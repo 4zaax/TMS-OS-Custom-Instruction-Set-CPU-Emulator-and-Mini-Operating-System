@@ -39,6 +39,8 @@ FILE* open_file(char address[]){
 int check(char command[], char arg1[], char arg2[], char arg3[]){
     if (strcmp(command,"give") == 0)
         assign(arg1, arg2);
+    else if (strcmp(command,"com") == 0)
+        compare(arg1, arg2, arg3);
 }
 
 void assign(char destination[], char value[]){
@@ -52,4 +54,19 @@ void assign(char destination[], char value[]){
 int get_var_id(char variable[]){
     if (variable[0] != 'v') return -1;
     return atoi(variable + 1);
+}
+
+int compare(char var1[], char value[], char destination[]){
+    int source_id = get_var_id(var1);
+    int source = var[source_id];
+    int val = atoi(value);
+    int result;
+    if (source > val)
+        result = 1;
+    else if (source < val)
+        result = -1;
+    else
+        result = 0;
+    int dest_id = get_var_id(destination);
+    var[dest_id] = result;
 }
