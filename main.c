@@ -22,6 +22,7 @@ int main() {
         if (tokens < 1) continue;
         check(command,arg1,arg2,arg3);
     }
+    printf("value of v3 is %d \n",var[3]);
     fclose(file);
     return 0;
 }
@@ -41,6 +42,8 @@ int check(char command[], char arg1[], char arg2[], char arg3[]){
         assign(arg1, arg2);
     else if (strcmp(command,"com") == 0)
         compare(arg1, arg2, arg3);
+    else if (strcmp(command,"eq") == 0)
+        equal_test(arg1, arg2, arg3);
     else 
         printf("Unknown command: %s\n",command);
 }
@@ -69,6 +72,16 @@ int compare(char var1[], char value[], char destination[]){
         result = -1;
     else
         result = 0;
+    int dest_id = get_var_id(destination);
+    var[dest_id] = result;
+}
+
+int equal_test(char var1[], char value[], char destination[]){
+    int source_id = get_var_id(var1);
+    int source = var[source_id];
+    int val = atoi(value);
+    int result;
+    source == val ? (result = 1):(result = 0);
     int dest_id = get_var_id(destination);
     var[dest_id] = result;
 }
