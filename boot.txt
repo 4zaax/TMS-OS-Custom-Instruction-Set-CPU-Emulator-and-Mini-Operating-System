@@ -1,3 +1,5 @@
-AS V1 5
-AS V2 10
-CM V1 V2 V3
+give V1 5
+f1: com v1 10 v2
+eq v2 0 V3
+run v3 goto f1
+run v3 <optional_command> 
