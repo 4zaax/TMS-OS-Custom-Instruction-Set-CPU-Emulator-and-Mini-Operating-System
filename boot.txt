@@ -1,5 +1,6 @@
 give v1 5
 com v1 10 v2
+eq v2 1 v3
 f1: com v1 10 v2
 eq v2 0 V3
 run v3 goto f1
