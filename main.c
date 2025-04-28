@@ -41,6 +41,8 @@ int check(char command[], char arg1[], char arg2[], char arg3[]){
         assign(arg1, arg2);
     else if (strcmp(command,"com") == 0)
         compare(arg1, arg2, arg3);
+    else 
+        printf("Unknown command: %s\n",command);
 }
 
 void assign(char destination[], char value[]){
