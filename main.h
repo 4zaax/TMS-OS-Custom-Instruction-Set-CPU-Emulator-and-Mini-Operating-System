@@ -1,2 +1,4 @@
 FILE* open_file(char address[]);
-void parse_command(void);
+int check(char command[], char arg1[], char arg2[], char arg3[]);
+int get_var_id(char variable[]);
+void assign(char value[], char destination[]);
