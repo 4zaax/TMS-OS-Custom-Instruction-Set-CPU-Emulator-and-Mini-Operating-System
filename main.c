@@ -37,7 +37,7 @@ FILE* open_file(char address[]){
 }
 
 int check(char command[], char arg1[], char arg2[], char arg3[]){
-    if (strcmp(command,"give") == 0)
+    if (strcmp(command,"as") == 0)
         assign(arg1, arg2);
     else if (strcmp(command,"com") == 0)
         compare(arg1, arg2, arg3);

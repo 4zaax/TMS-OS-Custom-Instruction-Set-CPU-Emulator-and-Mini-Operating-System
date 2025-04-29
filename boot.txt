@@ -1,5 +1,5 @@
-give v1 5
-give v10 10
+as v1 5
+as v10 10
 add v1 v10 v15
 show v15
 sub v15 v1 v10
