@@ -1,0 +1,25 @@
+Rules to prevent errors :
+1. Variables are named as: v0,v1,v2,...,up to v199
+2. A total of 200 variables are currently supported.
+3. General syntax :
+    > COMMAND ARG1 ARG2 ARG3
+4. All commands must be written in lowercase format.
+5. In later stages we will discuss loops and function syntax which will follow this kind of structure:
+LOOP:
+command 1
+command 2
+...
+END:
+6. Each command can be labeled to simplify the jump process, which has not been implemented yet.
+
+* you can find language sample in boot.txt file
+
+Future extensions:
+function implementation
+return command for functions
+loops implementation
+break and continue commands
+support for input output from user
+more precise error handling
+postfix exp ev support (if needed)
+
