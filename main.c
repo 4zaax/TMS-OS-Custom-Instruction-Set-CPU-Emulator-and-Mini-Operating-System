@@ -85,3 +85,4 @@ int equal_test(char var1[], char value[], char destination[]){
     int dest_id = get_var_id(destination);
     var[dest_id] = result;
 }
+// salam
