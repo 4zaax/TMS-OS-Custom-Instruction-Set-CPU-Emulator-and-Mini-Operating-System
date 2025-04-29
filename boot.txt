@@ -1,7 +1,15 @@
 give v1 5
+give v10 10
+add v1 v10 v15
+show v15
+sub v15 v1 v10
+show v10
+mul v10 v10 v100
+show v100
+div v100 v100 v1
+show v1
 com v1 10 v2
 eq v2 1 v3
 f1: com v1 10 v2
 eq v2 0 V3
-run v3 goto f1
-run v3 <optional_command> 
+div v1 v3
