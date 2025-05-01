@@ -6,7 +6,10 @@
 #define MEMORY_SIZE 200
 #define MAX_LINES 500
 #define LINE_LEN 256
+#define STACK_SIZE 100
 int var[MEMORY_SIZE];
+int call_stack[STACK_SIZE];
+int sp = -1;
 
 FILE *file;
 
@@ -168,5 +171,21 @@ void load_program(FILE *file) {
             strcpy(program[program_size].line, buffer);
         }
         program_size++;
+    }
+}
+
+void push(int val) {
+    if (sp < STACK_SIZE - 1)
+        call_stack[++sp] = val;
+    else
+        printf("Stack Overflow\n");
+}
+
+int pop() {
+    if (sp >= 0)
+        return call_stack[sp--];
+    else {
+        printf("Stack Underflow\n");
+        return -1;
     }
 }
