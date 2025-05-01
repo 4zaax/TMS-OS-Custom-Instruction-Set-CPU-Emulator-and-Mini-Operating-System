@@ -11,7 +11,6 @@
 int var[MEMORY_SIZE];
 int call_stack[STACK_SIZE];
 int sp = -1; //stack pointer
-int current_line = 0;
 FILE *file;
 
 typedef struct {
@@ -88,7 +87,7 @@ int get_var_id(char variable[]){
     return atoi(variable + 1);
 }
 
-int compare(char var1[], char value[], char destination[]){
+void compare(char var1[], char value[], char destination[]){
     int source_id = get_var_id(var1);
     int source = var[source_id];
     int val = atoi(value);
@@ -103,7 +102,7 @@ int compare(char var1[], char value[], char destination[]){
     var[dest_id] = result;
 }
 
-int equal_test(char var1[], char value[], char destination[]){
+void equal_test(char var1[], char value[], char destination[]){
     int source_id = get_var_id(var1);
     int source = var[source_id];
     int val = atoi(value);

@@ -1,3 +1,4 @@
+START:
 as v0 3
 as v1 7
 show v0
@@ -18,3 +19,4 @@ goto B
 
 END:
 show v0
+goto START
