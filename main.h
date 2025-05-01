@@ -10,7 +10,7 @@ void multiply(char var1[], char var2[], char destination[]);
 void divide(char var1[], char var2[], char destination[]);
 void modulo(char var1[], char var2[], char destination[]);
 void show(char variable[]);
-
+void load_program(FILE *file);
 
 
 

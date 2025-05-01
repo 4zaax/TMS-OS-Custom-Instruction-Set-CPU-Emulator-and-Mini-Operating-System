@@ -4,9 +4,19 @@
 #include "main.h"
 
 #define MEMORY_SIZE 200
+#define MAX_LINES 500
+#define LINE_LEN 256
 int var[MEMORY_SIZE];
 
 FILE *file;
+
+typedef struct {
+    char line[LINE_LEN];
+    char label[20];
+} LineEntry;
+
+LineEntry program[MAX_LINES];
+int program_size = 0;
 
 int main() {
 
@@ -139,4 +149,24 @@ void modulo(char var1[], char var2[], char destination[]){
 void show(char variable[]){ // makes debugging easier
     int var_id = get_var_id(variable);
     printf("%s value is: %d \n",variable, var[var_id]);
+}
+
+void load_program(FILE *file) {
+    char buffer[LINE_LEN];
+    while (fgets(buffer, sizeof(buffer), file) != NULL) {
+        buffer[strcspn(buffer, "\n")] = '\0';
+
+        // Check if it's a label
+        char *colon = strchr(buffer, ':');
+        if (colon && colon == buffer + strlen(buffer) - 1) {
+            // It’s a label like L1:
+            strncpy(program[program_size].label, buffer, colon - buffer);
+            program[program_size].label[colon - buffer] = '\0';
+            program[program_size].line[0] = '\0'; // No command
+        } else {
+            program[program_size].label[0] = '\0'; // No label
+            strcpy(program[program_size].line, buffer);
+        }
+        program_size++;
+    }
 }
