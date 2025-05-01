@@ -13,6 +13,7 @@ void show(char variable[]);
 void load_program(FILE *file);
 void push(int val);
 int pop();
+int find_label(const char *label);
 
 
 

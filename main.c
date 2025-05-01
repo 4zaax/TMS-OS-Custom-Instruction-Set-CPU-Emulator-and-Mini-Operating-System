@@ -174,6 +174,7 @@ void load_program(FILE *file) {
     }
 }
 
+
 void push(int val) {
     if (sp < STACK_SIZE - 1)
         call_stack[++sp] = val;
@@ -188,4 +189,12 @@ int pop() {
         printf("Stack Underflow\n");
         return -1;
     }
+}
+
+int find_label(const char *label) {
+    for (int i = 0; i < program_size; ++i) {
+        if (strcmp(program[i].label, label) == 0)
+            return i;
+    }
+    return -1;
 }
