@@ -3,13 +3,14 @@
 #include <string.h>
 #include "main.h"
 
-#define MEMORY_SIZE 200
-#define MAX_LINES 500
-#define LINE_LEN 256
-#define STACK_SIZE 100
+#define MEMORY_SIZE 200 // store our variables
+#define MAX_LINES 500   // os supports programs of maximum 500 lines
+#define LINE_LEN 256    // each line of program should be less than 256 characters
+#define STACK_SIZE 100  // os stack size
+
 int var[MEMORY_SIZE];
 int call_stack[STACK_SIZE];
-int sp = -1;
+int sp = -1; //stack pointer
 int current_line = 0;
 FILE *file;
 
@@ -27,16 +28,11 @@ int main() {
     if (file == NULL) printf("Shutting down OS\n");else  printf("boot file loaded successfully\n");
     load_program(file);
     fclose(file);
-    for (int current_line = 0; current_line < program_size; current_line++){
+    for (int current_line = 1 ; current_line <= program_size; current_line++){
         if(program[current_line].line[0] == '\0')continue;
         char command[10],arg1[10],arg2[10],arg3[10];
         int tokens = sscanf(program[current_line].line, "%s %s %s %s", command, arg1, arg2, arg3);
         if (tokens < 1)continue;
-        if (strcmp(command, "goto") == 0) {
-            go2(arg1, &current_line);  // Pass pointer to current_line
-            continue;
-        }
-
         check(command, arg1, arg2, arg3, &current_line);
     }
 
@@ -165,9 +161,9 @@ void load_program(FILE *file) {
     char buffer[LINE_LEN];
     while (fgets(buffer, sizeof(buffer), file) != NULL) {
         buffer[strcspn(buffer, "\n")] = '\0';
-
         // Check if it's a label
         char *colon = strchr(buffer, ':');
+        program_size++;
         if (colon && colon == buffer + strlen(buffer) - 1) {
             // It’s a label like L1:
             strncpy(program[program_size].label, buffer, colon - buffer);
@@ -177,7 +173,6 @@ void load_program(FILE *file) {
             program[program_size].label[0] = '\0'; // No label
             strcpy(program[program_size].line, buffer);
         }
-        program_size++;
     }
 }
 

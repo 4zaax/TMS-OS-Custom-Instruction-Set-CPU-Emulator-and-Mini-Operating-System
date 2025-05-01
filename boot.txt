@@ -1,14 +1,20 @@
-as v0 5
-as v1 10
+as v0 3
+as v1 7
 show v0
 show v1
 
-goto LOOP
+goto A
 
-L1:
+B:
 add v0 v1 v2
 show v2
 
-LOOP:
+goto END
+
+A:
 sub v1 v0 v3
 show v3
+goto B
+
+END:
+show v0
