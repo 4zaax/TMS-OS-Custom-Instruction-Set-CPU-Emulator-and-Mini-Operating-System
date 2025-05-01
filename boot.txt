@@ -1,15 +1,14 @@
-as v1 5
-as v10 10
-add v1 v10 v15
-show v15
-sub v15 v1 v10
-show v10
-mul v10 v10 v100
-show v100
-div v100 v100 v1
+as v0 5
+as v1 10
+show v0
 show v1
-com v1 10 v2
-eq v2 1 v3
-f1: com v1 10 v2
-eq v2 0 V3
-div v1 v3
+
+goto LOOP
+
+L1:
+add v0 v1 v2
+show v2
+
+LOOP:
+sub v1 v0 v3
+show v3

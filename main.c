@@ -10,7 +10,7 @@
 int var[MEMORY_SIZE];
 int call_stack[STACK_SIZE];
 int sp = -1;
-
+int current_line = 0;
 FILE *file;
 
 typedef struct {
@@ -25,18 +25,23 @@ int main() {
 
     file = open_file("../boot.txt");
     if (file == NULL) printf("Shutting down OS\n");else  printf("boot file loaded successfully\n");
-
-    char line[1024];
-
-    while (fgets(line, sizeof(line), file/*stdin*/)) {
-        line[strcspn(line, "\n")] = '\0'; //replacing delimiter with null terminator
-        char command[10], arg1[10], arg2[10], arg3[10];
-        int tokens = sscanf(line, "%s %s %s %s", command, arg1, arg2, arg3);
-        if (tokens < 1) continue;
-        check(command,arg1,arg2,arg3);
-    }
+    load_program(file);
     fclose(file);
-    return 0;
+    for (int current_line = 0; current_line < program_size; current_line++){
+        if(program[current_line].line[0] == '\0')continue;
+        char command[10],arg1[10],arg2[10],arg3[10];
+        int tokens = sscanf(program[current_line].line, "%s %s %s %s", command, arg1, arg2, arg3);
+        if (tokens < 1)continue;
+        if (strcmp(command, "goto") == 0) {
+            go2(arg1, &current_line);  // Pass pointer to current_line
+            continue;
+        }
+
+        check(command, arg1, arg2, arg3, &current_line);
+    }
+
+    file = open_file("../boot.txt");
+    char line[1024];
 }
 
 
@@ -49,7 +54,7 @@ FILE* open_file(char address[]){
     return file;
 }
 
-int check(char command[], char arg1[], char arg2[], char arg3[]){
+int check(char command[], char arg1[], char arg2[], char arg3[], int *current_line){
     if (strcmp(command,"as") == 0)
         assign(arg1, arg2);
     else if (strcmp(command,"com") == 0)
@@ -68,6 +73,8 @@ int check(char command[], char arg1[], char arg2[], char arg3[]){
         show(arg1);
     else if (strcmp(command,"mod") == 0)
         modulo(arg1, arg2, arg3);
+    else if (strcmp(command,"goto") == 0)
+        go2(arg1,current_line);
     else
         printf("Unknown command: %s\n",command);
 }
@@ -197,4 +204,14 @@ int find_label(const char *label) {
             return i;
     }
     return -1;
+}
+
+void go2(const char *label, int *current_line){
+        int target_line = find_label(label);
+        if (target_line != -1) {
+            push(*current_line + 1); // Save return point
+            *current_line = target_line;
+        } else {
+            printf("Label not found: %s\n", label);
+        }
 }

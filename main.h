@@ -1,5 +1,5 @@
 FILE* open_file(char address[]);
-int check(char command[], char arg1[], char arg2[], char arg3[]);
+int check(char command[], char arg1[], char arg2[], char arg3[], int *current_line);
 int get_var_id(char variable[]);
 void assign(char value[], char destination[]);
 int compare(char var1[], char value[], char destination[]);
@@ -14,6 +14,7 @@ void load_program(FILE *file);
 void push(int val);
 int pop();
 int find_label(const char *label);
+void go2(const char *label, int *current_line);
 
 
 
