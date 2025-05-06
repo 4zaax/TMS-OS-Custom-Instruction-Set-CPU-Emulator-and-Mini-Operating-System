@@ -226,3 +226,4 @@ int main(){
     fclose(fp);
     return 0;
     }
+//this is for mani
