@@ -70,6 +70,8 @@ int check(char command[], char arg1[], char arg2[], char arg3[], int *current_li
         modulo(arg1, arg2, arg3);
     else if (strcmp(command,"goto") == 0)
         go2(arg1,current_line);
+    else if (strcmp(command,"return") == 0)
+        *current_line = pop();
     else
         printf("Unknown command: %s\n",command);
 }

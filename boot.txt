@@ -9,6 +9,7 @@ goto A
 B:
 add v0 v1 v2
 show v2
+return
 
 goto END
 
@@ -19,4 +20,4 @@ goto B
 
 END:
 show v0
-goto START
+
