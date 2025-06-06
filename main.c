@@ -162,6 +162,7 @@ void load_program(FILE *file) {
     char buffer[LINE_LEN];
     while (fgets(buffer, sizeof(buffer), file) != NULL) {
         buffer[strcspn(buffer, "\n")] = '\0';
+        if (buffer[0] == '\0' || buffer[0] == '#') continue;
         // Check if it's a label
         char *colon = strchr(buffer, ':');
         program_size++;

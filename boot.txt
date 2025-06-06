@@ -4,6 +4,8 @@ as v1 7
 show v0
 show v1
 
+# comment test
+
 goto A
 
 B:
@@ -14,6 +16,9 @@ return
 goto END
 
 A:
+
+##comment test
+
 sub v1 v0 v3
 show v3
 goto B
