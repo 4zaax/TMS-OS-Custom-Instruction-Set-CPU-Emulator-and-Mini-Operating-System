@@ -25,4 +25,7 @@ goto B
 
 END:
 show v0
+print "first message in our own language"
+print v0
+show v0
 

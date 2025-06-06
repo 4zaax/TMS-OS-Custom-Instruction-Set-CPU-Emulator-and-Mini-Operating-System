@@ -29,14 +29,9 @@ int main() {
     fclose(file);
     for (int current_line = 1 ; current_line <= program_size; current_line++){
         if(program[current_line].line[0] == '\0')continue;
-        char command[10],arg1[10],arg2[10],arg3[10];
-        int tokens = sscanf(program[current_line].line, "%s %s %s %s", command, arg1, arg2, arg3);
-        if (tokens < 1)continue;
-        check(command, arg1, arg2, arg3, &current_line);
+        check(program[current_line].line, &current_line);
     }
 
-    file = open_file("../boot.txt");
-    char line[1024];
 }
 
 
@@ -49,7 +44,12 @@ FILE* open_file(char address[]){
     return file;
 }
 
-int check(char command[], char arg1[], char arg2[], char arg3[], int *current_line){
+int check(char *line, int *current_line){
+    if (first_char(line) == '#') return 0;
+    char command[10],arg1[10],arg2[10],arg3[10];
+    int tokens = sscanf(program[*current_line].line, "%s %s %s %s", command, arg1, arg2, arg3);
+    if (tokens < 1) return -1;
+
     if (strcmp(command,"as") == 0)
         assign(arg1, arg2);
     else if (strcmp(command,"com") == 0)
@@ -72,6 +72,8 @@ int check(char command[], char arg1[], char arg2[], char arg3[], int *current_li
         go2(arg1,current_line);
     else if (strcmp(command,"return") == 0)
         *current_line = pop();
+    else if (strcmp(command,"print") == 0)
+        print(arg1, line);
     else
         printf("Unknown command: %s\n",command);
 }
@@ -162,7 +164,7 @@ void load_program(FILE *file) {
     char buffer[LINE_LEN];
     while (fgets(buffer, sizeof(buffer), file) != NULL) {
         buffer[strcspn(buffer, "\n")] = '\0';
-        if (buffer[0] == '\0' || buffer[0] == '#') continue;
+        // if (buffer[0] == '\0' || buffer[0] == '#') continue;
         // Check if it's a label
         char *colon = strchr(buffer, ':');
         program_size++;
@@ -211,4 +213,24 @@ void go2(const char *label, int *current_line){
         } else {
             printf("Label not found: %s\n", label);
         }
+}
+
+char first_char(char* line){
+    char* c;
+    for(c = line; c == ' ' && c != '\0'; c++);
+    return *c;
+}
+
+void print(char* arg, char* line){
+    char *first_quote = strchr(line, '"');
+    char *last_quote = strrchr(line, '"');
+    if (first_quote != NULL && first_quote < last_quote){
+        *last_quote = '\0';
+        char* message = (char*) malloc(sizeof (char) * LINE_LEN);
+        strcpy(message, first_quote+1);
+        printf("%s\n",message);
+        free(message);
+        return;
+    }
+    show(arg);
 }
