@@ -126,9 +126,12 @@ int check(char *line, int *current_line){
         if (arg1[0]<='9' && arg3[0]>='1') go2(arg1,current_line);
         else if(find_variable_index(arg3)!=-1 && find_variable_value(arg3)!=0) go2(arg1,current_line);
     }
-
     else if (strcasecmp(command,"RET") == 0)
         *current_line = pop();
+    else if (strcasecmp(command,"PUSH") == 0)
+        user_push(arg1);
+    else if (strcasecmp(command,"POP") == 0)
+        user_pop(arg1);
     else
         printf("Unknown command: %s\n",command);
 }
@@ -465,4 +468,18 @@ int find_mem_addr(char* arg){
         addr = (addr * 10) + ((*c)-'0');
     }
     return addr;
+}
+
+void user_push(char var[]){
+    int val;
+    if (isdigit(var[0]))
+        val = atoi(var);
+    else
+        val = find_variable_value(var);
+    push(val);
+}
+
+void user_pop(char var[]){
+    int value = pop();
+    assign(var,value);
 }

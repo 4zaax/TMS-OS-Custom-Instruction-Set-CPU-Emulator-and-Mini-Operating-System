@@ -39,3 +39,5 @@ int pop();
 int find_label(const char *label);
 void go2(const char *label, int *current_line);
 int find_mem_addr(char* arg);
+void user_push(char var[]);
+void user_pop(char var[]);
