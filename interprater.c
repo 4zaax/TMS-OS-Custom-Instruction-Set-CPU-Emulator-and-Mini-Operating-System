@@ -347,7 +347,7 @@ void divide(char var1[], char var2[], char var3[]){
     else value1 = find_variable_value(var1);
     if (var2[0]<='9' &&  var2[0]>='0') value2= atoi(var2);
     else value2= find_variable_value(var2);
-    if(value2==0) printf("Diviotion by zero");
+    if(value2==0) printf("Division by zero");
     else{
         int result=value1/value2;
         assign(var3,result);
@@ -373,7 +373,7 @@ void set_char_var(const char *name, char value) {
         Characters++;
     }
 }
-*/ 
+*/
 
 void get_input(char arg1[]){
     int c=getchar();
