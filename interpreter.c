@@ -132,6 +132,8 @@ int check(char *line, int *current_line){
         user_push(arg1);
     else if (strcasecmp(command,"POP") == 0)
         user_pop(arg1);
+    else if (strcasecmp(command,"MOV") == 0)
+        move(arg1,arg2);
     else
         printf("Unknown command: %s\n",command);
 }
@@ -305,15 +307,6 @@ void XOR( char var1[],  char var2[], char var3[]) {
     int result = value1 ^ value1;
     assign(var3, result);
 }
-void equal_test(char var1[], char value[], char destination[]){
-    int source_id = get_var_id(var1);
-    int source = var[source_id];
-    int val = atoi(value);
-    int result;
-    source == val ? (result = 1):(result = 0);
-    int dest_id = get_var_id(destination);
-    var[dest_id] = result;
-}
 
 void addition(char var1[], char var2[], char var3[]){
     int value1,value2;
@@ -470,6 +463,13 @@ int find_mem_addr(char* arg){
     return addr;
 }
 
+int* find_var_addr(char* name){
+    int idx = find_variable_index(name);
+    if (idx != -1) return &(variables[idx].value);
+    printf("variable not found\n", name);
+    return 0;
+}
+
 void user_push(char var[]){
     int val;
     if (isdigit(var[0]))
@@ -482,4 +482,48 @@ void user_push(char var[]){
 void user_pop(char var[]){
     int value = pop();
     assign(var,value);
+}
+
+void move(char* dest, char* src){
+    int dest_reg_idx = find_variable_index(dest);
+    int source_reg_idx = find_variable_index(src);
+    int dest_mem_idx = find_mem_addr(dest);
+    int source_mem_idx = find_mem_addr(src);
+    // mov reg reg
+    if (dest_reg_idx != -1 && source_reg_idx != -1){
+        assign(dest, find_variable_value(src));
+        return;
+    }
+    // mov reg [mem]
+    if (dest_reg_idx != -1 && source_mem_idx != -1){
+        if (source_mem_idx + 4 > MEMORY_SIZE){
+            printf("MOV: assign memory to register failed due to an overflow\n");
+            return;
+        }
+        memcpy(find_var_addr(dest), &input_memory[source_mem_idx],4);
+        return;
+    }
+
+    // mov [mem] reg
+    if (source_reg_idx != -1 && dest_mem_idx != -1){
+        if (dest_mem_idx + 4 > MEMORY_SIZE){
+            printf("MOV: assign register to memory failed due to an overflow\n");
+            return;
+        }
+        memcpy(&input_memory[dest_mem_idx], find_var_addr(src),4);
+        return;
+    }
+
+    // mov reg num
+    if (dest_reg_idx != -1){
+        assign(dest, atoi(src));
+        return;
+    }
+
+    // mov mem num
+    if (dest_mem_idx != -1){
+        int val = atoi(src);
+        memcpy(&input_memory[dest_mem_idx], &val, 4);
+    }
+    printf("MOV : invalid syntax\n");
 }
