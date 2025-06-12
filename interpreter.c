@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "main.h"
+#include "ctype.h"
 
 #define MEMORY_SIZE 200 // store our variables
 #define MAX_LINES 500   // os supports programs of maximum 500 lines
@@ -453,3 +454,15 @@ char first_char(char* line){
     return *c;
 }
 
+int find_mem_addr(char* arg){
+    if (arg[0] != '[') return -1;
+    char* end_bracket = strchr(arg, ']');
+    if(!end_bracket) return -1;
+    int len = end_bracket - arg -1;
+    char* c = arg;
+    int addr = 0;
+    for(c = arg+1; isdigit(*c); c++){
+        addr = (addr * 10) + ((*c)-'0');
+    }
+    return addr;
+}
