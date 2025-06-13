@@ -535,16 +535,29 @@ void move(char* dest, char* src){
         assign(dest, atoi(src));
         return;
     }
+    else{
+        reg_init(dest);
+        int val = atoi(src);
+        assign(dest, val);
+        return;
+    }
 
     // mov mem num
     if (dest_mem_idx != -1){
         int val = atoi(src);
         memcpy(&input_memory[dest_mem_idx], &val, 4);
     }
+    else
     printf("MOV : invalid syntax\n");
 }
 
 void read_mem(const char* arg1){
     int addr = find_mem_addr(arg1);
     printf("data in memory house %d : %d\n",addr,input_memory[addr]);
+}
+
+void reg_init (char *name){
+    if (find_variable_index(name) != -1)
+        printf("reg_init : register already exists\n");
+    assign(name, 0);
 }
