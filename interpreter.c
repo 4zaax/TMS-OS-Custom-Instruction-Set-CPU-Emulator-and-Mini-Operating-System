@@ -51,10 +51,8 @@ int main() {
     load_program(file);
     fclose(file);
     for (int current_line = 1 ; current_line <= program_size; current_line++){
-        if(program[current_line].line[0] == '\0')continue;
         check(program[current_line].line, &current_line);
     }
-
 }
 
 
@@ -73,9 +71,8 @@ int check(char *line, int *current_line){
     int tokens = sscanf(program[*current_line].line, "%s %s %s %s", command, arg1, arg2, arg3);
     if (tokens < 1) return -1;
 
-    if (strcasecmp(command,"AS") == 0){
+    if (strcasecmp(command,"AS") == 0)
         pre_assign(arg1,arg2);
-    }
     else if (strcasecmp(command,"EQ") == 0)
         equal(arg1, arg2, arg3);
     else if (strcasecmp(command,"NEQ") == 0)
@@ -101,9 +98,9 @@ int check(char *line, int *current_line){
     else if (strcasecmp(command,"SHR") == 0)
         SHR(arg1, arg2, arg3);
     else if (strcasecmp(command,"INC") == 0)
-        increment(arg3);
+        increment(arg1);
     else if (strcasecmp(command,"DEC") == 0)
-        decrement(arg3);
+        decrement(arg1);
     else if (strcasecmp(command,"GET") == 0)
         get_input(arg1);
     else if (strcasecmp(command,"ADD") == 0)
@@ -119,11 +116,13 @@ int check(char *line, int *current_line){
     else if (strcasecmp(command,"MOD") == 0)
         modulo(arg1, arg2, arg3);
     else if (strcasecmp(command,"GMP") == 0){
-        if (arg1[0]<='9' && arg3[0]>='1') go2(arg1,current_line);
-        else if(find_variable_index(arg3)!=-1 && find_variable_value(arg3)!=0) go2(arg1,current_line);
+            if (tokens == 2)
+                go2(arg1, current_line);
+            else if (find_variable_index(arg3)!=-1 && find_variable_value(arg3)!=0)
+                go2(arg1,current_line);
     }
     else if (strcasecmp(command,"RET") == 0)
-        *current_line = pop();
+        *current_line = pop()-1;
     else if (strcasecmp(command,"PUSH") == 0)
         user_push(arg1);
     else if (strcasecmp(command,"POP") == 0)
@@ -403,7 +402,6 @@ void load_program(FILE *file) {
     char buffer[LINE_LEN];
     while (fgets(buffer, sizeof(buffer), file) != NULL) {
         buffer[strcspn(buffer, "\n")] = '\0';
-        if (buffer[0] == '\0' || buffer[0] == '#') continue;
         // Check if it's a label
         char *colon = strchr(buffer, ':');
         program_size++;

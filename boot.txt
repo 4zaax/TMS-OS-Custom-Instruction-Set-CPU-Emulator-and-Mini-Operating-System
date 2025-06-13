@@ -1,8 +1,8 @@
 START:
 as shayan 100
 show shayan
-get shayan
-show shayan
+# get shayan
+# show shayan
 as shayan s
 show shayan
 
@@ -25,24 +25,26 @@ show v1
 
 # comment test
 
-GUMP A
+GMP A
 
 B:
 ADD v0 v1 v2
 SHOW v2
 RET
 
-GUMP END
+GMP END
 
 A:
-
 ##comment test
-
-SUB v1 v0 v3
+AS v1 10
+AS v2 20
+SUB v3 v1 v2
 SHOW v3
-GUMP B
+GMP B
+show shayan
 
 END:
+show shayan
 SHOW v0
 # print "first message in our own language"
 # print v0
