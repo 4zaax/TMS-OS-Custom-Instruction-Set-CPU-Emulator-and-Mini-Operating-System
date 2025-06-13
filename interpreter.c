@@ -74,11 +74,7 @@ int check(char *line, int *current_line){
     if (tokens < 1) return -1;
 
     if (strcasecmp(command,"AS") == 0){
-         int value1;
-         if(arg1[0]<='9' && arg1[0]>='0') {value1= atoi(arg1);  assign(arg3, value1);}
-         else if ( find_variable_index(arg1)!=-1 ){value1= find_variable_value(arg1);  assign(arg3, value1);}
-         else{ printf("AS: value not found\n");}
-
+        pre_assign(arg1,arg2);
     }
     else if (strcasecmp(command,"EQ") == 0)
         equal(arg1, arg2, arg3);
@@ -159,10 +155,25 @@ int find_variable_index(const char *name) {
 }
 
 void show( char v[]){
-    if(find_variable_index(v)!=-1) printf("%d", find_variable_value(v));
+    if(find_variable_index(v)!=-1) printf("%s value is %d\n",v, find_variable_value(v));
     else { printf("%c",v);}
 }
 
+void pre_assign(char* arg1, char* arg2){
+    int value2;
+    if (isdigit(arg2[0])) {
+        value2 = atoi(arg2);
+        assign(arg1, value2);
+    }
+    else if (strlen(arg2) == 1){
+        assign (arg1, arg2[0]);
+    }
+    else if (find_variable_index(arg2) !=-1){
+        value2 = find_variable_value(arg2);
+        assign(arg1, value2);
+    }
+    else printf("AS: an error occurred while assigning.\n",arg2);
+}
 
 void assign(const char *name, int value) {
     int index= find_variable_index(name);
@@ -526,3 +537,5 @@ void move(char* dest, char* src){
     }
     printf("MOV : invalid syntax\n");
 }
+
+

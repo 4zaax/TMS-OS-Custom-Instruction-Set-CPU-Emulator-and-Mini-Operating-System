@@ -6,6 +6,7 @@ FILE* open_file(char address[]);
 int check(char* line, int* current_line);
 char first_char(char* line);
 int get_var_id(char variable[]);
+void pre_assign(char* arg1, char* arg2);
 void assign(const char *name, int value);
 void not_equal( char var1[], char var2[], char var3[]);
 void SHR( char var1[],char var2[],  char var3[]);

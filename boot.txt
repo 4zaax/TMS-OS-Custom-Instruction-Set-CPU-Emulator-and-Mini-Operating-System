@@ -7,8 +7,8 @@ as shayan s
 show shayan
 
 AS v0 3
-AS v1 10
 SHOW v0
+AS v1 10
 SHOW v1
 INC v0
 show v0
