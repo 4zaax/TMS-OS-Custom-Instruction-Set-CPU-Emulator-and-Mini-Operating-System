@@ -70,14 +70,14 @@ FILE* open_file(char address[]){
 int check(char *line, int *current_line){
     if (first_char(line) == '#') return 0;
     char command[10],arg1[10],arg2[10],arg3[10];
-    int tokens = sscanf(program[*current_line].line, "%s %s %s %s", command, arg3, arg1, arg2);
+    int tokens = sscanf(program[*current_line].line, "%s %s %s %s", command, arg1, arg2, arg3);
     if (tokens < 1) return -1;
 
     if (strcasecmp(command,"AS") == 0){
          int value1;
          if(arg1[0]<='9' && arg1[0]>='0') {value1= atoi(arg1);  assign(arg3, value1);}
          else if ( find_variable_index(arg1)!=-1 ){value1= find_variable_value(arg1);  assign(arg3, value1);}
-         else{ printf("value not found");}
+         else{ printf("AS: value not found\n");}
 
     }
     else if (strcasecmp(command,"EQ") == 0)
@@ -106,7 +106,7 @@ int check(char *line, int *current_line){
         SHR(arg1, arg2, arg3);
     else if (strcasecmp(command,"INC") == 0)
         increment(arg3);
-    else if (strcasecmp(command,"INC") == 0)
+    else if (strcasecmp(command,"DEC") == 0)
         decrement(arg3);
     else if (strcasecmp(command,"GET") == 0)
         get_input(arg1);
@@ -191,93 +191,92 @@ int find_variable_value(const char *name) {
 
 
 void equal( char var1[], char var2[], char var3[]) {
-    int value1, value2;
-    if (var1[0] <= '9' && var1[0] >= '0') value1 = atoi(var1);
-    else value1 = find_variable_value(var1);
+    int value2, value3;
     if (var2[0] <= '9' && var2[0] >= '0') value2 = atoi(var2);
     else value2 = find_variable_value(var2);
-    int result = (value2 == value1);
+    if (var3[0] <= '9' && var3[0] >= '0') value3 = atoi(var3);
+    else value3 = find_variable_value(var3);
+    int result = (value3 == value2);
     assign(var3, result);
-
 }
 void is_greater( char var1[], char var2[], char var3[]) {
-    int value1, value2;
-    if (var1[0] <= '9' && var1[0] >= '0') value1 = atoi(var1);
-    else value1 = find_variable_value(var1);
+    int value2, value3;
     if (var2[0] <= '9' && var2[0] >= '0') value2 = atoi(var2);
     else value2 = find_variable_value(var2);
-    int result = (value1 > value2 );
-    assign(var3, result);
+    if (var3[0] <= '9' && var3[0] >= '0') value3 = atoi(var3);
+    else value3 = find_variable_value(var3);
+    int result = (value2 > value3 );
+    assign(var1, result);
 }
-void is_greater_equal( char var1[], char var2[], char var3[]) {
-    int value1, value2;
-    if (var1[0] <= '9' && var1[0] >= '0') value1 = atoi(var1);
-    else value1 = find_variable_value(var1);
+void is_greater_equal(char var1[], char var2[], char var3[]) {
+    int value2, value3;
     if (var2[0] <= '9' && var2[0] >= '0') value2 = atoi(var2);
     else value2 = find_variable_value(var2);
-    int result = (value1 >= value2);
-    assign(var3, result);
+    if (var3[0] <= '9' && var3[0] >= '0') value3 = atoi(var3);
+    else value3 = find_variable_value(var3);
+    int result = (value2 >= value3);
+    assign(var1, result);
 }
-void is_less_than( char var1[], char var2[], char var3[]) {
-    int value1, value2;
-    if (var1[0] <= '9' && var1[0] >= '0') value1 = atoi(var1);
-    else value1 = find_variable_value(var1);
+void is_less_than(char var1[], char var2[], char var3[]) {
+    int value2, value3;
     if (var2[0] <= '9' && var2[0] >= '0') value2 = atoi(var2);
     else value2 = find_variable_value(var2);
-    int result = (value1 < value2);
-    assign(var3, result);
+    if (var3[0] <= '9' && var3[0] >= '0') value3 = atoi(var3);
+    else value3 = find_variable_value(var3);
+    int result = (value2 < value3);
+    assign(var1, result);
 }
-void is_less_than_equal( char var1[], char var2[], char var3[]) {
-    int value1, value2;
-    if (var1[0] <= '9' && var1[0] >= '0') value1 = atoi(var1);
-    else value1 = find_variable_value(var1);
+void is_less_than_equal(char var1[], char var2[], char var3[]) {
+    int value2, value3;
     if (var2[0] <= '9' && var2[0] >= '0') value2 = atoi(var2);
     else value2 = find_variable_value(var2);
-    int result = (value1 <= value2);
-    assign(var3, result);
+    if (var3[0] <= '9' && var3[0] >= '0') value3 = atoi(var3);
+    else value3 = find_variable_value(var3);
+    int result = (value2 <= value3);
+    assign(var1, result);
 }
-void not_equal( char var1[], char var2[], char var3[]) {
-    int value1, value2;
-    if (var1[0] <= '9' && var1[0] >= '0') value1 = atoi(var1);
-    else value1 = find_variable_value(var1);
+void not_equal(char var1[], char var2[], char var3[]) {
+    int value2, value3;
     if (var2[0] <= '9' && var2[0] >= '0') value2 = atoi(var2);
     else value2 = find_variable_value(var2);
-    int result = (value2 != value1);
-    assign(var3, result);
+    if (var3[0] <= '9' && var3[0] >= '0') value3 = atoi(var3);
+    else value3 = find_variable_value(var3);
+    int result = (value3 != value2);
+    assign(var1, result);
 
 }
-void AND( char var1[], char var2[], char var3[]) {
-    int value1, value2;
-    if (var1[0] <= '9' && var1[0] >= '0') value1 = atoi(var1);
-    else value1 = find_variable_value(var1);
+void AND(char var1[], char var2[], char var3[]) {
+    int value2, value3;
     if (var2[0] <= '9' && var2[0] >= '0') value2 = atoi(var2);
     else value2 = find_variable_value(var2);
-    int result = value1 & value2;
-    assign(var3, result);
+    if (var3[0] <= '9' && var3[0] >= '0') value3 = atoi(var3);
+    else value3 = find_variable_value(var3);
+    int result = value2 & value3;
+    assign(var1, result);
 
 }
-void SHL( char var1[],char var2[],  char var3[]) {
-    int value1, value2;
-    if (var1[0] <= '9' && var1[0] >= '0') value1 = atoi(var1);
-    else {value1 = find_variable_value(var1);}
+void SHL(char var1[], char var2[], char var3[]) {
+    int value2, value3;
     if (var2[0] <= '9' && var2[0] >= '0') value2 = atoi(var2);
-    else value2 = find_variable_value(var2);
-    int result = value1 << value2;
-    assign(var3, result);
+    else {value2 = find_variable_value(var2);}
+    if (var3[0] <= '9' && var3[0] >= '0') value3 = atoi(var3);
+    else value3 = find_variable_value(var3);
+    int result = value2 << value3;
+    assign(var1, result);
 
 }
-void SHR( char var1[],char var2[],  char var3[]) {
-    int value1, value2;
-    if (var1[0] <= '9' && var1[0] >= '0') value1 = atoi(var1);
-    else value1 = find_variable_value(var1);
+void SHR(char var1[], char var2[], char var3[]) {
+    int value2, value3;
     if (var2[0] <= '9' && var2[0] >= '0') value2 = atoi(var2);
     else value2 = find_variable_value(var2);
-    if (value2 < 0) {
+    if (var3[0] <= '9' && var3[0] >= '0') value3 = atoi(var3);
+    else value3 = find_variable_value(var3);
+    if (value3 < 0) {
         printf("error\n ");
         return;
     }
-    int result = value1 >> value2;
-    assign(var3, result);
+    int result = value2 >> value3;
+    assign(var1, result);
 
 }
 
@@ -290,64 +289,64 @@ void NOT( char var1[]) {
 }
 
 void OR( char var1[],  char var2[], char var3[]) {
-    int value1,value2;
-    if (var1[0]<='9' &&  var1[0]>='0') value1= atoi(var1);
-    else value1 = find_variable_value(var1);
+    int value2,value3;
     if (var2[0]<='9' &&  var2[0]>='0') value2= atoi(var2);
-    else value2= find_variable_value(var2);
-    int result=value1 | value2;
-    assign(var3,result);
+    else value2 = find_variable_value(var2);
+    if (var3[0]<='9' &&  var3[0]>='0') value3= atoi(var3);
+    else value3= find_variable_value(var3);
+    int result = value2 | value3;
+    assign(var1,result);
 }
 void XOR( char var1[],  char var2[], char var3[]) {
-    int value1, value2;
-    if (var1[0] <= '9' && var1[0] >= '0') value1 = atoi(var1);
-    else value1 = find_variable_value(var1);
+    int value2, value3;
     if (var2[0] <= '9' && var2[0] >= '0') value2 = atoi(var2);
     else value2 = find_variable_value(var2);
-    int result = value1 ^ value1;
-    assign(var3, result);
+    if (var3[0] <= '9' && var3[0] >= '0') value3 = atoi(var3);
+    else value3 = find_variable_value(var3);
+    int result = value2 ^ value2;
+    assign(var1, result);
 }
 
-void addition(char var1[], char var2[], char var3[]){
-    int value1,value2;
-    if (var1[0]<='9' &&  var1[0]>='0') value1= atoi(var1);
-    else value1 = find_variable_value(var1);
+void addition(char var1[],  char var2[], char var3[]){
+    int value2,value3;
     if (var2[0]<='9' &&  var2[0]>='0') value2= atoi(var2);
-    else value2= find_variable_value(var2);
-    int result=value1+value2;
-    assign(var3,result);
+    else value2 = find_variable_value(var2);
+    if (var3[0]<='9' &&  var3[0]>='0') value3= atoi(var3);
+    else value3= find_variable_value(var3);
+    int result=value2+value3;
+    assign(var1,result);
 }
 
-void subtract(char var1[], char var2[], char var3[]){
-    int value1,value2;
-    if (var1[0]<='9' &&  var1[0]>='0') value1= atoi(var1);
-    else value1 = find_variable_value(var1);
+void subtract(char var1[],  char var2[], char var3[]){
+    int value2,value3;
     if (var2[0]<='9' &&  var2[0]>='0') value2= atoi(var2);
-    else value2= find_variable_value(var2);
-    int result=value1-value2;
-    assign(var3,result);
+    else value2 = find_variable_value(var2);
+    if (var3[0]<='9' &&  var3[0]>='0') value3= atoi(var3);
+    else value3= find_variable_value(var3);
+    int result=value2-value3;
+    assign(var1,result);
 }
 
-void multiply(char var1[], char var2[], char var3[]){
-    int value1,value2;
-    if (var1[0]<='9' &&  var1[0]>='0') value1= atoi(var1);
-    else value1 = find_variable_value(var1);
+void multiply(char var1[],  char var2[], char var3[]){
+    int value2,value3;
     if (var2[0]<='9' &&  var2[0]>='0') value2= atoi(var2);
-    else value2= find_variable_value(var2);
-    int result=value2*value1;
-    assign(var3,result);
+    else value2 = find_variable_value(var2);
+    if (var3[0]<='9' &&  var3[0]>='0') value3= atoi(var3);
+    else value3= find_variable_value(var3);
+    int result=value3*value2;
+    assign(var1,result);
 }
 
-void divide(char var1[], char var2[], char var3[]){
-    int value1,value2;
-    if (var1[0]<='9' &&  var1[0]>='0') value1= atoi(var1);
-    else value1 = find_variable_value(var1);
+void divide(char var1[],  char var2[], char var3[]){
+    int value2,value3;
     if (var2[0]<='9' &&  var2[0]>='0') value2= atoi(var2);
-    else value2= find_variable_value(var2);
-    if(value2==0) printf("Division by zero");
+    else value2 = find_variable_value(var2);
+    if (var3[0]<='9' &&  var3[0]>='0') value3= atoi(var3);
+    else value3= find_variable_value(var3);
+    if(value3==0) printf("Division by zero");
     else{
-        int result=value1/value2;
-        assign(var3,result);
+        int result=value2/value3;
+        assign(var1,result);
     }
 
 }
@@ -379,13 +378,13 @@ void get_input(char arg1[]){
 }
 
 void modulo(char var1[], char var2[], char var3[]){
-    int value1,value2;
-    if (var1[0]<='9' &&  var1[0]>='0') value1= atoi(var1);
-    else value1 = find_variable_value(var1);
+    int value2,value3;
     if (var2[0]<='9' &&  var2[0]>='0') value2= atoi(var2);
-    else value2= find_variable_value(var2);
-    int result=value2%value1;
-    assign(var3,result);
+    else value2 = find_variable_value(var2);
+    if (var3[0]<='9' &&  var3[0]>='0') value3= atoi(var3);
+    else value3= find_variable_value(var3);
+    int result=value3%value2;
+    assign(var1,result);
 }
 
 

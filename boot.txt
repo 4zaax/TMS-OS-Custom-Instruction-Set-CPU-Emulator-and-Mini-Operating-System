@@ -1,31 +1,50 @@
 START:
-as v0 3
-as v1 7
+as shayan 100
+show shayan
+get shayan
+show shayan
+as shayan s
+show shayan
+
+AS v0 3
+AS v1 10
+SHOW v0
+SHOW v1
+INC v0
 show v0
+DEC v0
+SHOW v0
+PUSH 70
+POP v0
+show v0
+DEC v0
+PUSH v0
+POP v1
+# v1 value should now be 69
 show v1
 
 # comment test
 
-goto A
+GUMP A
 
 B:
-add v0 v1 v2
-show v2
-return
+ADD v0 v1 v2
+SHOW v2
+RET
 
-goto END
+GUMP END
 
 A:
 
 ##comment test
 
-sub v1 v0 v3
-show v3
-goto B
+SUB v1 v0 v3
+SHOW v3
+GUMP B
 
 END:
-show v0
-print "first message in our own language"
-print v0
-show v0
+SHOW v0
+# print "first message in our own language"
+# print v0
+SHOW v0
 
