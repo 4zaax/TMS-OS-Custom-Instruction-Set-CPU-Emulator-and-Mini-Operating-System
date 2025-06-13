@@ -79,7 +79,7 @@ int check(char *line, int *current_line){
         not_equal(arg1, arg2, arg3);
     else if (strcasecmp(command,"GT") == 0)
         is_greater(arg1, arg2, arg3);
-    else if (strcasecmp(command,"EQ") == 0)
+    else if (strcasecmp(command,"GTE") == 0)
         is_greater_equal(arg1, arg2, arg3);
     else if (strcasecmp(command,"LS") == 0)
         is_less_than(arg1, arg2, arg3);
@@ -132,6 +132,9 @@ int check(char *line, int *current_line){
         user_pop(arg1);
     else if (strcasecmp(command,"MOV") == 0)
         move(arg1,arg2);
+    // optional commands :
+    else if (strcasecmp(command,"READ") == 0)
+        read_mem(arg1);
     else if (strcasecmp(command,"READ") == 0)
         read_mem(arg1);
     else
@@ -212,7 +215,7 @@ void equal( char var1[], char var2[], char var3[]) {
     if (var3[0] <= '9' && var3[0] >= '0') value3 = atoi(var3);
     else value3 = find_variable_value(var3);
     int result = (value3 == value2);
-    assign(var3, result);
+    assign(var1, result);
 }
 void is_greater( char var1[], char var2[], char var3[]) {
     int value2, value3;
@@ -398,7 +401,7 @@ void modulo(char var1[], char var2[], char var3[]){
     else value2 = find_variable_value(var2);
     if (var3[0]<='9' &&  var3[0]>='0') value3= atoi(var3);
     else value3= find_variable_value(var3);
-    int result=value3%value2;
+    int result=value2%value3;
     assign(var1,result);
 }
 
