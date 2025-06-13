@@ -116,9 +116,12 @@ int check(char *line, int *current_line){
     else if (strcasecmp(command,"MOD") == 0)
         modulo(arg1, arg2, arg3);
     else if (strcasecmp(command,"GMP") == 0){
+        int arglen = strlen(arg2);
             if (tokens == 2)
                 go2(arg1, current_line);
-            else if (find_variable_index(arg3)!=-1 && find_variable_value(arg3)!=0)
+            else if (arglen == 1 && arg2[0] == '1')
+                go2(arg1,current_line);
+            else if (find_variable_index(arg2)!=-1 && find_variable_value(arg2)!=0)
                 go2(arg1,current_line);
     }
     else if (strcasecmp(command,"RET") == 0)
