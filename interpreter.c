@@ -92,7 +92,7 @@ int check(char *line, int *current_line){
     else if (strcasecmp(command,"XOR") == 0)
         XOR(arg1, arg2, arg3);
     else if (strcasecmp(command,"NOT") == 0)
-        NOT(arg1);
+        NOT(arg1,arg2);
     else if (strcasecmp(command,"SHL") == 0)
         SHL(arg1, arg2, arg3);
     else if (strcasecmp(command,"SHR") == 0)
@@ -298,11 +298,11 @@ void SHR(char var1[], char var2[], char var3[]) {
 
 }
 
-void NOT( char var1[]) {
-    int value1 ;
-    if (var1[0] <= '9' && var1[0] >= '0') value1 = atoi(var1);
-    else value1 = find_variable_value(var1);
-    int result = ~value1;
+void NOT(char var1[], char var2[]){
+    int value2 ;
+    if (var2[0] <= '9' && var2[0] >= '0') value2 = atoi(var2);
+    else value2 = find_variable_value(var2);
+    int result = ~value2;
     assign(var1, result);
 }
 
@@ -321,7 +321,7 @@ void XOR( char var1[],  char var2[], char var3[]) {
     else value2 = find_variable_value(var2);
     if (var3[0] <= '9' && var3[0] >= '0') value3 = atoi(var3);
     else value3 = find_variable_value(var3);
-    int result = value2 ^ value2;
+    int result = value2 ^ value3;
     assign(var1, result);
 }
 

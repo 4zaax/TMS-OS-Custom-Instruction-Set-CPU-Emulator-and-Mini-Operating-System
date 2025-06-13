@@ -1,10 +1,6 @@
-as v0 3
-shr v0 v0
-show v0
-as v1 3
-as res 29
-mod res v0 v1
-show res
+as v0 2
+shl v1 v0 1
+show v1
 
 # eq is working
 # neq is working
@@ -14,11 +10,11 @@ show res
 # lse is working
 # and is working
 # or is working
-# xor not working
-# not is not working
+# xor not working -> fixed
+# not is not working -> fixed
 # add working
 # sub working
 # mul working
 # div working
 # mod not working -> fixed
-# shl and shr not working
+# shl and shr

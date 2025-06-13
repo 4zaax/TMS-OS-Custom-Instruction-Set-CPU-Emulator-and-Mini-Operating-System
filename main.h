@@ -22,7 +22,7 @@ void SHL( char var1[],char var2[],  char var3[]);
 void AND( char var1[],  char var2[], char var3[]);
 void OR( char var1[],  char var2[], char var3[]);
 void XOR( char var1[],  char var2[], char var3[]);
-void NOT( char var1[]);
+void NOT( char var1[], char var2[]);
 int find_variable_value(const char *name) ;
 void increment(char arg3[]);
 void decrement(char arg3[]);
