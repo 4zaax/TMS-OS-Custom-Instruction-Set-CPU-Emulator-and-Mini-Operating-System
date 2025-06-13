@@ -132,6 +132,8 @@ int check(char *line, int *current_line){
         user_pop(arg1);
     else if (strcasecmp(command,"MOV") == 0)
         move(arg1,arg2);
+    else if (strcasecmp(command,"READ") == 0)
+        read_mem(arg1);
     else
         printf("Unknown command: %s\n",command);
 }
@@ -539,4 +541,7 @@ void move(char* dest, char* src){
     printf("MOV : invalid syntax\n");
 }
 
-
+void read_mem(const char* arg1){
+    int addr = find_mem_addr(arg1);
+    printf("data in memory house %d : %d\n",addr,input_memory[addr]);
+}

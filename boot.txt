@@ -1,13 +1,9 @@
 START:
 AS v0 10
-AS v1 9
-gmp A 1
-A:
-show v0
-as v100 1
-gmp END v100
-
+mov [100] v0
+read [100]
+As v1 20
+mov v1 [100]
 show v1
-END:
 
 
