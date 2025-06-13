@@ -51,6 +51,9 @@ int main() {
     load_program(file);
     fclose(file);
     for (int current_line = 1 ; current_line <= program_size; current_line++){
+        if (current_line == 14){
+            printf("\n");
+        }
         check(program[current_line].line, &current_line);
     }
 }
@@ -67,7 +70,7 @@ FILE* open_file(char address[]){
 
 int check(char *line, int *current_line){
     if (first_char(line) == '#') return 0;
-    char command[10],arg1[10],arg2[10],arg3[10];
+    char command[20],arg1[20],arg2[20],arg3[20];
     int tokens = sscanf(program[*current_line].line, "%s %s %s %s", command, arg1, arg2, arg3);
     if (tokens < 1) return -1;
 
@@ -137,6 +140,10 @@ int check(char *line, int *current_line){
         read_mem(arg1);
     else if (strcasecmp(command,"SHOWSTR") == 0)
         show_str(arg1);
+    else if (strcasecmp(command,"IF") == 0)
+        if_command(arg1, arg2, current_line);
+    else if (strcasecmp(command,"IFN") == 0)
+        if_not_command(arg1, arg2, current_line);
     else
         printf("Unknown command: %s\n",command);
 }
@@ -471,12 +478,16 @@ int find_mem_addr(char* arg){
     char* end_bracket = strchr(arg, ']');
     if(!end_bracket) return -1;
     int len = end_bracket - arg -1;
-    char* c = arg;
-    int addr = 0;
-    for(c = arg+1; isdigit(*c); c++){
-        addr = (addr * 10) + ((*c)-'0');
+    char* addr;
+    strncpy(addr, arg, len);
+    char* c = addr;
+    if (isdigit(*c)) {
+        for (c = addr; isdigit(*c); c++)
+            *addr = (*addr * 10) + ((*c) - '0');
     }
-    return addr;
+    else
+        *addr = find_variable_value(addr);
+    return *addr;
 }
 
 int* find_var_addr(char* name){
@@ -574,3 +585,39 @@ void show_str(char* arg1){
         printf("%c", input_memory[i]);
     }
 }
+
+void if_command(char* arg1,char* arg2, int* current_line){
+    if (is_num(arg1, strlen(arg1))){
+        int res = atoi(arg1);
+        if (res)
+            go2(arg2, current_line);
+    }
+    else {
+        int res = find_variable_value(arg1);
+        if (res)
+            go2(arg2, current_line);
+    }
+}
+
+void if_not_command (char* arg1,char* arg2, int* current_line){
+    if (is_num(arg1, strlen(arg1))){
+        int res = atoi(arg1);
+        if (!res)
+            go2(arg2, current_line);
+    }
+    else {
+        int res = find_variable_value(arg1);
+        if (!res)
+            go2(arg2, current_line);
+    }
+}
+
+int is_num(char* arg, int len){
+    int i;
+    for (i = 0; i < len; i++){
+        if(!isdigit(*(arg+i)))
+            return 0;
+    }
+    return 1;
+}
+

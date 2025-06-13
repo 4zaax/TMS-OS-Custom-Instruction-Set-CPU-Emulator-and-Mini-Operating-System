@@ -1,8 +1,22 @@
-mov [100] 'h'
-mov [101] 'e'
-mov [102] 'l'
-mov [103] 'l'
-mov [104] 'o'
-mov [105] '!'
-mov [107] '\0'
+# c holds each character we initialize it with value 0
+as c 0
+# starting point in memory
+as idx 100
+# cond turns 0 whenever user enters '\n'
+as cond 1
+gmp getstr cond
+
+getstr:
+    get c
+    show c
+    neq cond c 10
+    show cond
+    ifn cond getstr_break
+    mov [idx] c
+    read [idx]
+    inc idx
+    gmp getstr cond
+getstr_break:
 showstr [100]
+
+

@@ -47,3 +47,6 @@ int* find_var_addr(char* name);
 void move(char* dest, char* src);
 void read_mem(const char* arg1);
 void show_str(char* arg1);
+void if_command(char* arg1,char* arg2, int* current_line);
+void if_not_command(char* arg1,char* arg2, int* current_line);
+int is_num(char* arg, int len);
