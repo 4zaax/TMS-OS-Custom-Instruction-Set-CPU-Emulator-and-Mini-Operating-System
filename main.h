@@ -46,3 +46,4 @@ void user_pop(char var[]);
 int* find_var_addr(char* name);
 void move(char* dest, char* src);
 void read_mem(const char* arg1);
+void show_str(char* arg1);

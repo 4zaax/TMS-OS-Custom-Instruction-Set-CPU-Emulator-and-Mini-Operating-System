@@ -135,8 +135,8 @@ int check(char *line, int *current_line){
     // optional commands :
     else if (strcasecmp(command,"READ") == 0)
         read_mem(arg1);
-    else if (strcasecmp(command,"READ") == 0)
-        read_mem(arg1);
+    else if (strcasecmp(command,"SHOWSTR") == 0)
+        show_str(arg1);
     else
         printf("Unknown command: %s\n",command);
 }
@@ -535,17 +535,18 @@ void move(char* dest, char* src){
         assign(dest, atoi(src));
         return;
     }
-    else{
-        reg_init(dest);
-        int val = atoi(src);
-        assign(dest, val);
-        return;
-    }
+
 
     // mov mem num
     if (dest_mem_idx != -1){
-        int val = atoi(src);
-        memcpy(&input_memory[dest_mem_idx], &val, 4);
+        if (isdigit(src[0])){
+            int val = atoi(src);
+            memcpy(&input_memory[dest_mem_idx], &val, 4);
+        }
+        else {
+            int val = *(src+1);
+            input_memory[dest_mem_idx] = val;
+        }
     }
     else
     printf("MOV : invalid syntax\n");
@@ -560,4 +561,16 @@ void reg_init (char *name){
     if (find_variable_index(name) != -1)
         printf("reg_init : register already exists\n");
     assign(name, 0);
+}
+
+void show_str(char* arg1){
+    int idx = find_mem_addr(arg1);
+    int i;
+    for (i = idx; input_memory[i] != '\0' ;i++){
+        if (idx > MEMORY_SIZE){
+            printf("show_str: index our of range\n");
+            return;
+        }
+        printf("%c", input_memory[i]);
+    }
 }

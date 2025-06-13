@@ -1,2 +1,8 @@
-mov v0 100
-show v0
+mov [100] 'h'
+mov [101] 'e'
+mov [102] 'l'
+mov [103] 'l'
+mov [104] 'o'
+mov [105] '!'
+mov [107] '\0'
+showstr [100]
