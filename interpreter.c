@@ -618,7 +618,7 @@ void show_str(char* arg1){
 }
 
 void if_command(char* arg1,char* arg2, int* current_line){
-    if (is_num(arg1, strlen(arg1))){
+    if (is_num(arg1)){
         int res = atoi(arg1);
         if (res)
             go2(arg2, current_line);
@@ -631,7 +631,7 @@ void if_command(char* arg1,char* arg2, int* current_line){
 }
 
 void if_not_command (char* arg1,char* arg2, int* current_line){
-    if (is_num(arg1, strlen(arg1))){
+    if (is_num(arg1)){
         int res = atoi(arg1);
         if (!res)
             go2(arg2, current_line);
@@ -643,11 +643,63 @@ void if_not_command (char* arg1,char* arg2, int* current_line){
     }
 }
 
-int is_num(char* arg, int len){
+int is_num(char* arg){
+    int len = strlen(arg);
     int i;
     for (i = 0; i < len; i++){
         if(!isdigit(*(arg+i)))
             return 0;
     }
     return 1;
+}
+
+int is_mem_addr(char* arg){
+    int len = strlen(arg);
+    if ((arg[0] == '[')&&(arg[len-1] == ']'))
+        return 1;
+    return 0;
+}
+
+int is_char(char* arg){
+    int len = strlen(arg);
+    if (len == 1 && arg[0] == '\'')
+        return 2;
+    if (len == 3){
+        if (arg[0] == '\'' && arg[2] == '\'')
+            return 1;
+        return 0;
+    }
+    else if (len == 4){
+        if(arg[0] == '\'' && arg[3] == '\'' && arg[1] == '\\')
+            return 1;
+        return 0;
+    }
+    return 0;
+}
+
+int char_to_i(char* arg){
+    int len = strlen(arg);
+    if (len == 3)
+        return arg[1];
+    else if (len == 4)
+        if (strcmp(arg, "'\\n'") == 0)
+            return '\n';
+        else if (strcmp(arg, "'\\t'") == 0)
+            return '\t';
+        else if (strcmp(arg, "'\\r'") == 0)
+            return '\r';
+        else if (strcmp(arg, "'\\b'") == 0)
+            return '\b';
+        else if (strcmp(arg, "'\\f'") == 0)
+            return '\f';
+        else if (strcmp(arg, "'\\v'") == 0)
+            return '\v';
+        else if (strcmp(arg, "'\\0'") == 0)
+            return '\0';
+        else if (strcmp(arg, "'\\'") == 0)
+            return '\\';
+        else if (strcmp(arg, "'\\''") == 0)
+            return '\'';
+        else
+            printf("char_to_i: Invalid character, couldn't convert to integer.\n");
 }

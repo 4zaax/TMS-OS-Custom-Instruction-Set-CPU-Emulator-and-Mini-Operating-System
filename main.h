@@ -47,7 +47,7 @@ int find_variable_value(const char *name) ;
 int find_variable_index(const char *name);
 int find_mem_addr(char* arg);
 int* find_var_addr(char* name);
-int is_num(char* arg, int len);
+int is_num(char* arg);
 int is_char(char* arg);
 int is_mem_addr(char* arg);
 int char_to_i(char* arg);
