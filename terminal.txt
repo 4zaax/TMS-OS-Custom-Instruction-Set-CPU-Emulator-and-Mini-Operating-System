@@ -1,2 +1,101 @@
-as v0 10
-show v0
+####### Saving startup message on terminal load ####
+MOV      [0]     '>'
+MOV      [1]     '>'
+MOV      [2]     '>'
+MOV      [3]     ' '
+MOV      [4]     't'
+MOV      [5]     'y'
+MOV      [6]     'p'
+MOV      [7]     'e'
+MOV      [8]     ' '
+MOV      [9]     'h'
+MOV      [10]    'e'
+MOV      [11]    'l'
+MOV      [12]    'p'
+MOV      [13]    ' '
+MOV      [14]    't'
+MOV      [15]    'o'
+MOV      [16]    ' '
+MOV      [17]    's'
+MOV      [18]    'e'
+MOV      [19]    'e'
+MOV      [20]    ' '
+MOV      [21]    'a'
+MOV      [22]    'v'
+MOV      [23]    'a'
+MOV      [24]    'i'
+MOV      [25]    'l'
+MOV      [26]    'a'
+MOV      [27]    'b'
+MOV      [28]    'l'
+MOV      [29]    'e'
+MOV      [30]    ' '
+MOV      [31]    'c'
+MOV      [32]    'o'
+MOV      [33]    'm'
+MOV      [34]    'm'
+MOV      [35]    'a'
+MOV      [36]    'n'
+MOV      [37]    'd'
+MOV      [38]    '\n'
+MOV      [39]     0
+
+####### Saving "shut down"  string in memory #######
+MOV [90] 115   #s
+MOV [91] 104  #h
+MOV [92] 117   #u
+MOV [93] 116   #t
+MOV [94] 32    #space
+MOV [95] 100   #d
+MOV [96] 111   #o
+MOV [97] 119   #w
+MOV [98] 110   #n
+MOV [99] 0     #end of string
+##################Calculator####################
+MOV [40] 99    #c
+MOV [41] 97    #a
+MOV [42] 108   #l
+MOV [43] 99    #c
+MOV [44] 117   #u
+MOV [45] 108   #l
+MOV [46] 97    #a
+MOV [47] 116   #t
+MOV [48] 111   #o
+MOV [49] 114   #r
+MOV [50] 0
+
+showstr [0]
+AS idx 500      # user enters commands from memory house  500
+AS c 0          # initialization of char c
+AS eax 0        # '\n reach flag'
+push idx
+call get_command
+
+get_command:
+    call get_line
+
+END_get_command:
+
+JMP END
+
+get_line:
+    get c
+    EQ eax c '\n'
+    MOV [idx] '\0'
+    RET eax
+    MOV [idx] c
+    INC idx
+    JMP get_line
+end_get_line:
+
+save_char:
+    MOV [idx] c
+    INC idx
+    RET
+end_save_char:
+
+END:
+showstr [500]
+show '\n'
+showstr [90]
+exit
