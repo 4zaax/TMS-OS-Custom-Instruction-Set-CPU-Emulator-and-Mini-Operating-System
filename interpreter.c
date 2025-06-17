@@ -179,57 +179,75 @@ void show( char v[]){
 ///////////////////////////////////////////////////////////////
 
 void pre_assign(char* arg1, char* arg2){
-    int value2;
-    if (isdigit(arg2[0])) {
-        value2 = atoi(arg2);
-        assign(arg1, value2);
+    int assign_value = find_int_value(arg2);
+    assign(arg1, assign_value);
+}
+
+int find_int_value(char* arg){
+    int value;
+    // AS v0 10
+    if (is_num(arg))
+        value = atoi(arg);
+        // AS v0 's'
+    else if (is_char(arg) == 1)
+        value = char_to_i(arg);
+    else if (is_char(arg) == 2)
+        value = ' ';
+        // AS v0 [100] || AS v0 [v1]
+    else if (is_mem_addr(arg)){
+        int addr = find_mem_addr(arg);
+        value = input_memory[addr];
     }
-    else if (strlen(arg2) == 1){
-        assign (arg1, arg2[0]);
+        // AS v0 v1
+    else if (find_variable_index(arg) !=-1){
+        value = find_variable_value(arg);
+        assign(arg, value);
     }
-    else if (find_variable_index(arg2) !=-1){
-        value2 = find_variable_value(arg2);
-        assign(arg1, value2);
-    }
-    else printf("AS: an error occurred while assigning.\n",arg2);
+    else printf("AS: an error occurred while assigning.\n",arg);
+    return value;
 }
 
 void assign(const char *name, int value) {
-    int index= find_variable_index(name);
-    if (index != -1) {
-        variables[index].value = value;
-    } else {
-
-        if (variable_count < MAX_VARIABLES) {
-            strcpy(variables[variable_count].name, name);
-            variables[variable_count].value = value;
-            variable_count++;
-        } else {
-            printf("error\n");
+    if (is_mem_addr(name)){
+        int addr = find_mem_addr(name);
+        if (addr >= MEMORY_SIZE)
+            printf("Assign: memory index out of range.\n");
+        else
+            input_memory[addr] = value;
+    }
+    else { // value should be assigned to register
+        int index= find_variable_index(name);
+        if (index != -1)
+            variables[index].value = value;
+        else {
+            if (variable_count < MAX_VARIABLES) {
+                strcpy(variables[variable_count].name, name);
+                variables[variable_count].value = value;
+                variable_count++;
+            }
+            else
+                printf("Assign: register count exceeds limits\n");
         }
     }
 }
 
-
 int find_variable_value(const char *name) {
     int idx = find_variable_index(name);
     if (idx != -1) return variables[idx].value;
-    printf("variable not found\n", name);
+    printf("find_variable_value: variable %s not found\n", name);;
     return 0;
 }
-
-
 
 void equal( char var1[], char var2[], char var3[]) {
     int value2, value3;
     if (var2[0] <= '9' && var2[0] >= '0'){ value2 = atoi(var2);}
-    else if(var2[0]=='[') {value2=input_memory[find_mem_indx(var2)];}
+    else if(var2[0]=='[') {value2=input_memory[find_mem_addr(var2)];}
     else{ value2 = find_variable_value(var2);}
     if (var3[0] <= '9' && var3[0] >= '0'){ value3 = atoi(var3);}
-    else if(var3[0]=='[') {value3=input_memory[find_mem_indx(var3)];}
+    else if(var3[0]=='[') {value3=input_memory[find_mem_addr(var3)];}
     else {value3 = find_variable_value(var3);}
     int result = (value3 == value2);
-    if (var1[0]=='[') {input_memory[find_mem_indx(var1)]=result;return;}
+    if (var1[0]=='[') {input_memory[find_mem_addr(var1)]=result;return;}
     assign(var1, result);
 }
 void is_greater( char var1[], char var2[], char var3[]) {
@@ -271,13 +289,13 @@ void is_less_than_equal(char var1[], char var2[], char var3[]) {
 void not_equal(char var1[], char var2[], char var3[]) {
     int value2, value3;
     if (var2[0] <= '9' && var2[0] >= '0'){ value2 = atoi(var2);}
-    else if(var2[0]=='[') {value2=input_memory[find_mem_indx(var2)];}
+    else if(var2[0]=='[') {value2=input_memory[find_mem_addr(var2)];}
     else{ value2 = find_variable_value(var2);}
     if (var3[0] <= '9' && var3[0] >= '0'){ value3 = atoi(var3);}
-    else if(var3[0]=='[') {value3=input_memory[find_mem_indx(var3)];}
+    else if(var3[0]=='[') {value3=input_memory[find_mem_addr(var3)];}
     else {value3 = find_variable_value(var3);}
     int result = (value3 != value2);
-    if (var1[0]=='[') {input_memory[find_mem_indx(var1)]=result;return;}
+    if (var1[0]=='[') {input_memory[find_mem_addr(var1)]=result;return;}
     assign(var1, result);
 
 }
@@ -493,22 +511,19 @@ void my_strcpy(char *des,char * sourc,int len){
     }
     *(des+len)='\0';
 }
-int find_mem_indx(char* arg){
-
-
+int find_mem_addr(char* arg){
     if ((*arg) != '[') return -1;
     char* end_bracket = strchr(arg, ']');
     if(!end_bracket) return -1;
-    int len=end_bracket-arg-1;
+    int len = end_bracket-arg-1;
     int index;
-    char *c=(arg+1);
-    my_strcpy(c,(arg+1),len);
-    if (isdigit(*(arg+1))) {
+    char *c= (char*) malloc(sizeof (char) * (len+1));
+    my_strcpy(c,arg+1,len);
+
+    if (is_num(c))
         index= atoi(c);
-    }
     else
         index = find_variable_value(c);
-
     return index;
 }
 
@@ -537,8 +552,8 @@ void move(char* dest, char* src){
 
     int dest_reg_idx = find_variable_index(dest);
     int source_reg_idx = find_variable_index(src);
-    int dest_mem_idx = find_mem_indx(dest);
-    int source_mem_idx = find_mem_indx(src);
+    int dest_mem_idx = find_mem_addr(dest);
+    int source_mem_idx = find_mem_addr(src);
     // mov reg reg
     if (dest_reg_idx != -1 && source_reg_idx != -1){;
         assign(dest, find_variable_value(src));
@@ -583,7 +598,7 @@ void move(char* dest, char* src){
 }
 
 void read_mem(const char* arg1){
-    int addr = find_mem_indx(arg1);
+    int addr = find_mem_addr(arg1);
     printf("data in memory house %d : %d\n",addr,input_memory[addr]);
 }
 
@@ -594,7 +609,7 @@ void reg_init (char *name){
 }
 
 void show_str(char* arg1){
-    int idx = find_mem_indx(arg1);
+    int idx = find_mem_addr(arg1);
     int i;
     for (i = idx; input_memory[i] != 0 ;i++){
         if (idx > MEMORY_SIZE){

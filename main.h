@@ -43,6 +43,7 @@ void read_mem(const char* arg1);
 void show_str(char* arg1);
 void if_command(char* arg1,char* arg2, int* current_line);
 void if_not_command(char* arg1,char* arg2, int* current_line);
+int find_int_value(char* arg);
 int find_variable_value(const char *name) ;
 int find_variable_index(const char *name);
 int find_mem_addr(char* arg);
