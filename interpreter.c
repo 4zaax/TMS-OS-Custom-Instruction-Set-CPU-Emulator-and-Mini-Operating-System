@@ -404,33 +404,10 @@ void divide(char var1[],  char var2[], char var3[]){
     }
 
 }
-/*int find_char_var(const char *name) {
-    for (int i = 0; i < Characters; i++) {
-        if (strcmp(char_list[i].name, name) == 0)
-            return i;
-    }
-    return -1;
-}
-
-void set_char_var(const char *name, char value) {
-    int idx = find_char_var(name);
-    if (idx != -1) {
-        char_list[idx].value = value;
-    }
-    else {
-        strcpy(char_list[Characters].name, name);
-        char_list[Characters].value = value;
-        Characters++;
-    }
-}
-*/
 
 void get_input(char arg1[]){
     int c=getchar();
     assign(arg1, c);
-
-
-
 }
 
 void modulo(char var1[], char var2[], char var3[]){
@@ -449,9 +426,7 @@ void load_program(FILE *file) {
     while (fgets(buffer, sizeof(buffer), file) != NULL) {
         buffer[strcspn(buffer, "\n")] = '\0';
         // Check if it's a label
-
         char *colon = strchr(buffer, ':');
-
         program_size++;
         if (colon && colon == buffer + strlen(buffer) - 1) {
             // It’s a label like L1:
@@ -464,7 +439,6 @@ void load_program(FILE *file) {
         }
     }
 }
-
 
 void push(int val) {
     if (sp < STACK_SIZE - 1)
@@ -493,7 +467,6 @@ int find_label(const char *label) {
 void go2(const char *label, int *current_line){
     int target_line = find_label(label);
     if (target_line != -1) {
-
         *current_line = target_line;
     } else {
         printf("Label not found: %s\n", label);
@@ -525,13 +498,6 @@ int find_mem_addr(char* arg){
     else
         index = find_variable_value(c);
     return index;
-}
-
-int* find_var_addr(char* name){
-    int idx = find_variable_index(name);
-    if (idx != -1) return &(variables[idx].value);
-    printf("variable not found\n", name);
-    return 0;
 }
 
 void user_push(char var[]){
@@ -600,12 +566,6 @@ void move(char* dest, char* src){
 void read_mem(const char* arg1){
     int addr = find_mem_addr(arg1);
     printf("data in memory house %d : %d\n",addr,input_memory[addr]);
-}
-
-void reg_init (char *name){
-    if (find_variable_index(name) != -1)
-        printf("reg_init : register already exists\n");
-    assign(name, 0);
 }
 
 void show_str(char* arg1){
