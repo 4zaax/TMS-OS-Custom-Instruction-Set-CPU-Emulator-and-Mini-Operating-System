@@ -1,1 +1,0 @@
-run ../terminal.txt 1
