@@ -478,7 +478,7 @@ int pop() {
 }
 
 int find_label(const char *label) {
-    for (int i = 0; i < program_size; ++i) {
+    for (int i = 0; i <= program_size; ++i) {
         if (strcmp(program[i].label, label) == 0)
             return i;
     }
