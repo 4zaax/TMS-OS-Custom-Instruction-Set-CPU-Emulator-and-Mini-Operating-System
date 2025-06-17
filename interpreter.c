@@ -11,7 +11,6 @@
 #define STACK_SIZE 1000  // os stack size
 
 int input_memory[1000];
-int var[MEMORY_SIZE];
 int call_stack[STACK_SIZE];
 int sp = -1; //stack pointer
 FILE *file;
@@ -28,35 +27,20 @@ typedef struct {
 
 #define MAX_VAR_NAME 32
 
-typedef struct {
-    char name[MAX_VAR_NAME];
-    char value;
-} CharVar;
-
-
-CharVar char_list[1000];
-int Characters=0;
 Variable variables[1000];
 int variable_count = 0;
-
-
 LineEntry program[MAX_LINES];
 int program_size = 0;
 
 
 int main() {
-
     file = open_file("../boot.txt");
     if (file == NULL) printf("Shutting down OS\n");else  printf("boot file loaded successfully\n");
     load_program(file);
     fclose(file);
     for (int current_line = 1 ; current_line <= program_size; current_line++){
-        /*if (current_line == 14){
-            printf("\n");
-        }*/
         int result=check(program[current_line].line, &current_line);
         if(result==1)break;
-
     }
 }
 
@@ -123,13 +107,13 @@ int check(char *line, int *current_line){
         modulo(arg1, arg2, arg3);
     else if (strcasecmp(command,"JMP") == 0){
         int arglen = strlen(arg2);
-        if (tokens == 2){
-            go2(arg1, current_line);}
-        else if (arglen == 1 && arg2[0] == '1'){
-            go2(arg1,current_line);}
+        if (tokens == 2)
+            go2(arg1, current_line);
+        else if (arglen == 1 && arg2[0] == '1')
+            go2(arg1,current_line);
         else if (find_variable_index(arg2)!=-1 && find_variable_value(arg2)!=0){
             go2(arg1,current_line);}
-        else if (find_variable_index(arg2)==-1){ printf("Flag for jumping not found!\n");}
+        else if (find_variable_index(arg2)==-1)printf("check: no flag for jump!\n");
     }
     else if (strcasecmp(command,"RET") == 0) {
         int arglen = strlen(arg1);
@@ -139,7 +123,8 @@ int check(char *line, int *current_line){
             *current_line = pop() - 1;
         } else if (find_variable_index(arg1) != -1 && find_variable_value(arg1) != 0) {
             *current_line = pop() - 1;
-        } else if (find_variable_index(arg2) == -1) { printf("Flag for retern not found!\n"); }
+        } else if (find_variable_index(arg2) == -1)
+            printf("check: no flag was found to return!\n");
     }
 
     else if (strcasecmp(command,"PUSH") == 0)
@@ -189,6 +174,9 @@ void show( char v[]){
     if(find_variable_index(v)!=-1) printf("%s value is %d\n",v, find_variable_value(v));
     else { printf("%c",v);}
 }
+///////////////////////////////////////////////////////////////
+// pre_assign helps the language with multiple assign choices//
+///////////////////////////////////////////////////////////////
 
 void pre_assign(char* arg1, char* arg2){
     int value2;
