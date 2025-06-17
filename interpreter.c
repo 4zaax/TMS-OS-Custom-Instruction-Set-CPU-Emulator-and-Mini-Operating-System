@@ -34,7 +34,7 @@ int program_size = 0;
 
 
 int main() {
-    file = open_file("../calculator.txt");
+    file = open_file("../boot.txt");
     if (file == NULL) printf("Shutting down OS\n");else  printf("boot file loaded successfully\n");
     load_program(file);
     fclose(file);
@@ -145,6 +145,8 @@ int check(char *line, int *current_line){
         if_command(arg1, arg2, current_line);
     else if (strcasecmp(command,"IFN") == 0)
         if_not_command(arg1, arg2, current_line);
+    else if (strcasecmp(command,"RUN") == 0)
+        run_app(arg1, arg2, current_line);
     else
         printf("Unknown command1: %s\n",command);
     return 0;
@@ -627,4 +629,35 @@ int char_to_i(char* arg){
             return '\'';
         else
             printf("char_to_i: Invalid character, couldn't convert to integer.\n");
+}
+
+void run_app(char* filename, char* arg2, int* current_line) {
+    int flag = find_int_value(arg2);
+    if (flag == 0) return;
+    FILE* f = fopen(filename, "r");
+    if (!f) {
+        printf("run: file not found: %s\n", filename);
+        return;
+    }
+    // Save current interpreter state (if needed)
+    int saved_program_size = program_size;
+    LineEntry saved_program[MAX_LINES];
+    memcpy(saved_program, program, sizeof(program));
+
+    // Load the new program
+    program_size = 0;
+    load_program(f);
+    fclose(f);
+
+    // Run the loaded program
+    int run_line;
+    for (run_line = 1; run_line <= program_size; run_line++) {
+        int result = check(program[run_line].line, &run_line);
+        if (result == 1) break; // allow the called app to "exit"
+    }
+
+    // Restore previous program (the shell)
+    memcpy(program, saved_program, sizeof(program));
+    program_size = saved_program_size;
+    // Return to next line in shell after RUN
 }
