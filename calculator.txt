@@ -1,0 +1,153 @@
+####### Saving "shut down"  string in memory #######
+MOV [0] 115   #s
+MOV [1] 104  #h
+MOV [2] 117   #u
+MOV [3] 116   #t
+MOV [4] 32    #space
+MOV [5] 100   #d
+MOV [6] 111   #o
+MOV [7] 119   #w
+MOV [8] 110   #n
+MOV [9] 0     #end of string
+##################Calculator####################
+MOV [10] 99    #c
+MOV [11] 97    #a
+MOV [12] 108   #l
+MOV [13] 99    #c
+MOV [14] 117   #u
+MOV [15] 108   #l
+MOV [16] 97    #a
+MOV [17] 116   #t
+MOV [18] 111   #o
+MOV [19] 114   #r
+MOV [20] 0
+##########################  Functions #########################
+jmp Start
+
+
+get_input_function:
+ AS indx 100
+ AS input_flag 1
+Input:
+    get c
+    MOV [indx] c
+    inc indx
+    neq input_flag c 10   # ASCII code of ('\n') is 10 :newline
+    jmp Input input_flag
+    DEC indx
+    MOV [indx] 0
+    RET 
+
+get_int_function:
+  AS is_smaller 0
+  AS is_greater 0
+  AS is_digit 0 
+  AS not_digit 0
+  AS number 0
+int_loop:
+    MOV c [indx] 
+    GTE is_greater c 48                      #ASCII code of '0' is 48
+    LSE is_smaller c 57                      #ASCII code of '9' is 57
+    ADD is_digit is_smaller is_greater
+    NEQ not_digit is_digit 2
+    jmp retern not_digit
+    MUL number number 10
+    SUB digit c 48
+    ADD number number digit
+    inc indx
+    jmp int_loop 
+retern:
+    RET 
+
+
+Calculator_input:
+ AS loop_flag 0
+ AS indx 100
+ AS cal_indx 10
+loop1:
+   neq  loop_flag [indx] [cal_indx]
+   jmp r loop_flag
+   MOV c [indx]
+   eq  equal_flag [cal_indx] 0
+   inc indx
+   inc cal_indx
+   jmp calculat equal_flag
+   jmp loop1
+calculat:
+  call Calculator_function
+r:
+ret
+
+
+################################   Checking inputs   #####################################
+
+
+Start:
+AS flag_end 1 
+call get_input_function
+call Calculator_input
+
+AS indx 100
+AS indx_shut_down 0 
+AS equal_flag 0
+exit_input:
+   eq  loop_flag [indx] [indx_shut_down]
+   eq  equal_flag [indx_shut_down] 0
+   inc indx
+   inc indx_shut_down
+   jmp END equal_flag
+   jmp exit_input loop_flag
+ 
+##############################   Programs  ###########################################
+jmp Start flag_end
+
+Calculator_function:
+   AS close_flag 0
+   AS operator 0
+cal_loop:
+    call get_input_function
+     AS indx 100
+    eq close_flag  [indx] 99
+    jmp ret_cal close_flag
+    call get_int_function
+     AS number1 0
+     AS number2 0
+     MOV number1 number
+     MOV operator [indx]
+    inc indx
+    call get_int_function
+    MOV number2 number
+    eq operator_flag operator 43  #ASCII code of '+'
+    jmp add_lable operator_flag
+    eq operator_flag operator 45  #ASCII code of '-'
+    jmp sub_lable operator_flag
+    eq operator_flag operator 42   #ASCII code of '*'
+    jmp mul_lable operator_flag
+    eq operator_flag operator  47   #ASCII code of '*'
+    jmp div_lable operator_flag
+
+add_lable:
+  add result number1 number2
+  show result
+   jmp cal_loop 
+sub_lable:
+  SUB result number1 number2
+  show result
+    jmp cal_loop
+mul_lable:
+   MUL result number1 number2
+   show result
+   jmp cal_loop 
+div_lable:
+   DIV result number1 number2
+   show result
+    jmp cal_loop 
+
+ret_cal:
+ret
+
+
+END:
+exit
+
+

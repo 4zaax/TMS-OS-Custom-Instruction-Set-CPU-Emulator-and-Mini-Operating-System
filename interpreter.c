@@ -34,7 +34,7 @@ int program_size = 0;
 
 
 int main() {
-    file = open_file("../boot.txt");
+    file = open_file("../calculator.txt");
     if (file == NULL) printf("Shutting down OS\n");else  printf("boot file loaded successfully\n");
     load_program(file);
     fclose(file);
