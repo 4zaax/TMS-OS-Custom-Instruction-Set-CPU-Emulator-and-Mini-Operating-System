@@ -55,6 +55,9 @@ FILE* open_file(char address[]){
 }
 
 int check(char *line, int *current_line){
+    if ( current_line == 71){
+        printf("not\n");
+    }
     if (first_char(line) == '#') return 0;
     char command[20],arg1[20],arg2[20],arg3[20];
     int tokens = sscanf(program[*current_line].line, "%s %s %s %s", command, arg1, arg2, arg3);
@@ -149,6 +152,8 @@ int check(char *line, int *current_line){
         if_not_command(arg1, arg2, current_line);
     else if (strcasecmp(command,"RUN") == 0)
         run_app(arg1, arg2, current_line);
+    else if (strcasecmp(command,"JE") == 0)
+       conditional_jmp(command, arg1, arg2,arg3, current_line);
     else
         printf("Unknown command1: %s\n",command);
     return 0;
@@ -674,4 +679,13 @@ void run_app(char* filename, char* arg2, int* current_line) {
     memcpy(program, saved_program, sizeof(program));
     program_size = saved_program_size;
     // Return to next line in shell after RUN
+}
+
+void conditional_jmp(char* command, char* arg1, char* arg2, char* arg3, int* current_line){
+    int val2 = find_int_value(arg2);
+    int val3 = find_int_value(arg3);
+    if (strcasecmp(command, "JE") == 0){
+        if (val2 == val3)
+            go2(arg1, current_line);
+    }
 }

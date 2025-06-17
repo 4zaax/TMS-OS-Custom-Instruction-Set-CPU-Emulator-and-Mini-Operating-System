@@ -54,4 +54,4 @@ int is_char(char* arg);
 int is_mem_addr(char* arg);
 int char_to_i(char* arg);
 void run_app(char* arg1, char* arg2, int* current_line);
-
+void conditional_jmp(char* command, char* arg1, char* arg2, char* arg3, int* current_line);

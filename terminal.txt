@@ -64,16 +64,17 @@ MOV [48] 111   #o
 MOV [49] 114   #r
 MOV [50] 0
 
-showstr [0]
+showstr [0]     # show startup message
 AS idx 500      # user enters commands from memory house  500
 AS c 0          # initialization of char c
-AS eax 0        # '\n reach flag'
-push idx
+AS eax 0
 call get_command
 
 get_command:
+    push idx
     call get_line
-
+    call find_command:
+    pop idx
 END_get_command:
 
 JMP END
@@ -93,6 +94,41 @@ save_char:
     INC idx
     RET
 end_save_char:
+
+find_command:
+    MOV ecx [idx] # start of user command
+    MOV edx [90]    # start of shut down command
+    call str_cmp
+    as eax efx
+    call do_command
+    RET
+end_find_command:
+
+str_cmp:
+    push ecx
+    push edx
+    AS efx 1
+    str_cmp_loop:
+        eq efx ecx edx
+        je end_str_cmp_loop efx 0 # characters were not equal so efx is 0
+        eq efx ecx 0
+        je end_str_cmp_loop efx 1 # characters were equal and both were 0 so efx should be 1
+        ########################################################################################################################
+        # now if none of those conditions are true it means that we have equal characters and string has not reached the end yet
+        ########################################################################################################################
+        inc ecx
+        inc edx
+        jmp str_cmp_loop
+        jmp end_str_cmp_body ebx
+    end_str_cmp_loop:
+    pop edx
+    pop ecx
+    ret
+end_str_cmp:
+
+do_command:
+        je END eax 1
+end_do_command:
 
 END:
 showstr [500]
