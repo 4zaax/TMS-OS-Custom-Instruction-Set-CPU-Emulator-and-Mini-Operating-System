@@ -1,14 +1,14 @@
 ####### Saving "shut down"  string in memory #######
-MOV [0] 115   #s
-MOV [1] 104  #h
-MOV [2] 117   #u
-MOV [3] 116   #t
-MOV [4] 32    #space
-MOV [5] 100   #d
-MOV [6] 111   #o
-MOV [7] 119   #w
-MOV [8] 110   #n
-MOV [9] 0     #end of string
+MOV [90] 115   #s
+MOV [91] 104  #h
+MOV [92] 117   #u
+MOV [93] 116   #t
+MOV [94] 32    #space
+MOV [95] 100   #d
+MOV [96] 111   #o
+MOV [97] 119   #w
+MOV [98] 110   #n
+MOV [99] 0     #end of string
 ##################Calculator####################
 MOV [10] 99    #c
 MOV [11] 97    #a
@@ -148,6 +148,7 @@ ret
 
 
 END:
+
 exit
 
 
