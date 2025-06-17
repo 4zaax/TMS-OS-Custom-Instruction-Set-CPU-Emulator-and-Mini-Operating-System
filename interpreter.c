@@ -103,6 +103,8 @@ int check(char *line, int *current_line){
         divide(arg1, arg2, arg3);
     else if (strcasecmp(command,"SHOW") == 0)
         show(arg1);
+    else if (strcasecmp(command,"SHOWC") == 0)
+        showc(arg1);
     else if (strcasecmp(command,"MOD") == 0)
         modulo(arg1, arg2, arg3);
     else if (strcasecmp(command,"JMP") == 0){
@@ -173,8 +175,10 @@ int find_variable_index(const char *name) {
 }
 
 void show( char v[]){
-    if(find_variable_index(v)!=-1) printf("%s value is %d\n",v, find_variable_value(v));
-    else { printf("%c",v);}
+    printf("%d", find_int_value(v));
+}
+void showc( char v[]){
+    printf("%c", find_int_value(v));
 }
 ///////////////////////////////////////////////////////////////
 // pre_assign helps the language with multiple assign choices//

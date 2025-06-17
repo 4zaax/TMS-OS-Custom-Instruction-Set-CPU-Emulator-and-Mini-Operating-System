@@ -31,6 +31,7 @@ void multiply(char var1[], char var2[], char destination[]);
 void divide(char var1[], char var2[], char destination[]);
 void modulo(char var1[], char var2[], char destination[]);
 void show(char v[]);
+void showc( char v[]);
 void load_program(FILE *file);
 void push(int val);
 int pop();

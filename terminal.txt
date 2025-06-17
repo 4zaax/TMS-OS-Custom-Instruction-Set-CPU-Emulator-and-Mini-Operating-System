@@ -96,6 +96,6 @@ end_save_char:
 
 END:
 showstr [500]
-show '\n'
+showc '\n'
 showstr [90]
 exit
