@@ -5,10 +5,10 @@
 #include "ctype.h"
 
 #define MEMORY_SIZE 200 // store our variables
-#define MAX_LINES 500   // os supports programs of maximum 500 lines
+#define MAX_LINES 500   // OS supports programs of maximum 500 lines
 #define LINE_LEN 256
 #define MAX_VARIABLES 1000
-#define STACK_SIZE 1000  // os stack size
+#define STACK_SIZE 1000  // OS stack size
 
 int input_memory[1000];
 int call_stack[STACK_SIZE];
@@ -515,52 +515,14 @@ void user_pop(char var[]){
 }
 
 void move(char* dest, char* src){
-
-    int dest_reg_idx = find_variable_index(dest);
-    int source_reg_idx = find_variable_index(src);
-    int dest_mem_idx = find_mem_addr(dest);
-    int source_mem_idx = find_mem_addr(src);
-    // mov reg reg
-    if (dest_reg_idx != -1 && source_reg_idx != -1){;
-        assign(dest, find_variable_value(src));
-        return;
+    int value = find_int_value(src);
+    if (is_mem_addr(dest)) { // destination is memory_address
+        int idx = find_mem_addr(dest);
+        input_memory[idx] = value;
     }
-    // mov reg [mem]
-    else if ( source_mem_idx != -1){
-
-        if (source_mem_idx + 1 > MEMORY_SIZE){
-            printf("MOV: assign memory to register failed due to an overflow\n");
-            return;
-        }
-        assign(dest, input_memory[source_mem_idx]);
-        return;
+    else { // destination is register
+        assign(dest, value);
     }
-    // mov [mem] reg
-    else if (source_reg_idx != -1 && dest_mem_idx != -1){
-
-        if (dest_mem_idx + 1 > MEMORY_SIZE){
-            printf("MOV: assign register to memory failed due to an overflow\n");
-            return;
-        }
-
-        input_memory[dest_mem_idx]= find_variable_value(src);
-        return;
-    }
-    // mov reg number
-    else if  (dest_reg_idx != -1  ){
-        assign(dest, atoi(src));
-        return;
-    }
-    // mov [mem] number
-    else if (dest_mem_idx != -1 ){
-
-        if (isdigit(src[0])){
-            int val = atoi(src);
-            input_memory[dest_mem_idx]=val;
-        }
-    }
-    else
-        printf("MOV : invalid syntax\n");
 }
 
 void read_mem(const char* arg1){
