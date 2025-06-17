@@ -4,7 +4,7 @@
 #include "main.h"
 #include "ctype.h"
 
-#define MEMORY_SIZE 200 // store our variables
+#define MEMORY_SIZE 1000 // store our variables
 #define MAX_LINES 500   // OS supports programs of maximum 500 lines
 #define LINE_LEN 256
 #define MAX_VARIABLES 1000
@@ -34,7 +34,7 @@ int program_size = 0;
 
 
 int main() {
-    file = open_file("../boot.txt");
+    file = open_file("../terminal.txt");
     if (file == NULL) printf("Shutting down OS\n");else  printf("boot file loaded successfully\n");
     load_program(file);
     fclose(file);
@@ -123,7 +123,7 @@ int check(char *line, int *current_line){
             *current_line = pop() - 1;
         } else if (find_variable_index(arg1) != -1 && find_variable_value(arg1) != 0) {
             *current_line = pop() - 1;
-        } else if (find_variable_index(arg2) == -1)
+        } else if (find_variable_index(arg1) == -1)
             printf("check: no flag was found to return!\n");
     }
 
@@ -240,17 +240,27 @@ int find_variable_value(const char *name) {
     return 0;
 }
 
-void equal( char var1[], char var2[], char var3[]) {
+//void equal( char var1[], char var2[], char var3[]) {
+//    int value2, value3;
+//    if (var2[0] <= '9' && var2[0] >= '0'){ value2 = atoi(var2);}
+//    else if(var2[0]=='[') {value2=input_memory[find_mem_addr(var2)];}
+//    else{ value2 = find_variable_value(var2);}
+//    if (var3[0] <= '9' && var3[0] >= '0'){ value3 = atoi(var3);}
+//    else if(var3[0]=='[') {value3=input_memory[find_mem_addr(var3)];}
+//    else {value3 = find_variable_value(var3);}
+//    int result = (value3 == value2);
+//    if (var1[0]=='[') {input_memory[find_mem_addr(var1)]=result;return;}
+//    assign(var1, result);
+//}
+ void equal( char var1[], char var2[], char var3[]) {
     int value2, value3;
-    if (var2[0] <= '9' && var2[0] >= '0'){ value2 = atoi(var2);}
-    else if(var2[0]=='[') {value2=input_memory[find_mem_addr(var2)];}
-    else{ value2 = find_variable_value(var2);}
-    if (var3[0] <= '9' && var3[0] >= '0'){ value3 = atoi(var3);}
-    else if(var3[0]=='[') {value3=input_memory[find_mem_addr(var3)];}
-    else {value3 = find_variable_value(var3);}
-    int result = (value3 == value2);
-    if (var1[0]=='[') {input_memory[find_mem_addr(var1)]=result;return;}
-    assign(var1, result);
+    value2 = find_int_value(var2);
+    value3 = find_int_value(var3);
+    if (value2 == value3){
+        assign(var1, 1);
+        return;
+    }
+    assign(var1, 0);
 }
 void is_greater( char var1[], char var2[], char var3[]) {
     int value2, value3;
