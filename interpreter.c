@@ -6,7 +6,7 @@
 
 #define MEMORY_SIZE 1000 // RAM
 #define MAX_LINES 500   // OS supports programs of maximum 500 lines
-#define LINE_LEN 256
+#define LINE_LEN 512
 #define MAX_VARIABLES 1000
 #define STACK_SIZE 1000  // OS stack size
 
@@ -38,6 +38,7 @@ int main() {
     if (file == NULL) printf("Shutting down OS\n");else  printf("boot file loaded successfully\n");
     load_program(file);
     fclose(file);
+    printf("%s\n",program[165].label);
     for (int current_line = 1 ; current_line <= program_size; current_line++){
         int result=check(program[current_line].line, &current_line);
         if(result==1)break;
@@ -55,7 +56,7 @@ FILE* open_file(char address[]){
 }
 
 int check(char *line, int *current_line){
-    if ( *current_line == 87){ ///////////////////////////////////////////////////////////////////////delete///////////////////
+    if ( *current_line == 177){ ///////////////////////////////////////////////////////////////////////delete///////////////////
         printf("\n");
     }
     if (first_char(line) == '#') return 0;
@@ -155,7 +156,7 @@ int check(char *line, int *current_line){
     else if (strcasecmp(command,"JE") == 0)
        conditional_jmp(command, arg1, arg2,arg3, current_line);
     else
-        printf("Unknown command1: %s\n",command);
+        printf("Unknown command: %s\n",command);
     return 0;
 }
 
@@ -446,6 +447,7 @@ void load_program(FILE *file) {
     char buffer[LINE_LEN];
     while (fgets(buffer, sizeof(buffer), file) != NULL) {
         buffer[strcspn(buffer, "\n")] = '\0';
+        lstrip(buffer);
         // Check if it's a label
         char *colon = strchr(buffer, ':');
         program_size++;
@@ -459,6 +461,13 @@ void load_program(FILE *file) {
             strcpy(program[program_size].line, buffer);
         }
     }
+}
+
+void lstrip(char* line){
+    char* trimmed = line;
+    while(isspace((unsigned char)* trimmed))
+        trimmed++;
+    strcpy(line, trimmed);
 }
 
 void push(int val) {
@@ -479,7 +488,7 @@ int pop() {
 
 int find_label(const char *label) {
     for (int i = 0; i <= program_size; ++i) {
-        if (strcmp(program[i].label, label) == 0)
+        if (strcasecmp(program[i].label, label) == 0)
             return i;
     }
     return -1;

@@ -33,6 +33,7 @@ void modulo(char var1[], char var2[], char destination[]);
 void show(char v[]);
 void showc( char v[]);
 void load_program(FILE *file);
+void lstrip(char* line);
 void push(int val);
 int pop();
 int find_label(const char *label);

@@ -176,4 +176,3 @@ end_str_cmp:
 END:
 showstr [500]
 exit
-
