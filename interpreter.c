@@ -34,11 +34,10 @@ int program_size = 0;
 
 
 int main() {
-    file = open_file("../terminal.txt");
+    file = open_file("./terminal.txt");
     if (file == NULL) printf("Shutting down OS\n");else  printf("boot file loaded successfully\n");
     load_program(file);
     fclose(file);
-    printf("%s\n",program[165].label);
     for (int current_line = 1 ; current_line <= program_size; current_line++){
         int result=check(program[current_line].line, &current_line);
         if(result==1)break;
@@ -63,8 +62,10 @@ int check(char *line, int *current_line){
     char command[30],arg1[30],arg2[30],arg3[30];
     int tokens = sscanf(program[*current_line].line, "%s %s %s %s", command, arg1, arg2, arg3);
     if (tokens < 1) return -1;
-    if (strcasecmp(command,"exit") == 0)
+    if (strcasecmp(command,"exit") == 0){
+        printf("shutting down OS...\n");
         return 1;
+    }
     else if (strcasecmp(command,"AS") == 0)
         pre_assign(arg1,arg2);
     else if (strcasecmp(command,"EQ") == 0)

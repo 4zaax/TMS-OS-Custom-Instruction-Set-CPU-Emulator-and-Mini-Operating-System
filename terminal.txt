@@ -40,6 +40,13 @@ MOV      [37]    'd'
 MOV      [38]    '\n'
 MOV      [39]     0
 
+MOV      [80]     '>'
+MOV      [81]     '>'
+MOV      [82]     '>'
+MOV      [83]     32
+MOV      [84]     '\0'
+
+
 ####### Saving "shut down"  string in memory #######
 MOV [90] 115   #s
 MOV [91] 104  #h
@@ -81,16 +88,18 @@ MOV      [71]    'm'
 MOV      [72]    'a'
 MOV      [73]    'n'
 MOV      [74]    'd'
-MOV      [75]    '.'
+MOV      [75]    '\n'
 MOV      [76]    0
 
 
 _MAIN:
     showstr [0]     # show startup message
+    _MAIN_LOOP:
+    showstr [80]
     AS idx 500      # user enters commands from memory house  500
     call get_command
     call do_command
-    jmp END
+    JMP _MAIN_LOOP
 END_MAIN:
 
 get_command:
@@ -130,7 +139,6 @@ end_do_command:
 
 ######################## turns eax 1 if command is equal to shut down ########################################################################
 find_command:
-    show idx
     MOV ecx idx   # start index of user command
     MOV edx 90    # start index of shut down mssg command
     call str_cmp
