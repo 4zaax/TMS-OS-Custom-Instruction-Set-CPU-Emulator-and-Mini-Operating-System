@@ -80,8 +80,12 @@ int check(char *line, int *current_line){
         is_less_than_equal(arg1, arg2, arg3);
     else if (strcasecmp(command,"AND") == 0)
         AND(arg1, arg2, arg3);
+    else if (strcasecmp(command,"NAND") == 0)
+        NAND(arg1, arg2, arg3);
     else if (strcasecmp(command,"OR") == 0)
         OR(arg1, arg2, arg3);
+    else if (strcasecmp(command,"NOR") == 0)
+        NOR(arg1, arg2, arg3);
     else if (strcasecmp(command,"XOR") == 0)
         XOR(arg1, arg2, arg3);
     else if (strcasecmp(command,"NOT") == 0)
@@ -104,6 +108,8 @@ int check(char *line, int *current_line){
         multiply(arg1, arg2, arg3);
     else if (strcasecmp(command,"DIV") == 0)
         divide(arg1, arg2, arg3);
+    else if (strcasecmp(command,"SQRT") == 0)
+        _sqrt(arg1, arg2);
     else if (strcasecmp(command,"SHOW") == 0)
         show(arg1);
     else if (strcasecmp(command,"SHOWC") == 0)
@@ -330,6 +336,17 @@ void AND(char var1[], char var2[], char var3[]) {
     assign(var1, result);
 
 }
+void NAND(char var1[], char var2[], char var3[]) {
+    int value2, value3;
+    if (var2[0] <= '9' && var2[0] >= '0') value2 = atoi(var2);
+    else value2 = find_variable_value(var2);
+    if (var3[0] <= '9' && var3[0] >= '0') value3 = atoi(var3);
+    else value3 = find_variable_value(var3);
+    int result = !(value2 & value3);
+    assign(var1, result);
+
+}
+
 void SHL(char var1[], char var2[], char var3[]) {
     int value2, value3;
     if (var2[0] <= '9' && var2[0] >= '0') value2 = atoi(var2);
@@ -372,6 +389,15 @@ void OR( char var1[],  char var2[], char var3[]) {
     int result = value2 | value3;
     assign(var1,result);
 }
+void NOR( char var1[],  char var2[], char var3[]) {
+    int value2,value3;
+    if (var2[0]<='9' &&  var2[0]>='0') value2= atoi(var2);
+    else value2 = find_variable_value(var2);
+    if (var3[0]<='9' &&  var3[0]>='0') value3= atoi(var3);
+    else value3= find_variable_value(var3);
+    int result = !(value2 | value3);
+    assign(var1,result);
+}
 void XOR( char var1[],  char var2[], char var3[]) {
     int value2, value3;
     if (var2[0] <= '9' && var2[0] >= '0') value2 = atoi(var2);
@@ -400,6 +426,26 @@ void subtract(char var1[],  char var2[], char var3[]){
     else value3= find_variable_value(var3);
     int result=value2-value3;
     assign(var1,result);
+}
+void _sqrt(char var1[],  char var2[]){
+    //SQRT num result
+    int value2,value3;
+    if (var2[0]<='9' &&  var2[0]>='0') value2= atoi(var2);
+    else value2 = find_variable_value(var2);
+
+    if (value2 < 0)
+        assign(var1,-1);// if it was a negative num
+    if (value2 == 0 || value2 == 1)
+        assign(var1,value2);
+
+    double x = value2;
+    double epsilon = 1e-6;
+
+    while ((x * x - value2 > epsilon) || (x * x - value2 < -epsilon)) {
+        x = 0.5 * (x + value2 / x);
+    }
+
+    assign(var1,x);
 }
 
 void multiply(char var1[],  char var2[], char var3[]){
