@@ -167,8 +167,6 @@ str_cmp:
         pop ecx
         inc ecx
         inc edx
-        mov ecx [ecx]
-        mov edx [edx]
         jmp str_cmp_loop
         finish:
             pop edx
@@ -182,5 +180,4 @@ end_str_cmp:
 
 
 END:
-showstr [500]
 exit
