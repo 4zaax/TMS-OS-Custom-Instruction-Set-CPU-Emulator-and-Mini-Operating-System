@@ -4,13 +4,13 @@
 #include "main.h"
 #include "ctype.h"
 
-#define MEMORY_SIZE 1000 // store our variables
+#define MEMORY_SIZE 1000 // RAM
 #define MAX_LINES 500   // OS supports programs of maximum 500 lines
 #define LINE_LEN 256
 #define MAX_VARIABLES 1000
 #define STACK_SIZE 1000  // OS stack size
 
-int input_memory[1000];
+int input_memory[MEMORY_SIZE];
 int call_stack[STACK_SIZE];
 int sp = -1; //stack pointer
 FILE *file;
@@ -55,11 +55,11 @@ FILE* open_file(char address[]){
 }
 
 int check(char *line, int *current_line){
-    if ( current_line == 71){
-        printf("not\n");
+    if ( *current_line == 87){ ///////////////////////////////////////////////////////////////////////delete///////////////////
+        printf("\n");
     }
     if (first_char(line) == '#') return 0;
-    char command[20],arg1[20],arg2[20],arg3[20];
+    char command[30],arg1[30],arg2[30],arg3[30];
     int tokens = sscanf(program[*current_line].line, "%s %s %s %s", command, arg1, arg2, arg3);
     if (tokens < 1) return -1;
     if (strcasecmp(command,"exit") == 0)
@@ -180,7 +180,7 @@ int find_variable_index(const char *name) {
 }
 
 void show( char v[]){
-    printf("%d", find_int_value(v));
+    printf("%s value: %d\n",v, find_int_value(v)); /////////////////////delete %s part later
 }
 void showc( char v[]){
     printf("%c", find_int_value(v));
@@ -496,7 +496,7 @@ void go2(const char *label, int *current_line){
 
 char first_char(char* line){
     char* c;
-    for(c = line; c == ' ' && c != '\0'; c++);
+    for(c = line; ((*c == ' ') || (*c == '\t')) && *c != '\0'; c++);
     return *c;
 }
 void my_strcpy(char *des,char * sourc,int len){
