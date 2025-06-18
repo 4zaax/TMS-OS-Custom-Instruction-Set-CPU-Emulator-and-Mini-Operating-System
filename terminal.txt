@@ -40,25 +40,6 @@ MOV      [37]    'd'
 MOV      [38]    's'
 MOV      [39]     0
 
-###################### after each run we should print >>> #######################
-MOV      [80]     '>'
-MOV      [81]     '>'
-MOV      [82]     '>'
-MOV      [83]     '\0'
-MOV      [83]     32
-
-
-####### Saving "shut down"  string in memory #######
-MOV [90] 115   #s
-MOV [91] 104  #h
-MOV [92] 117   #u
-MOV [93] 116   #t
-MOV [94] 100   #d
-MOV [95] 111   #o
-MOV [96] 119   #w
-MOV [97] 110   #n
-MOV [98] 0     #end of string
-
 ################## Calculator ####################
 MOV [40] 99    #c
 MOV [41] 97    #a
@@ -71,6 +52,42 @@ MOV [47] 116   #t
 MOV [48] 111   #o
 MOV [49] 114   #r
 MOV [50] 0
+
+###################### after each command we should print >>> #######################
+MOV      [80]     '>'
+MOV      [81]     '>'
+MOV      [82]     '>'
+MOV      [83]     '\0'
+MOV      [83]     32
+
+################## run success mssg ######################
+MOV      [100]   'R'
+MOV      [101]   'u'
+MOV      [102]   'n'
+MOV      [103]   'n'
+MOV      [104]   'i'
+MOV      [105]   'n'
+MOV      [106]   'g'
+MOV      [107]   ' '
+MOV      [108]   'a'
+MOV      [109]   'p'
+MOV      [110]   'p'
+MOV      [111]   '.'
+MOV      [112]   '.'
+MOV      [113]   '.'
+MOV      [114]   0
+
+####### Saving "shut down"  string in memory #######
+MOV [90] 115   #s
+MOV [91] 104  #h
+MOV [92] 117   #u
+MOV [93] 116   #t
+MOV [94] 100   #d
+MOV [95] 111   #o
+MOV [96] 119   #w
+MOV [97] 110   #n
+MOV [98] 0     #end of string
+
 
 #################### Unknown command mssg ############################
 MOV      [60]    'U'
@@ -96,6 +113,23 @@ MOV      [181]    'l'
 MOV      [182]    's'
 MOV      [183]    0
 
+################ run command ###################
+MOV      [190]   'r'
+MOV      [191]   'u'
+MOV      [192]   'n'
+MOV      [193]   ' '
+MOV      [194]   'c'
+MOV      [195]   'a'
+MOV      [196]   'l'
+MOV      [197]   'c'
+MOV      [198]   'u'
+MOV      [199]   'l'
+MOV      [200]   'a'
+MOV      [201]   't'
+MOV      [202]   'o'
+MOV      [203]   'r'
+MOV      [204]   0
+
 _MAIN:
     showstr [0]     # show startup message
     showc '\n'
@@ -103,7 +137,6 @@ _MAIN:
     showstr [80]    # show >>> after each line
     AS idx 500      # user commands save from house 500
     call get_command
-    showstr [500]
     call do_command
     JMP _MAIN_LOOP
 END_MAIN:
@@ -138,12 +171,16 @@ do_command:
         JE command_error eax 0
         JE END eax 1
         JE CLS eax 2
+        JE RUN eax 3
         command_error:
             showstr [60]
             showc '\n'
             jmp end_do_command
         cls:
             clear
+            jmp end_do_command
+        RUN:
+            call run_program
             jmp end_do_command
 end_do_command:
         RET
@@ -152,14 +189,19 @@ end_do_command:
 ######################## turns eax 1 if command is equal to shut down ########################################################################
 find_command:
     MOV ecx idx   # start index of user command
-    MOV edx 90    # start index of shut down mssg command
-    call str_cmp    # efx becomes 1 if ecx and edx are equa
+    MOV edx 90    # start index of shut down message command
+    call str_cmp    # efx becomes 1 if ecx and edx are equal
     MUL eax efx 1
     RET eax
     MOV ecx idx     # start index of user command
     MOV edx 180     # start index of cls command
-    call str_cmp    # efx becomes 1 if ecx and edx are equa
+    call str_cmp    # efx becomes 1 if ecx and edx are equal
     MUL eax efx 2   # eax becomes 2 if efx is 1
+    RET eax
+    MOV ecx idx     # start index of user command
+    MOV edx 190     # start index of run calculator command
+    call str_cmp    # efx becomes 1 if ecx and edx are equal
+    MUL eax efx 3   # eax becomes 3 if efx is 1
     RET eax
     RET
 end_find_command:
@@ -196,6 +238,21 @@ str_cmp:
     ret
 end_str_cmp:
 
+run_program:
+    push idx
+    AS ecx idx
+    add ecx idx 4
+    AS edx [40]
+    call str_cmp
+    JE calc_exe efx 1
+    JE calc_exe efx 0
+    calc_exe:
+        showstr [100]
+        showc '\n'
+        run ../calculator.txt 1
+end_run_program:
+    pop idx
+    RET
 
 END:
 exit

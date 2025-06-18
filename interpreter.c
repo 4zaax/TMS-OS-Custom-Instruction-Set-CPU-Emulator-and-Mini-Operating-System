@@ -34,7 +34,7 @@ int program_size = 0;
 
 
 int main() {
-    file = open_file("./terminal.txt");
+    file = open_file("../terminal.txt");
     if (file == NULL) printf("Shutting down OS\n");else  printf("boot file loaded successfully\n");
     load_program(file);
     fclose(file);
@@ -169,6 +169,8 @@ int check(char *line, int *current_line){
 
     else if (strcasecmp(command,"clear") == 0)
         clear_screen();
+    else if (strcasecmp(command,"run") == 0)
+        run_app(arg1,arg2,current_line);
     else
         printf("Unknown command: %s\n",command);
     return 0;
