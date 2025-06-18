@@ -34,7 +34,7 @@ int program_size = 0;
 
 
 int main() {
-    file = open_file("../terminal.txt");
+    file = open_file("./terminal.txt");
     if (file == NULL) printf("Shutting down OS\n");else  printf("boot file loaded successfully\n");
     load_program(file);
     fclose(file);
@@ -126,6 +126,8 @@ int check(char *line, int *current_line){
         int arglen = strlen(arg1);
         if (tokens == 1) {
             *current_line = pop() - 1;
+        } else if (is_num(arg1) && atoi(arg1) != 0){
+            *current_line = pop() -1;
         } else if (arglen == 1 && arg1[0] == '1') {
             *current_line = pop() - 1;
         } else if (find_variable_index(arg1) != -1 && find_variable_value(arg1) != 0) {
@@ -143,7 +145,11 @@ int check(char *line, int *current_line){
         user_pop(arg1);
     else if (strcasecmp(command,"MOV") == 0)
         move(arg1,arg2);
-        // optional commands :
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////     optional commands /////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////
+
     else if (strcasecmp(command,"READ") == 0)
         read_mem(arg1);
     else if (strcasecmp(command,"SHOWSTR") == 0)
@@ -152,10 +158,17 @@ int check(char *line, int *current_line){
         if_command(arg1, arg2, current_line);
     else if (strcasecmp(command,"IFN") == 0)
         if_not_command(arg1, arg2, current_line);
-    else if (strcasecmp(command,"RUN") == 0)
-        run_app(arg1, arg2, current_line);
     else if (strcasecmp(command,"JE") == 0)
        conditional_jmp(command, arg1, arg2,arg3, current_line);
+    else if (strcasecmp(command,"SHOW_SP") == 0) // just for debugging
+       printf("stack pointer value is: %d\n",sp);
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////     system commands   /////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    else if (strcasecmp(command,"clear") == 0)
+        clear_screen();
     else
         printf("Unknown command: %s\n",command);
     return 0;
@@ -698,4 +711,12 @@ void conditional_jmp(char* command, char* arg1, char* arg2, char* arg3, int* cur
         if (val2 == val3)
             go2(arg1, current_line);
     }
+}
+
+void clear_screen() {
+#ifdef _WIN32
+    system("cls");
+#else
+    system("clear");
+#endif
 }
