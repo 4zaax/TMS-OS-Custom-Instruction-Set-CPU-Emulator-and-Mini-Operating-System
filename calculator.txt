@@ -1,17 +1,7 @@
-####### Saving "shut down"  string in memory #######
-MOV [90] 115   #s
-MOV [91] 104  #h
-MOV [92] 117   #u
-MOV [93] 116   #t
-MOV [94] 32    #space
-MOV [95] 100   #d
-MOV [96] 111   #o
-MOV [97] 119   #w
-MOV [98] 110   #n
-MOV [99] 0     #end of string
+
 ##################Calculator####################
-MOV [10] 99    #c
-MOV [11] 97    #a
+MOV [10] 'x'    #c
+MOV [11] 0    #a
 MOV [12] 108   #l
 MOV [13] 99    #c
 MOV [14] 117   #u
@@ -83,7 +73,7 @@ ret
 
 
 Start:
-AS flag_end 1 
+AS flag_end 0
 call get_input_function
 call Calculator_input
 
@@ -108,7 +98,7 @@ cal_loop:
     call get_input_function
      AS indx 100
     eq close_flag  [indx] 99
-    jmp ret_cal close_flag
+    jmp END close_flag
     call get_int_function
      AS number1 0
      AS number2 0

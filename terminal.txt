@@ -52,43 +52,6 @@ MOV [47] 116   #t
 MOV [48] 111   #o
 MOV [49] 114   #r
 MOV [50] 0
-
-###################### after each command we should print >>> #######################
-MOV      [80]     '>'
-MOV      [81]     '>'
-MOV      [82]     '>'
-MOV      [83]     '\0'
-MOV      [83]     32
-
-################## run success mssg ######################
-MOV      [100]   'R'
-MOV      [101]   'u'
-MOV      [102]   'n'
-MOV      [103]   'n'
-MOV      [104]   'i'
-MOV      [105]   'n'
-MOV      [106]   'g'
-MOV      [107]   ' '
-MOV      [108]   'a'
-MOV      [109]   'p'
-MOV      [110]   'p'
-MOV      [111]   '.'
-MOV      [112]   '.'
-MOV      [113]   '.'
-MOV      [114]   0
-
-####### Saving "shut down"  string in memory #######
-MOV [90] 115   #s
-MOV [91] 104  #h
-MOV [92] 117   #u
-MOV [93] 116   #t
-MOV [94] 100   #d
-MOV [95] 111   #o
-MOV [96] 119   #w
-MOV [97] 110   #n
-MOV [98] 0     #end of string
-
-
 #################### Unknown command mssg ############################
 MOV      [60]    'U'
 MOV      [61]    'n'
@@ -107,6 +70,93 @@ MOV      [73]    'n'
 MOV      [74]    'd'
 MOV      [75]    0
 
+###################### after each command we should print >>> #######################
+MOV      [80]     '>'
+MOV      [81]     '>'
+MOV      [82]     '>'
+MOV      [83]     '\0'
+MOV      [83]     32
+
+####### Saving "shut down"  string in memory #######
+MOV [90] 115   #s
+MOV [91] 104  #h
+MOV [92] 117   #u
+MOV [93] 116   #t
+MOV [94] 100   #d
+MOV [95] 111   #o
+MOV [96] 119   #w
+MOV [97] 110   #n
+MOV [98] 0     #end of string
+
+################## run success mssg ######################
+MOV      [100]   'R'
+MOV      [101]   'u'
+MOV      [102]   'n'
+MOV      [103]   'n'
+MOV      [104]   'i'
+MOV      [105]   'n'
+MOV      [106]   'g'
+MOV      [107]   ' '
+MOV      [108]   'a'
+MOV      [109]   'p'
+MOV      [110]   'p'
+MOV      [111]   '.'
+MOV      [112]   '.'
+MOV      [113]   '.'
+MOV      [114]   0
+
+################### os shutting down mssg ########################
+MOV      [120]   's'
+MOV      [121]   'h'
+MOV      [122]   'u'
+MOV      [123]   't'
+MOV      [124]   't'
+MOV      [125]   'i'
+MOV      [126]   'n'
+MOV      [127]   'g'
+MOV      [128]   ' '
+MOV      [129]   'd'
+MOV      [130]   'o'
+MOV      [131]   'w'
+MOV      [132]   'n'
+MOV      [133]   ' '
+MOV      [134]   'o'
+MOV      [135]   's'
+MOV      [136]   '.'
+MOV      [137]   '.'
+MOV      [138]   '.'
+MOV      [139]   0
+################### after each program run mssg ########################
+MOV      [140]   'P'
+MOV      [141]   'r'
+MOV      [142]   'o'
+MOV      [143]   'g'
+MOV      [144]   'r'
+MOV      [145]   'a'
+MOV      [146]   'm'
+MOV      [147]   ' '
+MOV      [148]   'f'
+MOV      [149]   'i'
+MOV      [150]   'n'
+MOV      [151]   'i'
+MOV      [152]   's'
+MOV      [153]   'h'
+MOV      [154]   'e'
+MOV      [155]   'd'
+MOV      [156]   ' '
+MOV      [157]   's'
+MOV      [158]   'u'
+MOV      [159]   'c'
+MOV      [160]   'c'
+MOV      [161]   'e'
+MOV      [162]   's'
+MOV      [163]   's'
+MOV      [164]   'f'
+MOV      [165]   'u'
+MOV      [166]   'l'
+MOV      [167]   'l'
+MOV      [168]   'y'
+MOV      [169]   0
 ################### saving cls command in memory #######################
 MOV      [180]    'c'
 MOV      [181]    'l'
@@ -240,6 +290,7 @@ end_str_cmp:
 
 run_program:
     push idx
+    push ecs
     AS ecx idx
     add ecx idx 4
     AS edx [40]
@@ -250,9 +301,13 @@ run_program:
         showstr [100]
         showc '\n'
         run ../calculator.txt 1
+        showstr [140]
+        jmp end_run_program
 end_run_program:
+    pop ecs
     pop idx
     RET
 
 END:
+showstr [120]
 exit

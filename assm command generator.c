@@ -5,8 +5,8 @@
 #include "stdlib.h"
 int main(){
     char* command = "MOV";
-    int start_index = 190;
-    char* mssg = "run calculator";
+    int start_index = 140;
+    char* mssg = "Program finished successfully";
     char* c = mssg;
     for(c = mssg; *c != '\0'; c++, start_index++){
         printf("%s \t [%d] \t '%c'\n",command, start_index, *c);

@@ -63,7 +63,6 @@ int check(char *line, int *current_line){
     int tokens = sscanf(program[*current_line].line, "%s %s %s %s", command, arg1, arg2, arg3);
     if (tokens < 1) return -1;
     if (strcasecmp(command,"exit") == 0){
-        printf("shutting down OS...\n");
         return 1;
     }
     else if (strcasecmp(command,"AS") == 0)
@@ -563,6 +562,7 @@ void user_pop(char var[]){
 void move(char* dest, char* src){
     int value = find_int_value(src);
     if (is_mem_addr(dest)) { // destination is memory_address
+        int offset = find_variable_value("ecs");
         int idx = find_mem_addr(dest);
         input_memory[idx] = value;
     }
