@@ -3,6 +3,7 @@
 #include <string.h>
 #include "main.h"
 #include "ctype.h"
+#include "stdint.h"
 
 #define MEMORY_SIZE 1000 // RAM
 #define MAX_LINES 500   // OS supports programs of maximum 500 lines
@@ -10,7 +11,52 @@
 #define MAX_VARIABLES 1000
 #define STACK_SIZE 1000  // OS stack size
 
-int input_memory[MEMORY_SIZE];
+uint8_t reg_mem[40]; // 40 bytes (10 * 4 bytes) -> 10 extended registers
+
+////////////////////////////////////////////////////////////////
+////////////////// GENERAL PURPOSE REGISTERS ///////////////////
+////////////////////////////////////////////////////////////////
+
+// EAX
+#define EAX_OFFSET 0
+uint32_t* eax = (uint32_t*)&reg_mem[EAX_OFFSET];
+uint16_t* ax  = (uint16_t*)&reg_mem[EAX_OFFSET];
+uint8_t*  al  = (uint8_t*)&reg_mem[EAX_OFFSET];
+uint8_t*  ah  = (uint8_t*)&reg_mem[EAX_OFFSET + 1];
+
+// EBX
+#define EBX_OFFSET 4
+uint32_t* ebx = (uint32_t*)&reg_mem[EBX_OFFSET];
+uint16_t* bx  = (uint16_t*)&reg_mem[EBX_OFFSET];
+uint8_t*  bl  = (uint8_t*)&reg_mem[EBX_OFFSET];
+uint8_t*  bh  = (uint8_t*)&reg_mem[EBX_OFFSET + 1];
+
+// ECX
+#define ECX_OFFSET 8
+uint32_t* ecx = (uint32_t*)&reg_mem[ECX_OFFSET];
+uint16_t* cx  = (uint16_t*)&reg_mem[ECX_OFFSET];
+uint8_t*  cl  = (uint8_t*)&reg_mem[ECX_OFFSET];
+uint8_t*  ch  = (uint8_t*)&reg_mem[ECX_OFFSET + 1];
+
+// EDX
+#define EDX_OFFSET 12
+uint32_t* edx = (uint32_t*)&reg_mem[EDX_OFFSET];
+uint16_t* dx  = (uint16_t*)&reg_mem[EDX_OFFSET];
+uint8_t*  dl  = (uint8_t*)&reg_mem[EDX_OFFSET];
+uint8_t*  dh  = (uint8_t*)&reg_mem[EDX_OFFSET + 1];
+
+////////////////////////////////////////////////////////////////
+////////////////// INDEX & POINTER REGISTERS ///////////////////
+////////////////////////////////////////////////////////////////
+
+uint32_t* esi = (uint32_t*)&reg_mem[16];
+uint32_t* edi = (uint32_t*)&reg_mem[20];
+uint32_t* ebp = (uint32_t*)&reg_mem[24];
+uint32_t* esp = (uint32_t*)&reg_mem[28];
+uint32_t* ip = (uint32_t*)&reg_mem[32];
+uint32_t* cs = (uint32_t*)&reg_mem[36];
+
+uint8_t memory[MEMORY_SIZE];
 int call_stack[STACK_SIZE];
 int sp = -1; //stack pointer
 FILE *file;
@@ -33,17 +79,19 @@ LineEntry program[MAX_LINES];
 int program_size = 0;
 
 
-int main() {
-    file = open_file("../terminal.txt");
-    if (file == NULL) printf("Shutting down OS\n");else  printf("boot file loaded successfully\n");
-    load_program(file);
-    fclose(file);
-    for (int current_line = 1 ; current_line <= program_size; current_line++){
-        int result=check(program[current_line].line, &current_line);
-        if(result==1)break;
-    }
+//int main() {
+//    file = open_file("../terminal.txt");
+//    if (file == NULL) printf("Shutting down OS\n");else  printf("boot file loaded successfully\n");
+//    load_program(file);
+//    fclose(file);
+//    for (int current_line = 1 ; current_line <= program_size; current_line++){
+//        int result=check(program[current_line].line, &current_line);
+//        if(result==1)break;
+//    }
+//}
+int main(){
+    printf("%d\n",is_num(""));
 }
-
 
 FILE* open_file(char address[]){
     FILE *file = fopen(address, "r");
@@ -223,7 +271,7 @@ int find_int_value(char* arg){
         // AS v0 [100] || AS v0 [v1]
     else if (is_mem_addr(arg)){
         int addr = find_mem_addr(arg);
-        value = input_memory[addr];
+        value = memory[addr];
     }
         // AS v0 v1
     else if (find_variable_index(arg) !=-1){
@@ -240,7 +288,7 @@ void assign(const char *name, int value) {
         if (addr >= MEMORY_SIZE)
             printf("Assign: memory index out of range.\n");
         else
-            input_memory[addr] = value;
+            memory[addr] = value;
     }
     else { // value should be assigned to register
         int index= find_variable_index(name);
@@ -268,13 +316,13 @@ int find_variable_value(const char *name) {
 //void equal( char var1[], char var2[], char var3[]) {
 //    int value2, value3;
 //    if (var2[0] <= '9' && var2[0] >= '0'){ value2 = atoi(var2);}
-//    else if(var2[0]=='[') {value2=input_memory[find_mem_addr(var2)];}
+//    else if(var2[0]=='[') {value2=memory[find_mem_addr(var2)];}
 //    else{ value2 = find_variable_value(var2);}
 //    if (var3[0] <= '9' && var3[0] >= '0'){ value3 = atoi(var3);}
-//    else if(var3[0]=='[') {value3=input_memory[find_mem_addr(var3)];}
+//    else if(var3[0]=='[') {value3=memory[find_mem_addr(var3)];}
 //    else {value3 = find_variable_value(var3);}
 //    int result = (value3 == value2);
-//    if (var1[0]=='[') {input_memory[find_mem_addr(var1)]=result;return;}
+//    if (var1[0]=='[') {memory[find_mem_addr(var1)]=result;return;}
 //    assign(var1, result);
 //}
  void equal( char var1[], char var2[], char var3[]) {
@@ -326,13 +374,13 @@ void is_less_than_equal(char var1[], char var2[], char var3[]) {
 void not_equal(char var1[], char var2[], char var3[]) {
     int value2, value3;
     if (var2[0] <= '9' && var2[0] >= '0'){ value2 = atoi(var2);}
-    else if(var2[0]=='[') {value2=input_memory[find_mem_addr(var2)];}
+    else if(var2[0]=='[') {value2=memory[find_mem_addr(var2)];}
     else{ value2 = find_variable_value(var2);}
     if (var3[0] <= '9' && var3[0] >= '0'){ value3 = atoi(var3);}
-    else if(var3[0]=='[') {value3=input_memory[find_mem_addr(var3)];}
+    else if(var3[0]=='[') {value3=memory[find_mem_addr(var3)];}
     else {value3 = find_variable_value(var3);}
     int result = (value3 != value2);
-    if (var1[0]=='[') {input_memory[find_mem_addr(var1)]=result;return;}
+    if (var1[0]=='[') {memory[find_mem_addr(var1)]=result;return;}
     assign(var1, result);
 
 }
@@ -564,7 +612,7 @@ void move(char* dest, char* src){
     if (is_mem_addr(dest)) { // destination is memory_address
         int offset = find_variable_value("ecs");
         int idx = find_mem_addr(dest);
-        input_memory[idx] = value;
+        memory[idx] = value;
     }
     else { // destination is register
         assign(dest, value);
@@ -573,18 +621,18 @@ void move(char* dest, char* src){
 
 void read_mem(const char* arg1){
     int addr = find_mem_addr(arg1);
-    printf("data in memory house %d : %d\n",addr,input_memory[addr]);
+    printf("data in memory house %d : %d\n",addr,memory[addr]);
 }
 
 void show_str(char* arg1){
     int idx = find_mem_addr(arg1);
     int i;
-    for (i = idx; input_memory[i] != 0 ;i++){
+    for (i = idx; memory[i] != 0 ;i++){
         if (idx > MEMORY_SIZE){
             printf("show_str: index our of range\n");
             return;
         }
-        printf("%c", input_memory[i]);
+        printf("%c", memory[i]);
     }
 }
 
@@ -616,19 +664,26 @@ void if_not_command (char* arg1,char* arg2, int* current_line){
 
 int is_num(char* arg){
     int len = strlen(arg);
-    int i;
-    for (i = 0; i < len; i++){
-        if(!isdigit(*(arg+i)))
+    if (len == 1 && !isdigit(arg[0])){
+        return 0;
+    }
+    char* c = arg;
+    for(; isspace(*c); c++);
+    if (!(isdigit(*c) || *c == '-' || *c == '+'))
+        return 0;
+    for(c++;*c != '\0' ;c++){
+        if (!isdigit(*c))
             return 0;
     }
     return 1;
 }
 
 int is_mem_addr(char* arg){
-    int len = strlen(arg);
-    if ((arg[0] == '[')&&(arg[len-1] == ']'))
-        return 1;
-    return 0;
+    return arg[0] == '[' && arg[strlen(arg)-1] == ']';
+}
+
+int is_immediate(const char* s) {
+    return (is_num(s) || is_char(s));
 }
 
 int is_char(char* arg){
@@ -722,3 +777,146 @@ void clear_screen() {
     system("clear");
 #endif
 }
+
+void* get_register(const char* reg, int size) {
+    if (size == 4) {
+        if      (strcasecmp(reg, "eax") == 0) return eax;
+        else if (strcasecmp(reg, "ebx") == 0) return ebx;
+        else if (strcasecmp(reg, "ecx") == 0) return ecx;
+        else if (strcasecmp(reg, "edx") == 0) return edx;
+        else if (strcasecmp(reg, "esi") == 0) return esi;
+        else if (strcasecmp(reg, "edi") == 0) return edi;
+        else if (strcasecmp(reg, "ebp") == 0) return ebp;
+        else if (strcasecmp(reg, "esp") == 0) return esp;
+        else if (strcasecmp(reg, "ip") == 0)  return ip;
+        else if (strcasecmp(reg, "cs") == 0)  return cs;
+    }
+    if (size == 2) {
+        if      (strcasecmp(reg, "ax") == 0) return ax;
+        else if (strcasecmp(reg, "bx") == 0) return bx;
+        else if (strcasecmp(reg, "cx") == 0) return cx;
+        else if (strcasecmp(reg, "dx") == 0) return dx;
+    }
+    if (size == 1) {
+        if      (strcasecmp(reg, "al") == 0) return al;
+        else if (strcasecmp(reg, "ah") == 0) return ah;
+        else if (strcasecmp(reg, "bl") == 0) return bl;
+        else if (strcasecmp(reg, "bh") == 0) return bh;
+        else if (strcasecmp(reg, "cl") == 0) return cl;
+        else if (strcasecmp(reg, "ch") == 0) return ch;
+        else if (strcasecmp(reg, "dl") == 0) return dl;
+        else if (strcasecmp(reg, "dh") == 0) return dh;
+    }
+    printf("get_register : Invalid syntax for accessing register\n");
+    return NULL; // Not a known register
+}
+
+
+void mov_handler (char* dest, char* src) {
+
+    uint32_t* d_reg = get_register(dest, 4);
+    uint32_t* s_reg = get_register(src, 4);
+
+    // Case 3: dest is 4bytes register, src is memory
+    if (d_reg && is_mem_addr(src)) {
+        int addr = find_mem_addr(src);
+        *d_reg = *((uint32_t*)&memory[addr]);
+        return;
+    }
+    // Case 4: dest is memory, src is 4byte register
+    if (is_mem_addr(dest) && s_reg) {
+        int addr = find_mem_addr(dest);
+        *((uint32_t*)&memory[addr]) = *s_reg;
+        return;
+    }
+    // Case 5: immediate to 4 bytes register
+    if (d_reg && is_immediate(src)) {
+
+        *d_reg = find_int_value(src);
+        return;
+    }
+    // Case 6: immediate to memory
+    if (is_mem_addr(dest) && is_immediate(src)) {
+        int addr = find_mem_addr(dest);
+        *((uint32_t*)&memory[addr]) = find_int_value(src);
+        return;
+    }
+    // Register to Register
+    if (d_reg && s_reg) {
+        *d_reg = *s_reg;
+        return;
+    }
+
+    printf("MOV: Invalid operands (%s, %s)\n", dest, src);
+}
+
+void movb_handler(char* dest, char* src) {
+    uint8_t* d_reg = get_register(dest, 1);
+    uint8_t* s_reg = get_register(src, 1);
+
+    // dest is register, src is memory
+    if (d_reg && is_mem_addr(src)) {
+        int addr = find_mem_addr(src);
+        *d_reg = memory[addr];
+        return;
+    }
+    // dest is memory, src is register
+    if (is_mem_addr((char*)dest) && s_reg) {
+        int addr = find_mem_addr(dest);
+        memory[addr] = *s_reg;
+        return;
+    }
+    // immediate to register
+    if (d_reg && is_immediate(src)) {
+        *d_reg = (uint8_t)find_int_value(src);
+        return;
+    }
+    // immediate to memory
+    if (is_mem_addr(dest) && is_immediate(src)) {
+        int addr = find_mem_addr(dest);
+        memory[addr] = (uint8_t)find_int_value(src);
+        return;
+    }
+    // register to register
+    if (d_reg && s_reg) {
+        *d_reg = *s_reg;
+        return;
+    }
+    printf("MOVB: Invalid operands (%s, %s)\n", dest, src);
+}
+
+void movw_handler(char* dest, char* src) {
+    uint16_t* d_reg = get_register(dest, 2);
+    uint16_t* s_reg = get_register(src, 2);
+
+    // dest is register, src is memory
+    if (d_reg && is_mem_addr(src)) {
+        int addr = find_mem_addr(src);
+        *d_reg = *((uint16_t*)&memory[addr]);
+        return;
+    }
+    // dest is memory, src is register
+    if (is_mem_addr(dest) && s_reg) {
+        int addr = find_mem_addr((char*)dest);
+        *((uint16_t*)&memory[addr]) = *s_reg;
+        return;
+    }
+    // immediate to register
+    if (d_reg && is_immediate(src)) {
+        *d_reg = (uint16_t)find_int_value((char*)src);
+        return;
+    }
+    // immediate to memory
+    if (is_mem_addr((char*)dest) && is_immediate(src)) {
+        int addr = find_mem_addr((char*)dest);
+        *((uint16_t*)&memory[addr]) = (uint16_t)find_int_value((char*)src);
+        return;
+    }
+    // register to register
+    if (d_reg && s_reg) {
+        *d_reg = *s_reg;
+        return;
+    }
+    printf("MOVW: Invalid operands (%s, %s)\n", dest, src);
+}
+
