@@ -79,19 +79,17 @@ LineEntry program[MAX_LINES];
 int program_size = 0;
 
 
-//int main() {
-//    file = open_file("../terminal.txt");
-//    if (file == NULL) printf("Shutting down OS\n");else  printf("boot file loaded successfully\n");
-//    load_program(file);
-//    fclose(file);
-//    for (int current_line = 1 ; current_line <= program_size; current_line++){
-//        int result=check(program[current_line].line, &current_line);
-//        if(result==1)break;
-//    }
-//}
-int main(){
-    printf("%d\n",is_num(""));
+int main() {
+    file = open_file("../boot.txt");
+    if (file == NULL) printf("Shutting down OS\n");else  printf("boot file loaded successfully\n");
+    load_program(file);
+    fclose(file);
+    for (int current_line = 1 ; current_line <= program_size; current_line++){
+        int result=check(program[current_line].line, &current_line);
+        if(result==1)break;
+    }
 }
+
 
 FILE* open_file(char address[]){
     FILE *file = fopen(address, "r");
@@ -103,9 +101,7 @@ FILE* open_file(char address[]){
 }
 
 int check(char *line, int *current_line){
-    if ( *current_line == 177){ ///////////////////////////////////////////////////////////////////////delete///////////////////
-        printf("\n");
-    }
+
     if (first_char(line) == '#') return 0;
     char command[30],arg1[30],arg2[30],arg3[30];
     int tokens = sscanf(program[*current_line].line, "%s %s %s %s", command, arg1, arg2, arg3);
@@ -115,6 +111,26 @@ int check(char *line, int *current_line){
     }
     else if (strcasecmp(command,"AS") == 0)
         pre_assign(arg1,arg2);
+    else if (strcasecmp(command, "MOV") == 0)
+        mov_handler(arg1, arg2);
+    else if (strcasecmp(command, "MOVB") == 0)
+        movb_handler(arg1, arg2);
+    else if (strcasecmp(command, "MOVW") == 0)
+        movw_handler(arg1, arg2);
+    else if (strcasecmp(command, "SHOWD") == 0)
+        showd(arg1);
+    else if (strcasecmp(command, "SHOWW") == 0)
+        showw(arg1);
+    else if (strcasecmp(command, "SHOWB") == 0)
+        showb(arg1);
+    else if (strcasecmp(command, "SHOWD_MEM") == 0)
+        showd_mem(find_int_value(arg1));
+    else if (strcasecmp(command, "SHOWW_MEM") == 0)
+        showw_mem(find_int_value(arg1));
+    else if (strcasecmp(command, "SHOWB_MEM") == 0)
+        showb_mem(find_int_value(arg1));
+    else if (strcasecmp(command, "SHOW_ALL_REGS") == 0)
+        show_all_registers();
     else if (strcasecmp(command,"EQ") == 0)
         equal(arg1, arg2, arg3);
     else if (strcasecmp(command,"NEQ") == 0)
@@ -154,7 +170,7 @@ int check(char *line, int *current_line){
     else if (strcasecmp(command,"DIV") == 0)
         divide(arg1, arg2, arg3);
     else if (strcasecmp(command,"SHOW") == 0)
-        show(arg1);
+        showd(arg1);
     else if (strcasecmp(command,"SHOWC") == 0)
         showc(arg1);
     else if (strcasecmp(command,"MOD") == 0)
@@ -223,7 +239,6 @@ int check(char *line, int *current_line){
     return 0;
 }
 
-
 void increment(char arg3[]){
     int result=find_variable_value(arg3);
     result+=1;
@@ -243,12 +258,40 @@ int find_variable_index(const char *name) {
     return -1;
 }
 
-void show( char v[]){
-    printf("%s value: %d\n",v, find_int_value(v)); /////////////////////delete %s part later
+void showd(const char* reg) {
+    uint32_t* r = get_register(reg, 4);
+    if (r) printf("%s = 0x%08X (%u)\n", reg, *r, *r);
+    else printf("showd: %s is not a dword register\n", reg);
 }
-void showc( char v[]){
-    printf("%c", find_int_value(v));
+
+void showw(const char* reg) {
+    uint16_t* r = get_register(reg, 2);
+    if (r) printf("%s = 0x%04X (%u)\n", reg, *r, *r);
+    else printf("showw: %s is not a word register\n", reg);
 }
+
+void showb(const char* reg) {
+    uint8_t* r = get_register(reg, 1);
+    if (r) printf("%s = 0x%02X (%u)\n", reg, *r, *r);
+    else printf("showb: %s is not a byte register\n", reg);
+}
+
+
+void showc(const char* reg) {
+    uint8_t* r = get_register(reg, 1);
+    if (r) printf("%s = 0x%02X (%u)\n", reg, *r, *r);
+    else printf("showb: %s is not a byte register\n", reg);
+}
+
+void show_all_registers() {
+    printf("EAX: 0x%08X  EBX: 0x%08X  ECX: 0x%08X  EDX: 0x%08X\n",
+           *eax, *ebx, *ecx, *edx);
+    printf("ESI: 0x%08X  EDI: 0x%08X  EBP: 0x%08X  ESP: 0x%08X\n",
+           *esi, *edi, *ebp, *esp);
+    printf("IP : 0x%08X  CS : 0x%08X\n",
+           *ip, *cs);
+}
+
 ///////////////////////////////////////////////////////////////
 // pre_assign helps the language with multiple assign choices//
 ///////////////////////////////////////////////////////////////
@@ -807,7 +850,6 @@ void* get_register(const char* reg, int size) {
         else if (strcasecmp(reg, "dl") == 0) return dl;
         else if (strcasecmp(reg, "dh") == 0) return dh;
     }
-    printf("get_register : Invalid syntax for accessing register\n");
     return NULL; // Not a known register
 }
 
@@ -919,4 +961,18 @@ void movw_handler(char* dest, char* src) {
     }
     printf("MOVW: Invalid operands (%s, %s)\n", dest, src);
 }
+
+void showd_mem(int addr) {
+    printf("MEM[%d] = 0x%08X (%u)\n", addr, *((uint32_t*)&memory[addr]), *((uint32_t*)&memory[addr]));
+}
+
+void showw_mem(int addr) {
+    printf("MEM[%d] = 0x%04X (%u)\n", addr, *((uint16_t*)&memory[addr]), *((uint16_t*)&memory[addr]));
+}
+
+void showb_mem(int addr) {
+    printf("MEM[%d] = 0x%02X (%u)\n", addr, memory[addr], memory[addr]);
+}
+
+
 
