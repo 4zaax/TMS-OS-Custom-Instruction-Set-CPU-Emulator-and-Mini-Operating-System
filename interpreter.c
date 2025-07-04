@@ -5,11 +5,10 @@
 #include "ctype.h"
 #include "stdint.h"
 
-#define MEMORY_SIZE 1000 // RAM
+#define MEMORY_SIZE 128000 // RAM
 #define MAX_LINES 500   // OS supports programs of maximum 500 lines
 #define LINE_LEN 512
 #define MAX_VARIABLES 1000
-#define STACK_SIZE 1000  // OS stack size
 
 uint8_t reg_mem[40]; // 40 bytes (10 * 4 bytes) -> 10 extended registers
 
@@ -57,8 +56,6 @@ uint32_t* ip = (uint32_t*)&reg_mem[32];
 uint32_t* cs = (uint32_t*)&reg_mem[36];
 
 uint8_t memory[MEMORY_SIZE];
-int call_stack[STACK_SIZE];
-int sp = -1; //stack pointer
 FILE *file;
 
 typedef struct {
@@ -71,8 +68,6 @@ typedef struct {
     int value;
 } Variable;
 
-#define MAX_VAR_NAME 32
-
 Variable variables[1000];
 int variable_count = 0;
 LineEntry program[MAX_LINES];
@@ -80,6 +75,7 @@ int program_size = 0;
 
 
 int main() {
+    *esp = MEMORY_SIZE;
     file = open_file("../boot.txt");
     if (file == NULL) printf("Shutting down OS\n");else  printf("boot file loaded successfully\n");
     load_program(file);
@@ -123,12 +119,24 @@ int check(char *line, int *current_line){
         showw(arg1);
     else if (strcasecmp(command, "SHOWB") == 0)
         showb(arg1);
+    else if (strcasecmp(command, "SHOWSD") == 0)
+        showsd(arg1);
+    else if (strcasecmp(command, "SHOWSW") == 0)
+        showsw(arg1);
+    else if (strcasecmp(command, "SHOWSB") == 0)
+        showsb(arg1);
     else if (strcasecmp(command, "SHOWD_MEM") == 0)
         showd_mem(find_int_value(arg1));
     else if (strcasecmp(command, "SHOWW_MEM") == 0)
         showw_mem(find_int_value(arg1));
     else if (strcasecmp(command, "SHOWB_MEM") == 0)
         showb_mem(find_int_value(arg1));
+    else if (strcasecmp(command, "SHOWSD_MEM") == 0)
+        showsd_mem(find_int_value(arg1));
+    else if (strcasecmp(command, "SHOWSW_MEM") == 0)
+        showsw_mem(find_int_value(arg1));
+    else if (strcasecmp(command, "SHOWSB_MEM") == 0)
+        showsb_mem(find_int_value(arg1));
     else if (strcasecmp(command, "SHOW_ALL_REGS") == 0)
         show_all_registers();
     else if (strcasecmp(command,"EQ") == 0)
@@ -143,10 +151,7 @@ int check(char *line, int *current_line){
         is_less_than(arg1, arg2, arg3);
     else if (strcasecmp(command,"LSE") == 0)
         is_less_than_equal(arg1, arg2, arg3);
-    else if (strcasecmp(command,"INC") == 0)
-        increment(arg1);
-    else if (strcasecmp(command,"DEC") == 0)
-        decrement(arg1);
+
     else if (strcasecmp(command,"GET") == 0)
         get_input(arg1);
     else if (strcasecmp(command, "ADD") == 0)
@@ -228,6 +233,34 @@ int check(char *line, int *current_line){
     else if (strcasecmp(command, "SHRB") == 0)
         shrb_handler(arg1, arg2, arg3);
 
+    else if (strcasecmp(command, "INC") == 0)
+        inc_handler(arg1);
+    else if (strcasecmp(command, "INCW") == 0)
+        incw_handler(arg1);
+    else if (strcasecmp(command, "INCB") == 0)
+        incb_handler(arg1);
+
+    else if (strcasecmp(command, "DEC") == 0)
+        dec_handler(arg1);
+    else if (strcasecmp(command, "DECW") == 0)
+        decw_handler(arg1);
+    else if (strcasecmp(command, "DECB") == 0)
+        decb_handler(arg1);
+
+    else if (strcasecmp(command, "PUSH") == 0)
+        push_handler(arg1);
+    else if (strcasecmp(command, "PUSHW") == 0)
+        pushw_handler(arg1);
+    else if (strcasecmp(command, "PUSHB") == 0)
+        pushb_handler(arg1);
+
+    else if (strcasecmp(command, "POP") == 0)
+        pop_handler(arg1);
+    else if (strcasecmp(command, "POPW") == 0)
+        popw_handler(arg1);
+    else if (strcasecmp(command, "POPB") == 0)
+        popb_handler(arg1);
+
     else if (strcasecmp(command,"SHOW") == 0)
         showd(arg1);
     else if (strcasecmp(command,"SHOWC") == 0)
@@ -258,13 +291,10 @@ int check(char *line, int *current_line){
             printf("check: no flag was found to return!\n");
     }
 
-    else if (strcasecmp(command,"PUSH") == 0)
-        user_push(arg1);
+
     else if (strcasecmp(command,"CALL") == 0){
         push(*current_line + 1);// Save return point
         go2(arg1,current_line);}
-    else if (strcasecmp(command,"POP") == 0)
-        user_pop(arg1);
     else if (strcasecmp(command,"MOV") == 0)
         move(arg1,arg2);
 
@@ -282,8 +312,7 @@ int check(char *line, int *current_line){
         if_not_command(arg1, arg2, current_line);
     else if (strcasecmp(command,"JE") == 0)
        conditional_jmp(command, arg1, arg2,arg3, current_line);
-    else if (strcasecmp(command,"SHOW_SP") == 0) // just for debugging
-       printf("stack pointer value is: %d\n",sp);
+
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////
     /////////////////////////////////////     system commands   /////////////////////////////////////////////
@@ -298,16 +327,40 @@ int check(char *line, int *current_line){
     return 0;
 }
 
-void increment(char arg3[]){
-    int result=find_variable_value(arg3);
-    result+=1;
-    assign(arg3,result);
-};
-void decrement(char arg3[]){
-    int result=find_variable_value(arg3);
-    result-=1;
-    assign(arg3,result);
+// INC
+void inc_handler(const char* reg) {
+    uint32_t* r = get_register(reg, 4);
+    if (!r) { printf("INC: must be 32-bit reg (%s)\n", reg); return; }
+    (*r)++;
 }
+void incw_handler(const char* reg) {
+    uint16_t* r = get_register(reg, 2);
+    if (!r) { printf("INCW: must be 16-bit reg (%s)\n", reg); return; }
+    (*r)++;
+}
+void incb_handler(const char* reg) {
+    uint8_t* r = get_register(reg, 1);
+    if (!r) { printf("INCB: must be 8-bit reg (%s)\n", reg); return; }
+    (*r)++;
+}
+
+// DEC
+void dec_handler(const char* reg) {
+    uint32_t* r = get_register(reg, 4);
+    if (!r) { printf("DEC: must be 32-bit reg (%s)\n", reg); return; }
+    (*r)--;
+}
+void decw_handler(const char* reg) {
+    uint16_t* r = get_register(reg, 2);
+    if (!r) { printf("DECW: must be 16-bit reg (%s)\n", reg); return; }
+    (*r)--;
+}
+void decb_handler(const char* reg) {
+    uint8_t* r = get_register(reg, 1);
+    if (!r) { printf("DECB: must be 8-bit reg (%s)\n", reg); return; }
+    (*r)--;
+}
+
 int find_variable_index(const char *name) {
     for (int i = 0; i < variable_count; i++) {
         if (strcmp(variables[i].name, name) == 0) {
@@ -335,11 +388,53 @@ void showb(const char* reg) {
     else printf("showb: %s is not a byte register\n", reg);
 }
 
+// Show signed dword (32 bits)
+void showsd(const char* reg) {
+    int32_t* r = get_register(reg, 4);
+    if (r) printf("%s = 0x%08X (%d)\n", reg, *r, *r);
+    else printf("showsd: %s is not a dword register\n", reg);
+}
+
+// Show signed word (16 bits)
+void showsw(const char* reg) {
+    int16_t* r = get_register(reg, 2);
+    if (r) printf("%s = 0x%04X (%d)\n", reg, *r, *r);
+    else printf("showsw: %s is not a word register\n", reg);
+}
+
+// Show signed byte (8 bits)
+void showsb(const char* reg) {
+    int8_t* r = get_register(reg, 1);
+    if (r) printf("%s = 0x%02X (%d)\n", reg, *r, *r);
+    else printf("showsb: %s is not a byte register\n", reg);
+}
 
 void showc(const char* reg) {
     uint8_t* r = get_register(reg, 1);
-    if (r) printf("%s = 0x%02X (%u)\n", reg, *r, *r);
-    else printf("showb: %s is not a byte register\n", reg);
+    if (r) printf("%s = 0x%02X (%c)\n", reg, *r, *r);
+    else printf("showc: %s is not a character register\n", reg);
+}
+
+// Unsigned
+void showd_mem(int addr) {
+    printf("MEM[%d] = 0x%08X (%u)\n", addr, *((uint32_t*)&memory[addr]), *((uint32_t*)&memory[addr]));
+}
+void showw_mem(int addr) {
+    printf("MEM[%d] = 0x%04X (%u)\n", addr, *((uint16_t*)&memory[addr]), *((uint16_t*)&memory[addr]));
+}
+void showb_mem(int addr) {
+    printf("MEM[%d] = 0x%02X (%u)\n", addr, memory[addr], memory[addr]);
+}
+
+// Signed
+void showsd_mem(int addr) {
+    printf("MEM[%d] = 0x%08X (%d)\n", addr, *((int32_t*)&memory[addr]), *((int32_t*)&memory[addr]));
+}
+void showsw_mem(int addr) {
+    printf("MEM[%d] = 0x%04X (%d)\n", addr, *((int16_t*)&memory[addr]), *((int16_t*)&memory[addr]));
+}
+void showsb_mem(int addr) {
+    printf("MEM[%d] = 0x%02X (%d)\n", addr, *((int8_t*)&memory[addr]), *((int8_t*)&memory[addr]));
 }
 
 void show_all_registers() {
@@ -676,21 +771,6 @@ void lstrip(char* line){
     strcpy(line, trimmed);
 }
 
-void push(int val) {
-    if (sp < STACK_SIZE - 1)
-        call_stack[++sp] = val;
-    else
-        printf("Stack Overflow\n");
-}
-
-int pop() {
-    if (sp >= 0)
-        return call_stack[sp--];
-    else {
-        printf("Stack Underflow\n");
-        return -1;
-    }
-}
 
 int find_label(const char *label) {
     for (int i = 0; i <= program_size; ++i) {
@@ -736,18 +816,72 @@ int find_mem_addr(char* arg){
     return index;
 }
 
-void user_push(char var[]){
-    int val;
-    if (isdigit(var[0]))
-        val = atoi(var);
-    else
-        val = find_variable_value(var);
-    push(val);
+// For RET/CALL, saves/restores line numbers on stack
+void push(int val) {
+    if (*esp < 4) { printf("PUSH: stack overflow\n"); return; }
+    *esp -= 4;
+    *((uint32_t*)&memory[*esp]) = val;
 }
 
-void user_pop(char var[]){
-    int value = pop();
-    assign(var,value);
+int pop() {
+    if (*esp > MEMORY_SIZE - 4) { printf("POP: stack underflow\n"); return -1; }
+    int val = *((uint32_t*)&memory[*esp]);
+    *esp += 4;
+    return val;
+}
+
+// Let's assume your stack base is at the *end* of memory[] (like x86).
+// ESP starts at MEMORY_SIZE (bytes). ESP points to the top of the stack.
+
+// PUSH dword (4 bytes)
+void push_handler(const char* src) {
+    uint32_t val = get_any_value(src);
+    if (*esp < 4) { printf("PUSH: stack overflow\n"); return; }
+    *esp -= 4;
+    *((uint32_t*)&memory[*esp]) = val;
+}
+
+// PUSH word (2 bytes)
+void pushw_handler(const char* src) {
+    uint16_t val = (uint16_t)get_any_value(src);
+    if (*esp < 2) { printf("PUSHW: stack overflow\n"); return; }
+    *esp -= 2;
+    *((uint16_t*)&memory[*esp]) = val;
+}
+
+// PUSH byte (1 byte)
+void pushb_handler(const char* src) {
+    uint8_t val = (uint8_t)get_any_value(src);
+    if (*esp < 1) { printf("PUSHB: stack overflow\n"); return; }
+    *esp -= 1;
+    *((uint8_t*)&memory[*esp]) = val;
+}
+
+// POP dword (4 bytes)
+void pop_handler(const char* dest) {
+    if (*esp > MEMORY_SIZE - 4) { printf("POP: stack underflow\n"); return; }
+    uint32_t* d = get_register(dest, 4);
+    if (!d) { printf("POP: dest must be 32-bit reg (%s)\n", dest); return; }
+    *d = *((uint32_t*)&memory[*esp]);
+    *esp += 4;
+}
+
+// POP word (2 bytes)
+void popw_handler(const char* dest) {
+    if (*esp > MEMORY_SIZE - 2) { printf("POPW: stack underflow\n"); return; }
+    uint16_t* d = get_register(dest, 2);
+    if (!d) { printf("POPW: dest must be 16-bit reg (%s)\n", dest); return; }
+    *d = *((uint16_t*)&memory[*esp]);
+    *esp += 2;
+}
+
+// POP byte (1 byte)
+void popb_handler(const char* dest) {
+    if (*esp > MEMORY_SIZE - 1) { printf("POPB: stack underflow\n"); return; }
+    uint8_t* d = get_register(dest, 1);
+    if (!d) { printf("POPB: dest must be 8-bit reg (%s)\n", dest); return; }
+    *d = *((uint8_t*)&memory[*esp]);
+    *esp += 1;
 }
 
 void move(char* dest, char* src){
@@ -1062,18 +1196,6 @@ void movw_handler(char* dest, char* src) {
     printf("MOVW: Invalid operands (%s, %s)\n", dest, src);
 }
 
-void showd_mem(int addr) {
-    printf("MEM[%d] = 0x%08X (%u)\n", addr, *((uint32_t*)&memory[addr]), *((uint32_t*)&memory[addr]));
-}
-
-void showw_mem(int addr) {
-    printf("MEM[%d] = 0x%04X (%u)\n", addr, *((uint16_t*)&memory[addr]), *((uint16_t*)&memory[addr]));
-}
-
-void showb_mem(int addr) {
-    printf("MEM[%d] = 0x%02X (%u)\n", addr, memory[addr], memory[addr]);
-}
-
 void add_handler(const char* dest, const char* src1, const char* src2) {
     uint32_t* d_reg = get_register(dest, 4);
     if (!d_reg) {
@@ -1149,12 +1271,47 @@ void mul_handler(const char* dest, const char* src1, const char* src2) {
     *d_reg = v1 * v2;
 }
 
+void mulw_handler(const char* dest, const char* src1, const char* src2) {
+    uint16_t* d_reg = get_register(dest, 2);
+    if (!d_reg) { printf("MULW: dest must be 16-bit register\n"); return; }
+    uint16_t v1 = (uint16_t)get_any_value(src1);
+    uint16_t v2 = (uint16_t)get_any_value(src2);
+    *d_reg = v1 * v2;
+}
+
+void mulb_handler(const char* dest, const char* src1, const char* src2) {
+    uint8_t* d_reg = get_register(dest, 1);
+    if (!d_reg) { printf("MULB: dest must be 8-bit register\n"); return; }
+    uint8_t v1 = (uint8_t)get_any_value(src1);
+    uint8_t v2 = (uint8_t)get_any_value(src2);
+    *d_reg = v1 * v2;
+}
+
 // Signed multiply
 void imul_handler(const char* dest, const char* src1, const char* src2) {
     int32_t* d_reg = get_register(dest, 4);
     if (!d_reg) { printf("IMUL: dest must be 32-bit register\n"); return; }
     int32_t v1 = (int32_t)get_any_value(src1);
     int32_t v2 = (int32_t)get_any_value(src2);
+    *d_reg = v1 * v2;
+}
+
+
+// Signed 16-bit multiply: dest = src1 * src2
+void imulw_handler(const char* dest, const char* src1, const char* src2) {
+    int16_t* d_reg = get_register(dest, 2);
+    if (!d_reg) { printf("IMULW: dest must be 16-bit register\n"); return; }
+    int16_t v1 = (int16_t)get_any_value(src1);
+    int16_t v2 = (int16_t)get_any_value(src2);
+    *d_reg = v1 * v2;
+}
+
+// Signed 8-bit multiply: dest = src1 * src2
+void imulb_handler(const char* dest, const char* src1, const char* src2) {
+    int8_t* d_reg = get_register(dest, 1);
+    if (!d_reg) { printf("IMULB: dest must be 8-bit register\n"); return; }
+    int8_t v1 = (int8_t)get_any_value(src1);
+    int8_t v2 = (int8_t)get_any_value(src2);
     *d_reg = v1 * v2;
 }
 

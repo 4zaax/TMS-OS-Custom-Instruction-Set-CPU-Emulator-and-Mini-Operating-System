@@ -1,2 +1,2 @@
-mov eax 'a'
-show eax
+movb al 'a'
+showc al

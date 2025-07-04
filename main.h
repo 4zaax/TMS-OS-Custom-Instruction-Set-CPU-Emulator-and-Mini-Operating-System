@@ -46,25 +46,32 @@ void shrw_handler(const char*, const char*, const char*);
 void shrb_handler(const char*, const char*, const char*);
 
 
-void OR( char var1[],  char var2[], char var3[]);
-void XOR( char var1[],  char var2[], char var3[]);
-void NOT( char var1[], char var2[]);
-void increment(char arg3[]);
-void decrement(char arg3[]);
-void equal_test(char var1[], char value[], char destination[]);
-void addition(char var1[], char var2[], char destination[]);
-void subtract(char var1[], char var2[], char destination[]);
-void multiply(char var1[], char var2[], char destination[]);
-void divide(char var1[], char var2[], char destination[]);
+void inc_handler(const char* reg);
+void incw_handler(const char* reg);
+void incb_handler(const char* reg);
+
+void dec_handler(const char* reg);
+void decw_handler(const char* reg);
+void decb_handler(const char* reg);
+
 void modulo(char var1[], char var2[], char destination[]);
+
 void showd(const char* reg);
 void showw(const char* reg);
 void showb(const char* reg);
-void showc(const char* reg);
-void show_all_registers();
+void showc(const char* reg); // shows character value
+
+void showsd(const char* reg);
+void showsw(const char* reg);
+void showsb(const char* reg);
+
 void showd_mem(int addr);
 void showw_mem(int addr);
 void showb_mem(int addr);
+void showsd_mem(int addr);
+void showsw_mem(int addr);
+void showsb_mem(int addr);
+
 void mov_handler (char* dest, char* src);
 void movb_handler(char* dest, char* src);
 void movw_handler(char* dest, char* src);
@@ -102,7 +109,14 @@ void idiv_handler(const char* dest, const char* src1, const char* src2);   // 32
 void idivw_handler(const char* dest, const char* src1, const char* src2);  // 16-bit
 void idivb_handler(const char* dest, const char* src1, const char* src2);  // 8-bit
 
+// Stack
+void push_handler(const char* src);       // 32-bit
+void pushw_handler(const char* src);      // 16-bit
+void pushb_handler(const char* src);      // 8-bit
 
+void pop_handler(const char* dest);       // 32-bit
+void popw_handler(const char* dest);      // 16-bit
+void popb_handler(const char* dest);      // 8-bit
 
 void load_program(FILE *file);
 void lstrip(char* line);
