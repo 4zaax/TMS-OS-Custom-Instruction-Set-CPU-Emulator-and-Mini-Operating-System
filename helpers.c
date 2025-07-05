@@ -73,10 +73,6 @@ int find_int_value(char* arg){
         value = memory[addr];
     }
         // AS v0 v1
-    else if (find_variable_index(arg) !=-1){
-        value = find_variable_value(arg);
-        assign(arg, value);
-    }
     else printf("AS: an error occurred while assigning.\n",arg);
     return value;
 }

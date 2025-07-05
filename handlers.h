@@ -141,5 +141,6 @@ void jg_handler(const char* label, int* current_line);
 void jl_handler(const char* label, int* current_line);
 
 void call_handler(const char* label, int* current_line);
+void ret_handler(const char* arg1, int tokens, int* current_line);
 
 #endif

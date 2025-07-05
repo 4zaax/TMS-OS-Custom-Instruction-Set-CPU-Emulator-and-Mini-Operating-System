@@ -89,7 +89,7 @@ int program_size = 0;
 
 int main() {
     *esp = MEMORY_SIZE;
-    file = open_file("../boot.txt");
+    file = open_file("../Apps/boot.txt");
     if (file == NULL) printf("Shutting down OS\n");else  printf("boot file loaded successfully\n");
     load_program(file);
     fclose(file);
@@ -118,8 +118,6 @@ int check(char *line, int *current_line){
     if (strcasecmp(command,"exit") == 0){
         return 1;
     }
-    else if (strcasecmp(command,"AS") == 0)
-        pre_assign(arg1,arg2);
     else if (strcasecmp(command, "MOV") == 0)
         mov_handler(arg1, arg2);
     else if (strcasecmp(command, "MOVB") == 0)
@@ -152,21 +150,21 @@ int check(char *line, int *current_line){
         showsb_mem(find_int_value(arg1));
     else if (strcasecmp(command, "SHOW_ALL_REGS") == 0)
         show_all_registers();
-    else if (strcasecmp(command,"EQ") == 0)
-        equal(arg1, arg2, arg3);
-    else if (strcasecmp(command,"NEQ") == 0)
-        not_equal(arg1, arg2, arg3);
-    else if (strcasecmp(command,"GT") == 0)
-        is_greater(arg1, arg2, arg3);
-    else if (strcasecmp(command,"GTE") == 0)
-        is_greater_equal(arg1, arg2, arg3);
-    else if (strcasecmp(command,"LS") == 0)
-        is_less_than(arg1, arg2, arg3);
-    else if (strcasecmp(command,"LSE") == 0)
-        is_less_than_equal(arg1, arg2, arg3);
+//    else if (strcasecmp(command,"EQ") == 0)
+//        equal(arg1, arg2, arg3);
+//    else if (strcasecmp(command,"NEQ") == 0)
+//        not_equal(arg1, arg2, arg3);
+//    else if (strcasecmp(command,"GT") == 0)
+//        is_greater(arg1, arg2, arg3);
+//    else if (strcasecmp(command,"GTE") == 0)
+//        is_greater_equal(arg1, arg2, arg3);
+//    else if (strcasecmp(command,"LS") == 0)
+//        is_less_than(arg1, arg2, arg3);
+//    else if (strcasecmp(command,"LSE") == 0)
+//        is_less_than_equal(arg1, arg2, arg3);
 
-    else if (strcasecmp(command,"GET") == 0)
-        get_input(arg1);
+//    else if (strcasecmp(command,"GET") == 0)
+//        get_input(arg1);
     else if (strcasecmp(command, "ADD") == 0)
         add_handler(arg1, arg2, arg3);
     else if (strcasecmp(command, "ADDB") == 0)
@@ -283,8 +281,8 @@ int check(char *line, int *current_line){
     else if (strcasecmp(command, "CLEAR_FLAGS") == 0)
         clear_flags();
 
-    else if (strcasecmp(command,"MOD") == 0)
-        modulo(arg1, arg2, arg3);
+//    else if (strcasecmp(command,"MOD") == 0)
+//        modulo(arg1, arg2, arg3);
     else if (strcasecmp(command,"JMP") == 0){
         int arglen = strlen(arg2);
         if (tokens == 2)
@@ -305,20 +303,8 @@ int check(char *line, int *current_line){
 
     else if (strcasecmp(command,"CALL") == 0)
         call_handler(arg1, current_line);
-    else if (strcasecmp(command,"RET") == 0) {
-        int arglen = strlen(arg1);
-        if (tokens == 1) {
-            *current_line = pop() - 1;
-        } else if (is_num(arg1) && atoi(arg1) != 0){
-            *current_line = pop() -1;
-        } else if (arglen == 1 && arg1[0] == '1') {
-            *current_line = pop() - 1;
-        } else if (find_variable_index(arg1) != -1 && find_variable_value(arg1) != 0) {
-            *current_line = pop() - 1;
-        } else if (find_variable_index(arg1) == -1)
-            printf("check: no flag was found to return!\n");
-    }
-
+    else if (strcasecmp(command,"RET") == 0)
+        ret_handler(arg1, tokens, current_line);
 
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -329,8 +315,6 @@ int check(char *line, int *current_line){
         read_mem(arg1);
     else if (strcasecmp(command,"SHOWSTR") == 0)
         show_str(arg1);
-
-
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////
     /////////////////////////////////////     system commands   /////////////////////////////////////////////
@@ -352,164 +336,6 @@ int check(char *line, int *current_line){
 ///////////////////////////////////////////////////////////////
 // pre_assign helps the language with multiple assign choices//
 ///////////////////////////////////////////////////////////////
-
-void pre_assign(char* arg1, char* arg2){
-    int assign_value = find_int_value(arg2);
-    assign(arg1, assign_value);
-}
-
-
-void assign(const char *name, int value) {
-    if (is_mem_addr(name)){
-        int addr = find_mem_addr(name);
-        if (addr >= MEMORY_SIZE)
-            printf("Assign: memory index out of range.\n");
-        else
-            memory[addr] = value;
-    }
-    else { // value should be assigned to register
-        int index= find_variable_index(name);
-        if (index != -1)
-            variables[index].value = value;
-        else {
-            if (variable_count < MAX_VARIABLES) {
-                strcpy(variables[variable_count].name, name);
-                variables[variable_count].value = value;
-                variable_count++;
-            }
-            else
-                printf("Assign: register count exceeds limits\n");
-        }
-    }
-}
-
-int find_variable_value(const char *name) {
-    int idx = find_variable_index(name);
-    if (idx != -1) return variables[idx].value;
-    printf("find_variable_value: variable %s not found\n", name);;
-    return 0;
-}
-
- void equal( char var1[], char var2[], char var3[]) {
-    int value2, value3;
-    value2 = find_int_value(var2);
-    value3 = find_int_value(var3);
-    if (value2 == value3){
-        assign(var1, 1);
-        return;
-    }
-    assign(var1, 0);
-}
-void is_greater( char var1[], char var2[], char var3[]) {
-    int value2, value3;
-    if (var2[0] <= '9' && var2[0] >= '0') value2 = atoi(var2);
-    else value2 = find_variable_value(var2);
-    if (var3[0] <= '9' && var3[0] >= '0') value3 = atoi(var3);
-    else value3 = find_variable_value(var3);
-    int result = (value2 > value3 );
-    assign(var1, result);
-}
-void is_greater_equal(char var1[], char var2[], char var3[]) {
-    int value2, value3;
-    if (var2[0] <= '9' && var2[0] >= '0') value2 = atoi(var2);
-    else value2 = find_variable_value(var2);
-    if (var3[0] <= '9' && var3[0] >= '0') value3 = atoi(var3);
-    else value3 = find_variable_value(var3);
-    int result = (value2 >= value3);
-    assign(var1, result);
-}
-void is_less_than(char var1[], char var2[], char var3[]) {
-    int value2, value3;
-    if (var2[0] <= '9' && var2[0] >= '0') value2 = atoi(var2);
-    else value2 = find_variable_value(var2);
-    if (var3[0] <= '9' && var3[0] >= '0') value3 = atoi(var3);
-    else value3 = find_variable_value(var3);
-    int result = (value2 < value3);
-    assign(var1, result);
-}
-void is_less_than_equal(char var1[], char var2[], char var3[]) {
-    int value2, value3;
-    if (var2[0] <= '9' && var2[0] >= '0') value2 = atoi(var2);
-    else value2 = find_variable_value(var2);
-    if (var3[0] <= '9' && var3[0] >= '0') value3 = atoi(var3);
-    else value3 = find_variable_value(var3);
-    int result = (value2 <= value3);
-    assign(var1, result);
-}
-void not_equal(char var1[], char var2[], char var3[]) {
-    int value2, value3;
-    if (var2[0] <= '9' && var2[0] >= '0'){ value2 = atoi(var2);}
-    else if(var2[0]=='[') {value2=memory[find_mem_addr(var2)];}
-    else{ value2 = find_variable_value(var2);}
-    if (var3[0] <= '9' && var3[0] >= '0'){ value3 = atoi(var3);}
-    else if(var3[0]=='[') {value3=memory[find_mem_addr(var3)];}
-    else {value3 = find_variable_value(var3);}
-    int result = (value3 != value2);
-    if (var1[0]=='[') {memory[find_mem_addr(var1)]=result;return;}
-    assign(var1, result);
-
-}
-
-
-void addition(char var1[],  char var2[], char var3[]){
-    int value2,value3;
-    if (var2[0]<='9' &&  var2[0]>='0') value2= atoi(var2);
-    else value2 = find_variable_value(var2);
-    if (var3[0]<='9' &&  var3[0]>='0') value3= atoi(var3);
-    else value3= find_variable_value(var3);
-    int result=value2+value3;
-    assign(var1,result);
-}
-
-void subtract(char var1[],  char var2[], char var3[]){
-    int value2,value3;
-    if (var2[0]<='9' &&  var2[0]>='0') value2= atoi(var2);
-    else value2 = find_variable_value(var2);
-    if (var3[0]<='9' &&  var3[0]>='0') value3= atoi(var3);
-    else value3= find_variable_value(var3);
-    int result=value2-value3;
-    assign(var1,result);
-}
-
-void multiply(char var1[],  char var2[], char var3[]){
-    int value2,value3;
-    if (var2[0]<='9' &&  var2[0]>='0') value2= atoi(var2);
-    else value2 = find_variable_value(var2);
-    if (var3[0]<='9' &&  var3[0]>='0') value3= atoi(var3);
-    else value3= find_variable_value(var3);
-    int result=value3*value2;
-    assign(var1,result);
-}
-
-void divide(char var1[],  char var2[], char var3[]){
-    int value2,value3;
-    if (var2[0]<='9' &&  var2[0]>='0') value2= atoi(var2);
-    else value2 = find_variable_value(var2);
-    if (var3[0]<='9' &&  var3[0]>='0') value3= atoi(var3);
-    else value3= find_variable_value(var3);
-    if(value3==0) printf("Division by zero");
-    else{
-        int result=value2/value3;
-        assign(var1,result);
-    }
-
-}
-
-void get_input(char arg1[]){
-    int c=getchar();
-    assign(arg1, c);
-}
-
-void modulo(char var1[], char var2[], char var3[]){
-    int value2,value3;
-    if (var2[0]<='9' &&  var2[0]>='0') value2= atoi(var2);
-    else value2 = find_variable_value(var2);
-    if (var3[0]<='9' &&  var3[0]>='0') value3= atoi(var3);
-    else value3= find_variable_value(var3);
-    int result=value2%value3;
-    assign(var1,result);
-}
-
 
 void load_program(FILE *file) {
     char buffer[LINE_LEN];

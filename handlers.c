@@ -41,15 +41,6 @@ void decb_handler(const char* reg) {
     (*r)--;
 }
 
-int find_variable_index(const char *name) {
-    for (int i = 0; i < variable_count; i++) {
-        if (strcmp(variables[i].name, name) == 0) {
-            return i;
-        }
-    }
-    return -1;
-}
-
 void showd(const char* reg) {
     uint32_t* r = get_register(reg, 4);
     if (r) printf("%s = 0x%08X (%u)\n", reg, *r, *r);
@@ -234,11 +225,6 @@ int find_mem_addr(char* arg){
     int index;
     char *c= (char*) malloc(sizeof (char) * (len+1));
     my_strcpy(c,arg+1,len);
-
-    if (is_num(c))
-        index= atoi(c);
-    else
-        index = find_variable_value(c);
     return index;
 }
 
@@ -729,11 +715,20 @@ void call_handler(const char* label, int* current_line) {
     go2(label, current_line);
 }
 
-void ret_handler(int* current_line) {
-    int ret_line = pop_int(); // Pop the return address (should match your stack implementation)
-    if (ret_line > 0)
-        *current_line = ret_line - 1; // Will be incremented after the loop
+void ret_handler(const char* arg1, int tokens, int* current_line) {
+    int do_ret = 0;
+    if (tokens == 1) {
+        do_ret = 1;
+    } else if (is_num(arg1) && atoi(arg1) != 0) {
+        do_ret = 1;
+    } else if (strlen(arg1) == 1 && arg1[0] == '1') {
+        do_ret = 1;
+    } else if (get_any_value(arg1) != 0) {
+        do_ret = 1;
+    }
+    if (do_ret) {
+        *current_line = pop_int() - 1;
+    } else {
+        return;
+    }
 }
-
-
-
