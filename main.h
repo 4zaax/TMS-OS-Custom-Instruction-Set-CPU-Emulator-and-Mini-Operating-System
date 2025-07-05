@@ -145,3 +145,38 @@ void run_app(char* arg1, char* arg2, int* current_line);
 void conditional_jmp(char* command, char* arg1, char* arg2, char* arg3, int* current_line);
 void clear_screen();
 void* get_register(const char* reg, int size);
+void show_all_registers();
+
+
+
+// In main.h or your header:
+extern uint8_t* ZF;
+extern uint8_t* SF;
+extern uint8_t* CF;
+extern uint8_t* OF;
+
+void clear_flags();
+void show_flags();
+void set_flags_add32(uint32_t, uint32_t, uint32_t);
+void set_flags_add16(uint16_t, uint16_t, uint16_t);
+void set_flags_add8(uint8_t, uint8_t, uint8_t);
+
+void set_flags_sub32(uint32_t, uint32_t, uint32_t);
+void set_flags_sub16(uint16_t, uint16_t, uint16_t);
+void set_flags_sub8(uint8_t, uint8_t, uint8_t);
+
+// Unsigned MUL flag setters
+void set_flags_mul32(uint32_t op1, uint32_t op2, uint32_t result);
+void set_flags_mul16(uint16_t op1, uint16_t op2, uint16_t result);
+void set_flags_mul8 (uint8_t  op1, uint8_t  op2, uint8_t  result);
+
+// Signed IMUL flag setters
+void set_flags_imul32(int32_t op1, int32_t op2, int32_t result);
+void set_flags_imul16(int16_t op1, int16_t op2, int16_t result);
+void set_flags_imul8 (int8_t  op1, int8_t  op2, int8_t  result);
+
+
+void je_handler(const char* label, int* current_line);
+void jne_handler(const char* label, int* current_line);
+void jg_handler(const char* label, int* current_line);
+void jl_handler(const char* label, int* current_line);

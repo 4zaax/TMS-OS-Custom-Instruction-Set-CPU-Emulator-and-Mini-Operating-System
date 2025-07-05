@@ -1,2 +1,4 @@
-movb al 'a'
-showc al
+addw ax 00 1
+showw ax
+
+show_flags

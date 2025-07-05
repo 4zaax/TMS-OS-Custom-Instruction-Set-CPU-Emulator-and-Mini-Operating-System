@@ -275,6 +275,11 @@ int check(char *line, int *current_line){
         showd(arg1);
     else if (strcasecmp(command,"SHOWC") == 0)
         showc(arg1);
+    else if (strcasecmp(command, "SHOW_FLAGS") == 0)
+        show_flags();
+    else if (strcasecmp(command, "CLEAR_FLAGS") == 0)
+        clear_flags();
+
     else if (strcasecmp(command,"MOD") == 0)
         modulo(arg1, arg2, arg3);
     else if (strcasecmp(command,"JMP") == 0){
@@ -283,10 +288,17 @@ int check(char *line, int *current_line){
             go2(arg1, current_line);
         else if (arglen == 1 && arg2[0] == '1')
             go2(arg1,current_line);
-        else if (find_variable_index(arg2)!=-1 && find_variable_value(arg2)!=0){
+        else if (get_any_value(arg2)!=0){
             go2(arg1,current_line);}
-        else if (find_variable_index(arg2)==-1)printf("check: no flag for jump!\n");
     }
+    else if (strcasecmp(command, "JE") == 0)
+        je_handler(arg1, current_line);
+    else if (strcasecmp(command, "JNE") == 0)
+        jne_handler(arg1, current_line);
+    else if (strcasecmp(command, "JG") == 0)
+        jg_handler(arg1, current_line);
+    else if (strcasecmp(command, "JL") == 0)
+        jl_handler(arg1, current_line);
     else if (strcasecmp(command,"RET") == 0) {
         int arglen = strlen(arg1);
         if (tokens == 1) {
@@ -300,13 +312,10 @@ int check(char *line, int *current_line){
         } else if (find_variable_index(arg1) == -1)
             printf("check: no flag was found to return!\n");
     }
-
-
     else if (strcasecmp(command,"CALL") == 0){
         push(*current_line + 1);// Save return point
         go2(arg1,current_line);}
-    else if (strcasecmp(command,"MOV") == 0)
-        move(arg1,arg2);
+
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////
     /////////////////////////////////////     optional commands /////////////////////////////////////////////
@@ -320,8 +329,7 @@ int check(char *line, int *current_line){
         if_command(arg1, arg2, current_line);
     else if (strcasecmp(command,"IFN") == 0)
         if_not_command(arg1, arg2, current_line);
-    else if (strcasecmp(command,"JE") == 0)
-       conditional_jmp(command, arg1, arg2,arg3, current_line);
+
 
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1214,18 +1222,9 @@ void add_handler(const char* dest, const char* src1, const char* src2) {
     }
     uint32_t val1 = get_any_value(src1);
     uint32_t val2 = get_any_value(src2);
-    *d_reg = val1 + val2;
-}
-
-void addb_handler(const char* dest, const char* src1, const char* src2) {
-    uint8_t* d_reg = get_register(dest, 1);
-    if (!d_reg) {
-        printf("ADDB: dest must be 8-bit register (%s)\n", dest);
-        return;
-    }
-    uint8_t val1 = (uint8_t)get_any_value(src1);
-    uint8_t val2 = (uint8_t)get_any_value(src2);
-    *d_reg = val1 + val2;
+    uint32_t res = val1 + val2;
+    *d_reg =res;
+    set_flags_add32(val1, val2, res);
 }
 
 void addw_handler(const char* dest, const char* src1, const char* src2) {
@@ -1236,7 +1235,22 @@ void addw_handler(const char* dest, const char* src1, const char* src2) {
     }
     uint16_t val1 = (uint16_t)get_any_value(src1);
     uint16_t val2 = (uint16_t)get_any_value(src2);
-    *d_reg = val1 + val2;
+    uint16_t res = val1 + val2;
+    *d_reg = res;
+    set_flags_add16(val1, val2, res);
+}
+
+void addb_handler(const char* dest, const char* src1, const char* src2) {
+    uint8_t* d_reg = get_register(dest, 1);
+    if (!d_reg) {
+        printf("ADDB: dest must be 8-bit register (%s)\n", dest);
+        return;
+    }
+    uint8_t val1 = (uint8_t)get_any_value(src1);
+    uint8_t val2 = (uint8_t)get_any_value(src2);
+    uint8_t res = val1 + val2;
+    *d_reg = res;
+    set_flags_add8(val1, val2, res);
 }
 
 void sub_handler(const char* dest, const char* src1, const char* src2) {
@@ -1247,7 +1261,9 @@ void sub_handler(const char* dest, const char* src1, const char* src2) {
     }
     uint32_t val1 = get_any_value(src1);
     uint32_t val2 = get_any_value(src2);
-    *d_reg = val1 - val2;
+    uint32_t res = val1 - val2;
+    *d_reg = res;
+    set_flags_sub32(val1, val2, res);
 }
 
 void subw_handler(const char* dest, const char* src1, const char* src2) {
@@ -1258,7 +1274,9 @@ void subw_handler(const char* dest, const char* src1, const char* src2) {
     }
     uint16_t val1 = (uint16_t)get_any_value(src1);
     uint16_t val2 = (uint16_t)get_any_value(src2);
-    *d_reg = val1 - val2;
+    uint16_t res = val1 - val2;
+    *d_reg = res;
+    set_flags_sub16(val1, val2, res);
 }
 
 void subb_handler(const char* dest, const char* src1, const char* src2) {
@@ -1269,16 +1287,20 @@ void subb_handler(const char* dest, const char* src1, const char* src2) {
     }
     uint8_t val1 = (uint8_t)get_any_value(src1);
     uint8_t val2 = (uint8_t)get_any_value(src2);
-    *d_reg = val1 - val2;
+    uint8_t res = val1 - val2;
+    *d_reg = res;
+    set_flags_sub8(val1, val2, res);
 }
 
-// Unsigned multiply
+// Unsigned Multiplication
 void mul_handler(const char* dest, const char* src1, const char* src2) {
     uint32_t* d_reg = get_register(dest, 4);
     if (!d_reg) { printf("MUL: dest must be 32-bit register\n"); return; }
-    uint32_t v1 = get_any_value(src1);
-    uint32_t v2 = get_any_value(src2);
-    *d_reg = v1 * v2;
+    uint32_t v1 = (uint32_t)get_any_value(src1);
+    uint32_t v2 = (uint32_t)get_any_value(src2);
+    uint64_t result = (uint64_t)v1 * (uint64_t)v2;
+    *d_reg = (uint32_t)result;
+    set_flags_mul32(v1, v2, (uint32_t)result);
 }
 
 void mulw_handler(const char* dest, const char* src1, const char* src2) {
@@ -1286,7 +1308,9 @@ void mulw_handler(const char* dest, const char* src1, const char* src2) {
     if (!d_reg) { printf("MULW: dest must be 16-bit register\n"); return; }
     uint16_t v1 = (uint16_t)get_any_value(src1);
     uint16_t v2 = (uint16_t)get_any_value(src2);
-    *d_reg = v1 * v2;
+    uint32_t result = (uint32_t)v1 * (uint32_t)v2;
+    *d_reg = (uint16_t)result;
+    set_flags_mul16(v1, v2, (uint16_t)result);
 }
 
 void mulb_handler(const char* dest, const char* src1, const char* src2) {
@@ -1294,7 +1318,9 @@ void mulb_handler(const char* dest, const char* src1, const char* src2) {
     if (!d_reg) { printf("MULB: dest must be 8-bit register\n"); return; }
     uint8_t v1 = (uint8_t)get_any_value(src1);
     uint8_t v2 = (uint8_t)get_any_value(src2);
-    *d_reg = v1 * v2;
+    uint16_t result = (uint16_t)v1 * (uint16_t)v2;
+    *d_reg = (uint8_t)result;
+    set_flags_mul8(v1, v2, (uint8_t)result);
 }
 
 // Signed multiply
@@ -1303,26 +1329,29 @@ void imul_handler(const char* dest, const char* src1, const char* src2) {
     if (!d_reg) { printf("IMUL: dest must be 32-bit register\n"); return; }
     int32_t v1 = (int32_t)get_any_value(src1);
     int32_t v2 = (int32_t)get_any_value(src2);
-    *d_reg = v1 * v2;
+    int64_t result = (int64_t)v1 * (int64_t)v2;
+    *d_reg = (int32_t)result;
+    set_flags_imul32(v1, v2, (int32_t)result);
 }
 
-
-// Signed 16-bit multiply: dest = src1 * src2
 void imulw_handler(const char* dest, const char* src1, const char* src2) {
     int16_t* d_reg = get_register(dest, 2);
     if (!d_reg) { printf("IMULW: dest must be 16-bit register\n"); return; }
     int16_t v1 = (int16_t)get_any_value(src1);
     int16_t v2 = (int16_t)get_any_value(src2);
-    *d_reg = v1 * v2;
+    int32_t result = (int32_t)v1 * (int32_t)v2;
+    *d_reg = (int16_t)result;
+    set_flags_imul16(v1, v2, (int16_t)result);
 }
 
-// Signed 8-bit multiply: dest = src1 * src2
 void imulb_handler(const char* dest, const char* src1, const char* src2) {
     int8_t* d_reg = get_register(dest, 1);
     if (!d_reg) { printf("IMULB: dest must be 8-bit register\n"); return; }
     int8_t v1 = (int8_t)get_any_value(src1);
     int8_t v2 = (int8_t)get_any_value(src2);
-    *d_reg = v1 * v2;
+    int16_t result = (int16_t)v1 * (int16_t)v2;
+    *d_reg = (int8_t)result;
+    set_flags_imul8(v1, v2, (int8_t)result);
 }
 
 // 32-bit unsigned division: dest = src1 / src2, EDX = src1 % src2
@@ -1391,7 +1420,139 @@ void idivb_handler(const char* dest, const char* src1, const char* src2) {
     *dl    = v1 % v2;
 }
 
+// 32-bit Add
+void set_flags_add32(uint32_t a, uint32_t b, uint32_t result) {
+    *ZF = (result == 0);
+    *SF = ((int32_t)result < 0);
+    *CF = (result < a); // carry-out for unsigned add
+    *OF = (((a ^ result) & (b ^ result)) >> 31) & 1; // signed overflow
+}
 
+// 16-bit Add
+void set_flags_add16(uint16_t a, uint16_t b, uint16_t result) {
+    *ZF = (result == 0);
+    *SF = ((int16_t)result < 0);
+    *CF = (result < a);
+    *OF = (((a ^ result) & (b ^ result)) >> 15) & 1;
+}
+
+// 8-bit Add
+void set_flags_add8(uint8_t a, uint8_t b, uint8_t result) {
+    *ZF = (result == 0);
+    *SF = ((int8_t)result < 0);
+    *CF = (result < a);
+    *OF = (((a ^ result) & (b ^ result)) >> 7) & 1;
+}
+
+// 32-bit Subtract
+void set_flags_sub32(uint32_t a, uint32_t b, uint32_t result) {
+    *ZF = (result == 0);
+    *SF = ((int32_t)result < 0);
+    *CF = (a < b); // borrow
+    *OF = (((a ^ b) & (a ^ result)) >> 31) & 1;
+}
+
+// 16-bit Subtract
+void set_flags_sub16(uint16_t a, uint16_t b, uint16_t result) {
+    *ZF = (result == 0);
+    *SF = ((int16_t)result < 0);
+    *CF = (a < b);
+    *OF = (((a ^ b) & (a ^ result)) >> 15) & 1;
+}
+
+// 8-bit Subtract
+void set_flags_sub8(uint8_t a, uint8_t b, uint8_t result) {
+    *ZF = (result == 0);
+    *SF = ((int8_t)result < 0);
+    *CF = (a < b);
+    *OF = (((a ^ b) & (a ^ result)) >> 7) & 1;
+}
+
+// Unsigned MUL Flags (ZF/SF untouched, CF/OF set)
+void set_flags_mul32(uint32_t op1, uint32_t op2, uint32_t result) {
+    uint64_t full = (uint64_t)op1 * (uint64_t)op2;
+    if ((full >> 32) != 0) {
+        *CF = 1; *OF = 1;
+    } else {
+        *CF = 0; *OF = 0;
+    }
+}
+
+void set_flags_mul16(uint16_t op1, uint16_t op2, uint16_t result) {
+    uint32_t full = (uint32_t)op1 * (uint32_t)op2;
+    if ((full >> 16) != 0) {
+        *CF = 1; *OF = 1;
+    } else {
+        *CF = 0; *OF = 0;
+    }
+}
+
+void set_flags_mul8(uint8_t op1, uint8_t op2, uint8_t result) {
+    uint16_t full = (uint16_t)op1 * (uint16_t)op2;
+    if ((full >> 8) != 0) {
+        *CF = 1; *OF = 1;
+    } else {
+        *CF = 0; *OF = 0;
+    }
+}
+
+// Signed IMUL Flags (ZF/SF untouched, CF/OF set)
+void set_flags_imul32(int32_t op1, int32_t op2, int32_t result) {
+    int64_t full = (int64_t)op1 * (int64_t)op2;
+    if ((full > INT32_MAX) || (full < INT32_MIN)) {
+        *CF = 1; *OF = 1;
+    } else {
+        *CF = 0; *OF = 0;
+    }
+}
+
+void set_flags_imul16(int16_t op1, int16_t op2, int16_t result) {
+    int32_t full = (int32_t)op1 * (int32_t)op2;
+    if ((full > INT16_MAX) || (full < INT16_MIN)) {
+        *CF = 1; *OF = 1;
+    } else {
+        *CF = 0; *OF = 0;
+    }
+}
+
+void set_flags_imul8(int8_t op1, int8_t op2, int8_t result) {
+    int16_t full = (int16_t)op1 * (int16_t)op2;
+    if ((full > INT8_MAX) || (full < INT8_MIN)) {
+        *CF = 1; *OF = 1;
+    } else {
+        *CF = 0; *OF = 0;
+    }
+}
+
+void je_handler(const char* label, int* current_line) {
+    if (*ZF) go2(label, current_line);
+}
+void jne_handler(const char* label, int* current_line) {
+    if (!*ZF) go2(label, current_line);
+}
+void jg_handler(const char* label, int* current_line) {
+    if (!*ZF && !*SF) go2(label, current_line); // Not zero and not negative
+}
+void jl_handler(const char* label, int* current_line) {
+    if (*SF) go2(label, current_line); // Sign flag set
+}
+
+void call_handler(const char* label, int* current_line) {
+    push_handler_int(*current_line + 1); // Save return point (pushes on stack!)
+    go2(label, current_line);
+}
+
+// For integer-only stack:
+void push_handler_int(int value) {
+    // Reuse your push logic for integers or make a small wrapper if stack is now in memory.
+    // See your stack pointer and stack array logic.
+}
+
+void ret_handler(int* current_line) {
+    int ret_line = pop_handler_int(); // Pop the return address (should match your stack implementation)
+    if (ret_line > 0)
+        *current_line = ret_line - 1; // Will be incremented after the loop
+}
 
 uint32_t get_any_value(const char* s) {
     void* ptr;
@@ -1401,6 +1562,15 @@ uint32_t get_any_value(const char* s) {
     if (is_immediate(s)) return find_int_value((char*)s);
     printf("Unknown operand: %s\n", s);
     return 0;
+}
+
+void clear_flags() {
+    for (int i = 0; i < 4; ++i)
+        flags_mem[i] = 0;
+}
+
+void show_flags() {
+    printf("ZF: %d  SF: %d  CF: %d  OF: %d\n", *ZF, *SF, *CF, *OF);
 }
 
 
