@@ -6,15 +6,72 @@
 #include "ctype.h"
 #include "stdint.h"
 
+void* get_register(const char* reg, int size) {
+    if (size == 4) {
+        if      (strcasecmp(reg, "eax") == 0) return eax;
+        else if (strcasecmp(reg, "ebx") == 0) return ebx;
+        else if (strcasecmp(reg, "ecx") == 0) return ecx;
+        else if (strcasecmp(reg, "edx") == 0) return edx;
+        else if (strcasecmp(reg, "esi") == 0) return esi;
+        else if (strcasecmp(reg, "edi") == 0) return edi;
+        else if (strcasecmp(reg, "ebp") == 0) return ebp;
+        else if (strcasecmp(reg, "esp") == 0) return esp;
+        else if (strcasecmp(reg, "ip") == 0)  return ip;
+        else if (strcasecmp(reg, "cs") == 0)  return cs;
+    }
+    if (size == 2) {
+        if      (strcasecmp(reg, "ax") == 0) return ax;
+        else if (strcasecmp(reg, "bx") == 0) return bx;
+        else if (strcasecmp(reg, "cx") == 0) return cx;
+        else if (strcasecmp(reg, "dx") == 0) return dx;
+    }
+    if (size == 1) {
+        if      (strcasecmp(reg, "al") == 0) return al;
+        else if (strcasecmp(reg, "ah") == 0) return ah;
+        else if (strcasecmp(reg, "bl") == 0) return bl;
+        else if (strcasecmp(reg, "bh") == 0) return bh;
+        else if (strcasecmp(reg, "cl") == 0) return cl;
+        else if (strcasecmp(reg, "ch") == 0) return ch;
+        else if (strcasecmp(reg, "dl") == 0) return dl;
+        else if (strcasecmp(reg, "dh") == 0) return dh;
+    }
+    return NULL; // Not a known register
+}
 
-uint32_t get_any_value(const char* s) {
+uint32_t find_any_value(const char* s) {
     void* ptr;
     if ((ptr = get_register(s, 4))) return *((uint32_t*)ptr);
     if ((ptr = get_register(s, 2))) return *((uint16_t*)ptr);
     if ((ptr = get_register(s, 1))) return *((uint8_t*)ptr);
-    if (is_immediate(s)) return find_int_value((char*)s);
+    if (is_immediate(s)) return find_immediate_value(s);
+    if (is_mem_addr(s)) return find_mem32_value(find_mem_addr(s));
     printf("Unknown operand: %s\n", s);
     return 0;
+}
+
+int find_immediate_value(const char* s){
+    if(is_num(s))
+        return (atoi(s));
+    else if (is_char(s))
+        return (char_to_i(s));
+    printf("find_immediate_value: invalid operand\n");
+    return 0;
+}
+
+int find_mem32_value(int addr) {
+    if (addr < 0 || addr > MEMORY_SIZE - 4) {
+        printf("find_mem32_value: invalid address\n");
+        return 0;
+    }
+    return *((int32_t*)&memory[addr]);
+}
+
+uint8_t find_mem8_value_unsigned(int addr) {
+    if (addr < 0 || addr > MEMORY_SIZE - 4) {
+        printf("find_mem32_value: invalid address\n");
+        return 0;
+    }
+    return *((uint8_t*)&memory[addr]);
 }
 
 void show_all_registers() {
@@ -26,13 +83,13 @@ void show_all_registers() {
            *ip, *cs);
 }
 
+void show_flags() {
+    printf("ZF: %d  SF: %d  CF: %d  OF: %d\n", *ZF, *SF, *CF, *OF);
+}
+
 void clear_flags() {
     for (int i = 0; i < 4; ++i)
         flags_mem[i] = 0;
-}
-
-void show_flags() {
-    printf("ZF: %d  SF: %d  CF: %d  OF: %d\n", *ZF, *SF, *CF, *OF);
 }
 
 // Push a 32-bit integer onto stack (memory[] stack, managed by *esp)
@@ -56,27 +113,6 @@ int pop_int() {
     return value;
 }
 
-
-int find_int_value(char* arg){
-    int value;
-    // AS v0 10
-    if (is_num(arg))
-        value = atoi(arg);
-        // AS v0 's'
-    else if (is_char(arg) == 1)
-        value = char_to_i(arg);
-    else if (is_char(arg) == 2)
-        value = ' ';
-        // AS v0 [100] || AS v0 [v1]
-    else if (is_mem_addr(arg)){
-        int addr = find_mem_addr(arg);
-        value = memory[addr];
-    }
-        // AS v0 v1
-    else printf("AS: an error occurred while assigning.\n",arg);
-    return value;
-}
-
 void lstrip(char* line){
     char* trimmed = line;
     while(isspace((unsigned char)* trimmed))
@@ -90,22 +126,6 @@ char first_char(char* line){
     return *c;
 }
 
-void read_mem(const char* arg1){
-    int addr = find_mem_addr(arg1);
-    printf("data in memory house %d : %d\n",addr,memory[addr]);
-}
-
-void show_str(char* arg1){
-    int idx = find_mem_addr(arg1);
-    int i;
-    for (i = idx; memory[i] != 0 ;i++){
-        if (idx > MEMORY_SIZE){
-            printf("show_str: index our of range\n");
-            return;
-        }
-        printf("%c", memory[i]);
-    }
-}
 
 int is_num(char* arg){
     int len = strlen(arg);
@@ -124,14 +144,14 @@ int is_num(char* arg){
 }
 
 int is_mem_addr(char* arg){
-    return arg[0] == '[' && arg[strlen(arg)-1] == ']';
+    return (arg[0] == '[' && arg[strlen(arg)-1] == ']') && (strlen(arg) > 2);
 }
 
 int is_immediate(const char* s) {
     return (is_num(s) || is_char(s));
 }
 
-int is_char(char* arg){
+    int is_char(char* arg){
     int len = strlen(arg);
     if (len == 1 && arg[0] == '\'')
         return 2;
@@ -175,35 +195,5 @@ int char_to_i(char* arg){
             printf("char_to_i: Invalid character, couldn't convert to integer.\n");
 }
 
-void* get_register(const char* reg, int size) {
-    if (size == 4) {
-        if      (strcasecmp(reg, "eax") == 0) return eax;
-        else if (strcasecmp(reg, "ebx") == 0) return ebx;
-        else if (strcasecmp(reg, "ecx") == 0) return ecx;
-        else if (strcasecmp(reg, "edx") == 0) return edx;
-        else if (strcasecmp(reg, "esi") == 0) return esi;
-        else if (strcasecmp(reg, "edi") == 0) return edi;
-        else if (strcasecmp(reg, "ebp") == 0) return ebp;
-        else if (strcasecmp(reg, "esp") == 0) return esp;
-        else if (strcasecmp(reg, "ip") == 0)  return ip;
-        else if (strcasecmp(reg, "cs") == 0)  return cs;
-    }
-    if (size == 2) {
-        if      (strcasecmp(reg, "ax") == 0) return ax;
-        else if (strcasecmp(reg, "bx") == 0) return bx;
-        else if (strcasecmp(reg, "cx") == 0) return cx;
-        else if (strcasecmp(reg, "dx") == 0) return dx;
-    }
-    if (size == 1) {
-        if      (strcasecmp(reg, "al") == 0) return al;
-        else if (strcasecmp(reg, "ah") == 0) return ah;
-        else if (strcasecmp(reg, "bl") == 0) return bl;
-        else if (strcasecmp(reg, "bh") == 0) return bh;
-        else if (strcasecmp(reg, "cl") == 0) return cl;
-        else if (strcasecmp(reg, "ch") == 0) return ch;
-        else if (strcasecmp(reg, "dl") == 0) return dl;
-        else if (strcasecmp(reg, "dh") == 0) return dh;
-    }
-    return NULL; // Not a known register
-}
+
 

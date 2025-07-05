@@ -88,6 +88,8 @@ int program_size = 0;
 
 
 int main() {
+    printf("%d\n",find_immediate_value("[100]"));
+    return 0;
     *esp = MEMORY_SIZE;
     file = open_file("../Apps/boot.txt");
     if (file == NULL) printf("Shutting down OS\n");else  printf("boot file loaded successfully\n");
@@ -137,17 +139,17 @@ int check(char *line, int *current_line){
     else if (strcasecmp(command, "SHOWSB") == 0)
         showsb(arg1);
     else if (strcasecmp(command, "SHOWD_MEM") == 0)
-        showd_mem(find_int_value(arg1));
+        showd_mem(find_any_value(arg1));
     else if (strcasecmp(command, "SHOWW_MEM") == 0)
-        showw_mem(find_int_value(arg1));
+        showw_mem(find_any_value(arg1));
     else if (strcasecmp(command, "SHOWB_MEM") == 0)
-        showb_mem(find_int_value(arg1));
+        showb_mem(find_any_value(arg1));
     else if (strcasecmp(command, "SHOWSD_MEM") == 0)
-        showsd_mem(find_int_value(arg1));
+        showsd_mem(find_any_value(arg1));
     else if (strcasecmp(command, "SHOWSW_MEM") == 0)
-        showsw_mem(find_int_value(arg1));
+        showsw_mem(find_any_value(arg1));
     else if (strcasecmp(command, "SHOWSB_MEM") == 0)
-        showsb_mem(find_int_value(arg1));
+        showsb_mem(find_any_value(arg1));
     else if (strcasecmp(command, "SHOW_ALL_REGS") == 0)
         show_all_registers();
 //    else if (strcasecmp(command,"EQ") == 0)
@@ -289,7 +291,7 @@ int check(char *line, int *current_line){
             go2(arg1, current_line);
         else if (arglen == 1 && arg2[0] == '1')
             go2(arg1,current_line);
-        else if (get_any_value(arg2)!=0){
+        else if (find_any_value(arg2)!=0){
             go2(arg1,current_line);}
     }
     else if (strcasecmp(command, "JE") == 0)
@@ -311,10 +313,10 @@ int check(char *line, int *current_line){
     /////////////////////////////////////     optional commands /////////////////////////////////////////////
     /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    else if (strcasecmp(command,"READ") == 0)
-        read_mem(arg1);
-    else if (strcasecmp(command,"SHOWSTR") == 0)
-        show_str(arg1);
+//    else if (strcasecmp(command,"READ") == 0)
+//        read_mem(arg1);
+//    else if (strcasecmp(command,"SHOWSTR") == 0)
+//        show_str(arg1);
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////
     /////////////////////////////////////     system commands   /////////////////////////////////////////////
@@ -377,7 +379,7 @@ void go2(const char *label, int *current_line){
 
 
 void run_app(char* filename, char* arg2, int* current_line) {
-    int flag = find_int_value(arg2);
+    int flag = find_any_value(arg2);
     if (flag == 0) return;
     FILE* f = fopen(filename, "r");
     if (!f) {

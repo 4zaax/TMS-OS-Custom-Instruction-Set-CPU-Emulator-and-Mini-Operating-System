@@ -45,17 +45,31 @@ extern uint32_t* esp;
 extern uint32_t* ip;
 extern uint32_t* cs;
 
+void* get_register(const char* reg, int size);
+// Generic value fetcher for any type of register
+uint32_t find_any_value(const char* s);
+int find_mem32_value(int addr);
+uint8_t find_mem8_value_unsigned(int addr);
+int find_immediate_value(const char* s);
+
+// Easier Debug
+void show_all_registers();
 void clear_flags();
 void show_flags();
+
+// Stack
 void push_int(int value);
 int pop_int();
+
+// Type Recognition
 int is_num(char* arg);
-int is_char(char* arg);
 int is_mem_addr(char* arg);
+int is_char(char* arg);
 int is_immediate(const char* s);
+
+// General
 int char_to_i(char* arg);
-// Generic value fetcher for any type of register
-uint32_t get_any_value(const char* s);
+
 
 
 #endif
