@@ -344,18 +344,18 @@ int parse_and_execute(char* line){
         call_handler(arg1);
     else if (strcasecmp(command,"RET") == 0)
         ret_handler();
-//    else if (strcasecmp(command,"EQ") == 0)
-//        equal(arg1, arg2, arg3);
-//    else if (strcasecmp(command,"NEQ") == 0)
-//        not_equal(arg1, arg2, arg3);
-//    else if (strcasecmp(command,"GT") == 0)
-//        is_greater(arg1, arg2, arg3);
-//    else if (strcasecmp(command,"GTE") == 0)
-//        is_greater_equal(arg1, arg2, arg3);
-//    else if (strcasecmp(command,"LS") == 0)
-//        is_less_than(arg1, arg2, arg3);
-//    else if (strcasecmp(command,"LSE") == 0)
-//        is_less_than_equal(arg1, arg2, arg3);
+    else if (strcasecmp(command,"EQ") == 0)
+        eq_handler(arg1, arg2, arg3);
+    else if (strcasecmp(command,"NEQ") == 0)
+        neq_handler(arg1, arg2, arg3);
+    else if (strcasecmp(command,"GT") == 0)
+        gt_handler(arg1, arg2, arg3);
+    else if (strcasecmp(command,"GTE") == 0)
+        gte_handler(arg1, arg2, arg3);
+    else if (strcasecmp(command,"LS") == 0)
+        ls_handler(arg1, arg2, arg3);
+    else if (strcasecmp(command,"LSE") == 0)
+        lse_handler(arg1, arg2, arg3);
 
 //    else if (strcasecmp(command,"GET") == 0)
 //        get_input(arg1);
@@ -381,82 +381,6 @@ int parse_and_execute(char* line){
 }
 
 
-
-
-
-/////////////////////////////////////////////////////////////////
-//// pre_assign helps the language with multiple assign choices//
-/////////////////////////////////////////////////////////////////
-//
-//void load_program(FILE *file) {
-//    char buffer[LINE_LEN];
-//    while (fgets(buffer, sizeof(buffer), file) != NULL) {
-//        buffer[strcspn(buffer, "\n")] = '\0';
-//        lstrip(buffer);
-//        // Check if it's a label
-//        char *colon = strchr(buffer, ':');
-//        program_size++;
-//        if (colon && colon == buffer + strlen(buffer) - 1) {
-//            // It’s a label like L1:
-//            strncpy(program[program_size].label, buffer, colon - buffer);
-//            program[program_size].label[colon - buffer] = '\0';
-//            program[program_size].line[0] = '\0'; // No command
-//        } else {
-//            program[program_size].label[0] = '\0'; // No label
-//            strcpy(program[program_size].line, buffer);
-//        }
-//    }
-//}
-//
-//int find_label(const char *label) {
-//    for (int i = 0; i <= program_size; ++i) {
-//        if (strcasecmp(program[i].label, label) == 0)
-//            return i;
-//    }
-//    return -1;
-//}
-//
-//void go2(const char *label, int *current_line){
-//    int target_line = find_label(label);
-//    if (target_line != -1) {
-//        *current_line = target_line;
-//    } else {
-//        printf("Label not found: %s\n", label);
-//    }
-//}
-
-
-
-//void run_app(char* filename, char* arg2, int* current_line) {
-//    int flag = find_any_value(arg2);
-//    if (flag == 0) return;
-//    FILE* f = fopen(filename, "r");
-//    if (!f) {
-//        printf("run: file not found: %s\n", filename);
-//        return;
-//    }
-//    // Save current interpreter state (if needed)
-//    int saved_program_size = program_size;
-//    LineEntry saved_program[MAX_LINES];
-//    memcpy(saved_program, program, sizeof(program));
-//
-//    // Load the new program
-//    program_size = 0;
-//    load_program(f);
-//    fclose(f);
-//
-//    // Run the loaded program
-//    int run_line;
-//    for (run_line = 1; run_line <= program_size; run_line++) {
-//        int result = check(program[run_line].line, &run_line);
-//        if (result == 1) break; // allow the called app to "exit"
-//    }
-//
-//    // Restore previous program (the shell)
-//    memcpy(program, saved_program, sizeof(program));
-//    program_size = saved_program_size;
-//    // Return to next line in shell after RUN
-//}
 
 
 // Scans loaded program in memory, builds label table
@@ -509,3 +433,78 @@ int lookup_label_offset(const char* name) {
     }
     return -1;
 }
+
+
+// old functions :
+
+/////////////////////////////////////////////////////////////////
+//// pre_assign helps the language with multiple assign choices//
+/////////////////////////////////////////////////////////////////
+//
+//void load_program(FILE *file) {
+//    char buffer[LINE_LEN];
+//    while (fgets(buffer, sizeof(buffer), file) != NULL) {
+//        buffer[strcspn(buffer, "\n")] = '\0';
+//        lstrip(buffer);
+//        // Check if it's a label
+//        char *colon = strchr(buffer, ':');
+//        program_size++;
+//        if (colon && colon == buffer + strlen(buffer) - 1) {
+//            // It’s a label like L1:
+//            strncpy(program[program_size].label, buffer, colon - buffer);
+//            program[program_size].label[colon - buffer] = '\0';
+//            program[program_size].line[0] = '\0'; // No command
+//        } else {
+//            program[program_size].label[0] = '\0'; // No label
+//            strcpy(program[program_size].line, buffer);
+//        }
+//    }
+//}
+//
+//int find_label(const char *label) {
+//    for (int i = 0; i <= program_size; ++i) {
+//        if (strcasecmp(program[i].label, label) == 0)
+//            return i;
+//    }
+//    return -1;
+//}
+//
+//void go2(const char *label, int *current_line){
+//    int target_line = find_label(label);
+//    if (target_line != -1) {
+//        *current_line = target_line;
+//    } else {
+//        printf("Label not found: %s\n", label);
+//    }
+//}
+
+//void run_app(char* filename, char* arg2, int* current_line) {
+//    int flag = find_any_value(arg2);
+//    if (flag == 0) return;
+//    FILE* f = fopen(filename, "r");
+//    if (!f) {
+//        printf("run: file not found: %s\n", filename);
+//        return;
+//    }
+//    // Save current interpreter state (if needed)
+//    int saved_program_size = program_size;
+//    LineEntry saved_program[MAX_LINES];
+//    memcpy(saved_program, program, sizeof(program));
+//
+//    // Load the new program
+//    program_size = 0;
+//    load_program(f);
+//    fclose(f);
+//
+//    // Run the loaded program
+//    int run_line;
+//    for (run_line = 1; run_line <= program_size; run_line++) {
+//        int result = check(program[run_line].line, &run_line);
+//        if (result == 1) break; // allow the called app to "exit"
+//    }
+//
+//    // Restore previous program (the shell)
+//    memcpy(program, saved_program, sizeof(program));
+//    program_size = saved_program_size;
+//    // Return to next line in shell after RUN
+//}

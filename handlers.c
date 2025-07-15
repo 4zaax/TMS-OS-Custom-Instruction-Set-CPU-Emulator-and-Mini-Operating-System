@@ -763,3 +763,45 @@ void ret_handler(void) {
         printf("RET: invalid return address %d\n", ret_addr);
     }
 }
+
+// Equality: dest = (src1 == src2) ? 1 : 0
+void eq_handler(const char* dest, const char* src1, const char* src2) {
+    uint8_t* d = get_register(dest, 1);
+    if (!d) { printf("EQ: dest must be 1-byte reg (%s)\n", dest); return; }
+    *d = (find_any_value(src1) == find_any_value(src2)) ? 1 : 0;
+}
+
+// Not Equal: dest = (src1 != src2) ? 1 : 0
+void neq_handler(const char* dest, const char* src1, const char* src2) {
+    uint8_t* d = get_register(dest, 1);
+    if (!d) { printf("NEQ: dest must be 1-byte reg (%s)\n", dest); return; }
+    *d = (find_any_value(src1) != find_any_value(src2)) ? 1 : 0;
+}
+
+// Greater Than: dest = (src1 > src2) ? 1 : 0
+void gt_handler(const char* dest, const char* src1, const char* src2) {
+    uint8_t* d = get_register(dest, 1);
+    if (!d) { printf("GT: dest must be 1-byte reg (%s)\n", dest); return; }
+    *d = ((int32_t)find_any_value(src1) > (int32_t)find_any_value(src2)) ? 1 : 0;
+}
+
+// Greater Than or Equal: dest = (src1 >= src2) ? 1 : 0
+void gte_handler(const char* dest, const char* src1, const char* src2) {
+    uint8_t* d = get_register(dest, 1);
+    if (!d) { printf("GTE: dest must be 1-byte reg (%s)\n", dest); return; }
+    *d = ((int32_t)find_any_value(src1) >= (int32_t)find_any_value(src2)) ? 1 : 0;
+}
+
+// Less Than: dest = (src1 < src2) ? 1 : 0
+void ls_handler(const char* dest, const char* src1, const char* src2) {
+    uint8_t* d = get_register(dest, 1);
+    if (!d) { printf("LS: dest must be 1-byte reg (%s)\n", dest); return; }
+    *d = ((int32_t)find_any_value(src1) < (int32_t)find_any_value(src2)) ? 1 : 0;
+}
+
+// Less Than or Equal: dest = (src1 <= src2) ? 1 : 0
+void lse_handler(const char* dest, const char* src1, const char* src2) {
+    uint8_t* d = get_register(dest, 1);
+    if (!d) { printf("LSE: dest must be 1-byte reg (%s)\n", dest); return; }
+    *d = ((int32_t)find_any_value(src1) <= (int32_t)find_any_value(src2)) ? 1 : 0;
+}

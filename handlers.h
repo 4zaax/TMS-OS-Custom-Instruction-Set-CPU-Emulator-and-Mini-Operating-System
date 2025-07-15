@@ -143,4 +143,11 @@ void jl_handler(const char* label);
 void call_handler(const char* label);
 void ret_handler(void);
 
+void eq_handler(const char* dest, const char* src1, const char* src2);
+void neq_handler(const char* dest, const char* src1, const char* src2);
+void gt_handler(const char* dest, const char* src1, const char* src2);
+void gte_handler(const char* dest, const char* src1, const char* src2);
+void ls_handler(const char* dest, const char* src1, const char* src2);
+void lse_handler(const char* dest, const char* src1, const char* src2);
+
 #endif
