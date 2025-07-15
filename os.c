@@ -17,6 +17,16 @@ uint8_t reg_mem[44]; // 40 bytes (10 * 4 bytes) -> 10 extended registers
 uint8_t flags_mem[4]; // ZF, SF, CF, OF (one byte each)
 FILE *file;
 
+#define MAX_LABELS 1024
+
+typedef struct {
+    char name[32];    // label name
+    int offset;       // offset from cs (position in loaded program)
+} LabelEntry;
+
+LabelEntry label_table[MAX_LABELS];
+int label_count = 0;
+
 ////////////////////////////////////////////////////////////////
 //////////////////       setting flags       ///////////////////
 ////////////////////////////////////////////////////////////////
@@ -95,15 +105,15 @@ int fetch_line(char* out, int prog_size) {
     return i + (memory[*cs + *ip + i] == '\n' ? 1 : 0); // include newline if present
 }
 
+
 // Trivial parser (for demo: just print lines)
 void execute_program(int prog_size) {
     *ip = 0;
     char line[LINE_LEN];
     while (*ip < prog_size) {
         int n = fetch_line(line, prog_size);
-        // You want to execute the line here!
-        parse_and_execute(line);
         *ip += n;
+        parse_and_execute(line);
     }
 }
 
@@ -120,6 +130,8 @@ int main() {
 
     uint32_t prog_size = load_program_linear(f);
     fclose(f);
+
+    scan_labels(prog_size);
 
     // Now, execute (your parser should now support MOV cs, ...)
     execute_program(prog_size);
@@ -138,8 +150,15 @@ FILE* open_file(char address[]){
 }
 
 int parse_and_execute(char* line){
-
+    lstrip(line);
+    // Ignore empty lines
+    if (line[0] == '\0') return 0;
+    // Ignore comment lines
     if (first_char(line) == '#') return 0;
+    // Ignore label lines
+    int len = strlen(line);
+    if (len > 1 && line[len-1] == ':') return 0;
+
     char command[30],arg1[30],arg2[30],arg3[30];
     int tokens = sscanf(line, "%s %s %s %s", command, arg1, arg2, arg3);
     if (tokens < 1) return -1;
@@ -309,22 +328,22 @@ int parse_and_execute(char* line){
         show_flags();
     else if (strcasecmp(command, "CLF") == 0)
         clear_flags();
-//
-//    else if (strcasecmp(command,"JMP") == 0)
-//        jmp_handler(arg1, arg2, current_line, tokens);
-//    else if (strcasecmp(command, "JE") == 0)
-//        je_handler(arg1, current_line);
-//    else if (strcasecmp(command, "JNE") == 0)
-//        jne_handler(arg1, current_line);
-//    else if (strcasecmp(command, "JG") == 0)
-//        jg_handler(arg1, current_line);
-//    else if (strcasecmp(command, "JL") == 0)
-//        jl_handler(arg1, current_line);
-//
-//    else if (strcasecmp(command,"CALL") == 0)
-//        call_handler(arg1, current_line);
-//    else if (strcasecmp(command,"RET") == 0)
-//        ret_handler(arg1, tokens, current_line);
+
+    else if (strcasecmp(command,"JMP") == 0)
+        jmp_handler(arg1);
+    else if (strcasecmp(command, "JE") == 0)
+        je_handler(arg1);
+    else if (strcasecmp(command, "JNE") == 0)
+        jne_handler(arg1);
+    else if (strcasecmp(command, "JG") == 0)
+        jg_handler(arg1);
+    else if (strcasecmp(command, "JL") == 0)
+        jl_handler(arg1);
+
+    else if (strcasecmp(command,"CALL") == 0)
+        call_handler(arg1);
+    else if (strcasecmp(command,"RET") == 0)
+        ret_handler();
 //    else if (strcasecmp(command,"EQ") == 0)
 //        equal(arg1, arg2, arg3);
 //    else if (strcasecmp(command,"NEQ") == 0)
@@ -439,6 +458,41 @@ int parse_and_execute(char* line){
 //    // Return to next line in shell after RUN
 //}
 
+
+// Scans loaded program in memory, builds label table
+void scan_labels(int prog_size) {
+    label_count = 0;
+    int offset = 0;
+    char line[LINE_LEN];
+
+    while (offset < prog_size) {
+        // Read one line from memory
+        int i = 0;
+        while ((offset + i < prog_size) && (memory[*cs + offset + i] != '\n')) {
+            line[i] = memory[*cs + offset + i];
+            i++;
+        }
+        line[i] = '\0';
+
+        // Trim leading spaces
+        lstrip(line);
+
+        // Check if line is a label (ends with ':')
+        int len = strlen(line);
+        if (len > 1 && line[len-1] == ':') {
+            if (label_count < MAX_LABELS) {
+                strncpy(label_table[label_count].name, line, len-1);
+                label_table[label_count].name[len-1] = '\0';  // Remove ':'
+                label_table[label_count].offset = offset;
+                label_count++;
+            }
+        }
+
+        // Move to next line (+1 for newline if present)
+        offset += i + (memory[*cs + offset + i] == '\n' ? 1 : 0);
+    }
+}
+
 void clear_screen() {
 #ifdef _WIN32
     system("cls");
@@ -447,6 +501,11 @@ void clear_screen() {
 #endif
 }
 
-
-
-
+// Returns offset in program for a given label name, or -1 if not found
+int lookup_label_offset(const char* name) {
+    for (int i = 0; i < label_count; ++i) {
+        if (strcasecmp(label_table[i].name, name) == 0)
+            return label_table[i].offset;
+    }
+    return -1;
+}

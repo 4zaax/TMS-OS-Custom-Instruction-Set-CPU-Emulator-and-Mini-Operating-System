@@ -37,7 +37,8 @@ void run_app(char* arg1, char* arg2, int* current_line);
 void conditional_jmp(char* command, char* arg1, char* arg2, char* arg3, int* current_line);
 void clear_screen();
 int parse_and_execute(char* line);
-
+void scan_labels(int prog_size);
+int lookup_label_offset(const char* name);
 
 
 

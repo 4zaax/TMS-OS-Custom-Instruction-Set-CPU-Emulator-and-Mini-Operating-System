@@ -134,13 +134,13 @@ void set_flags_imul32(int32_t op1, int32_t op2, int32_t result);
 void set_flags_imul16(int16_t op1, int16_t op2, int16_t result);
 void set_flags_imul8 (int8_t  op1, int8_t  op2, int8_t  result);
 
-void jmp_handler(const char* label,const char* arg, int* current_line, int tokens);
-void je_handler(const char* label, int* current_line);
-void jne_handler(const char* label, int* current_line);
-void jg_handler(const char* label, int* current_line);
-void jl_handler(const char* label, int* current_line);
+void jmp_handler(const char* label);
+void je_handler(const char* label);
+void jne_handler(const char* label);
+void jg_handler(const char* label);
+void jl_handler(const char* label);
 
-void call_handler(const char* label, int* current_line);
-void ret_handler(const char* arg1, int tokens, int* current_line);
+void call_handler(const char* label);
+void ret_handler(void);
 
 #endif

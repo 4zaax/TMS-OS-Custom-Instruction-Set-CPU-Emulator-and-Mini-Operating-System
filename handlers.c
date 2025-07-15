@@ -694,47 +694,72 @@ void set_flags_imul8(int8_t op1, int8_t op2, int8_t result) {
 }
 
 
-//void jmp_handler(const char* label,const char* arg, int* current_line, int tokens){
-//    int arglen = strlen(arg);
-//    if (tokens == 2)
-//        go2(label, current_line);
-//    else if (arglen == 1 && arg[0] == '1')
-//        go2(label,current_line);
-//    else if (find_any_value(arg)!=0){
-//        go2(label,current_line);}
-//}
-//void je_handler(const char* label, int* current_line) {
-//    if (*ZF) go2(label, current_line);
-//}
-//void jne_handler(const char* label, int* current_line) {
-//    if (!*ZF) go2(label, current_line);
-//}
-//void jg_handler(const char* label, int* current_line) {
-//    if (!*ZF && !*SF) go2(label, current_line); // Not zero and not negative
-//}
-//void jl_handler(const char* label, int* current_line) {
-//    if (*SF) go2(label, current_line); // Sign flag set
-//}
+void jmp_handler(const char* label) {
+    int label_offset = lookup_label_offset(label);
+    if (label_offset >= 0) {
+        *ip = label_offset;
+    } else {
+        printf("Unknown label: %s\n", label);
+    }
+}
+void je_handler(const char* label) {
+    if (*ZF) {
+        int label_offset = lookup_label_offset(label);
+        if (label_offset >= 0)
+            *ip = label_offset;
+        else
+            printf("Unknown label: %s\n", label);
+    }
+}
 
-//void call_handler(const char* label, int* current_line) {
-//    push_int(*current_line + 1); // Save return point (pushes on stack!)
-//    go2(label, current_line);
-//}
-//
-//void ret_handler(const char* arg1, int tokens, int* current_line) {
-//    int do_ret = 0;
-//    if (tokens == 1) {
-//        do_ret = 1;
-//    } else if (is_num(arg1) && atoi(arg1) != 0) {
-//        do_ret = 1;
-//    } else if (strlen(arg1) == 1 && arg1[0] == '1') {
-//        do_ret = 1;
-//    } else if (find_any_value(arg1) != 0) {
-//        do_ret = 1;
-//    }
-//    if (do_ret) {
-//        *current_line = pop_int() - 1;
-//    } else {
-//        return;
-//    }
-//}
+void jne_handler(const char* label) {
+    if (!*ZF) {
+        int label_offset = lookup_label_offset(label);
+        if (label_offset >= 0)
+            *ip = label_offset;
+        else
+            printf("Unknown label: %s\n", label);
+    }
+}
+
+void jg_handler(const char* label) {
+    // JG (jump if greater, signed): ZF==0 && SF==OF
+    if (!*ZF && (*SF == *OF)) {
+        int label_offset = lookup_label_offset(label);
+        if (label_offset >= 0)
+            *ip = label_offset;
+        else
+            printf("Unknown label: %s\n", label);
+    }
+}
+
+void jl_handler(const char* label) {
+    // JL (jump if less, signed): SF != OF
+    if (*SF != *OF) {
+        int label_offset = lookup_label_offset(label);
+        if (label_offset >= 0)
+            *ip = label_offset;
+        else
+            printf("Unknown label: %s\n", label);
+    }
+}
+
+void call_handler(const char* label) {
+    int label_offset = lookup_label_offset(label);
+    if (label_offset < 0) {
+        printf("Unknown label: %s\n", label);
+        return;
+    }
+    // Push the *next* instruction's offset onto stack (where we return)
+    push_int(*ip);
+    *ip = label_offset;
+}
+
+void ret_handler(void) {
+    int ret_addr = pop_int();
+    if (ret_addr >= 0 && ret_addr < MEMORY_SIZE) {
+        *ip = ret_addr;
+    } else {
+        printf("RET: invalid return address %d\n", ret_addr);
+    }
+}

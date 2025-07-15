@@ -1,8 +1,16 @@
 MOV cs 0
-MOV ip 0
 MOV ss 18000
-SHOWD ss
 MOV esp 2000
 MOV eax 42
+_start:
+MOV eax 3
+CALL MYFUNC
 SHOWD eax
-SHOWD IP
+JMP END
+
+MYFUNC:
+ADD eax eax eax
+RET
+
+END:
+SHOWD eax
