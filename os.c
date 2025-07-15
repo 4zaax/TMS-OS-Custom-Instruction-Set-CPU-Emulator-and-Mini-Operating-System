@@ -2,20 +2,16 @@
 #include <stdlib.h>
 #include <string.h>
 #include "main.h"
-#include "ctype.h"
 #include "stdint.h"
 #include "helpers.h"
 #include "handlers.h"
 
 #define MEMORY_SIZE 128000 // RAM
-#define MAX_LINES 500   // OS supports programs of maximum 500 lines
 #define LINE_LEN 512
-#define MAX_VARIABLES 1000
 
 uint8_t memory[MEMORY_SIZE];
 uint8_t reg_mem[44]; // 40 bytes (10 * 4 bytes) -> 10 extended registers
 uint8_t flags_mem[4]; // ZF, SF, CF, OF (one byte each)
-FILE *file;
 
 #define MAX_LABELS 1024
 
@@ -137,16 +133,6 @@ int main() {
     execute_program(prog_size);
 
     return 0;
-}
-
-
-FILE* open_file(char address[]){
-    FILE *file = fopen(address, "r");
-    if (file == NULL) {
-        printf("Failed to open boot file %s.\n",address);
-        return NULL;
-    }
-    return file;
 }
 
 int parse_and_execute(char* line){
@@ -344,6 +330,7 @@ int parse_and_execute(char* line){
         call_handler(arg1);
     else if (strcasecmp(command,"RET") == 0)
         ret_handler();
+
     else if (strcasecmp(command,"EQ") == 0)
         eq_handler(arg1, arg2, arg3);
     else if (strcasecmp(command,"NEQ") == 0)
@@ -418,11 +405,11 @@ void scan_labels(int prog_size) {
 }
 
 void clear_screen() {
-#ifdef _WIN32
-    system("cls");
-#else
-    system("clear");
-#endif
+    #ifdef _WIN32
+        system("cls");
+    #else
+        system("clear");
+    #endif
 }
 
 // Returns offset in program for a given label name, or -1 if not found
