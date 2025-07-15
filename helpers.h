@@ -3,9 +3,7 @@
 #define HELPERS_H
 
 #define MEMORY_SIZE 128000 // RAM
-#define MAX_LINES 500   // OS supports programs of maximum 500 lines
 #define LINE_LEN 512
-#define MAX_VARIABLES 1000
 
 #include "stdint.h"
 
@@ -44,6 +42,7 @@ extern uint32_t* ebp;
 extern uint32_t* esp;
 extern uint32_t* ip;
 extern uint32_t* cs;
+extern uint32_t* ss;
 
 void* get_register(const char* reg, int size);
 // Generic value fetcher for any type of register
@@ -67,8 +66,6 @@ int is_mem_addr(char* arg);
 int is_char(char* arg);
 int is_immediate(const char* s);
 
-extern struct symbole_table;
-extern int symbol_count;
 
 
 

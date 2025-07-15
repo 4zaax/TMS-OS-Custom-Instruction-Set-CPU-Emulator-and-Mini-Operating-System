@@ -6,7 +6,6 @@
 #include "stdint.h"
 #include "helpers.h"
 #include "handlers.h"
-#include "tables.h"
 
 #define MEMORY_SIZE 128000 // RAM
 #define MAX_LINES 500   // OS supports programs of maximum 500 lines
@@ -14,7 +13,7 @@
 #define MAX_VARIABLES 1000
 
 uint8_t memory[MEMORY_SIZE];
-uint8_t reg_mem[40]; // 40 bytes (10 * 4 bytes) -> 10 extended registers
+uint8_t reg_mem[44]; // 40 bytes (10 * 4 bytes) -> 10 extended registers
 uint8_t flags_mem[4]; // ZF, SF, CF, OF (one byte each)
 FILE *file;
 
@@ -69,30 +68,63 @@ uint32_t* ebp = (uint32_t*)&reg_mem[24];
 uint32_t* esp = (uint32_t*)&reg_mem[28];
 uint32_t* ip = (uint32_t*)&reg_mem[32];
 uint32_t* cs = (uint32_t*)&reg_mem[36];
+uint32_t* ss  = (uint32_t*)&reg_mem[40];
 
 
+// Loader: load program from file into memory at given *cs
+// Returns program size
+uint32_t load_program_linear(FILE* file) {
+    char buffer[LINE_LEN];
+    int offset = 0;
+    while (fgets(buffer, sizeof(buffer), file) != NULL) {
+        int len = strlen(buffer);
+        memcpy(&memory[*cs + offset], buffer, len);
+        offset += len;
+    }
+    return offset;
+}
 
-typedef struct {
+// Reads a line from memory at *cs + *ip, returns line length
+int fetch_line(char* out, int prog_size) {
+    int i = 0;
+    while ((*ip + i < prog_size) && (memory[*cs + *ip + i] != '\n')) {
+        out[i] = memory[*cs + *ip + i];
+        i++;
+    }
+    out[i] = '\0';
+    return i + (memory[*cs + *ip + i] == '\n' ? 1 : 0); // include newline if present
+}
+
+// Trivial parser (for demo: just print lines)
+void execute_program(int prog_size) {
+    *ip = 0;
     char line[LINE_LEN];
-    char label[20];
-} LineEntry;
-
-LineEntry program[MAX_LINES];
-int program_size = 0;
-
+    while (*ip < prog_size) {
+        int n = fetch_line(line, prog_size);
+        // You want to execute the line here!
+        parse_and_execute(line);
+        *ip += n;
+    }
+}
 
 int main() {
-//    printf("%d\n",find_any_value(""));
-//    return 0;
-    *esp = MEMORY_SIZE;
-    file = open_file("../Apps/boot.txt");
-    if (file == NULL) printf("Shutting down OS\n");else  printf("boot file loaded successfully\n");
-    load_program(file);
-    fclose(file);
-    for (int current_line = 1 ; current_line <= program_size; current_line++){
-        int result=check(program[current_line].line, &current_line);
-        if(result==1)break;
-    }
+    FILE* f = fopen("../Apps/terminal.txt", "r");
+    if (!f) { puts("terminal.txt not found"); return 1; }
+
+    // Optionally, zero registers/memory here.
+    memset(reg_mem, 0, sizeof(reg_mem));
+    memset(flags_mem, 0, sizeof(flags_mem));
+    memset(memory, 0, sizeof(memory));
+
+    // DO NOT set cs, ip, ss, esp here! Program does it in code!
+
+    uint32_t prog_size = load_program_linear(f);
+    fclose(f);
+
+    // Now, execute (your parser should now support MOV cs, ...)
+    execute_program(prog_size);
+
+    return 0;
 }
 
 
@@ -105,11 +137,11 @@ FILE* open_file(char address[]){
     return file;
 }
 
-int check(char *line, int *current_line){
+int parse_and_execute(char* line){
 
     if (first_char(line) == '#') return 0;
     char command[30],arg1[30],arg2[30],arg3[30];
-    int tokens = sscanf(program[*current_line].line, "%s %s %s %s", command, arg1, arg2, arg3);
+    int tokens = sscanf(line, "%s %s %s %s", command, arg1, arg2, arg3);
     if (tokens < 1) return -1;
 
     if (strcasecmp(command,"exit") == 0)
@@ -277,22 +309,22 @@ int check(char *line, int *current_line){
         show_flags();
     else if (strcasecmp(command, "CLF") == 0)
         clear_flags();
-
-    else if (strcasecmp(command,"JMP") == 0)
-        jmp_handler(arg1, arg2, current_line, tokens);
-    else if (strcasecmp(command, "JE") == 0)
-        je_handler(arg1, current_line);
-    else if (strcasecmp(command, "JNE") == 0)
-        jne_handler(arg1, current_line);
-    else if (strcasecmp(command, "JG") == 0)
-        jg_handler(arg1, current_line);
-    else if (strcasecmp(command, "JL") == 0)
-        jl_handler(arg1, current_line);
-
-    else if (strcasecmp(command,"CALL") == 0)
-        call_handler(arg1, current_line);
-    else if (strcasecmp(command,"RET") == 0)
-        ret_handler(arg1, tokens, current_line);
+//
+//    else if (strcasecmp(command,"JMP") == 0)
+//        jmp_handler(arg1, arg2, current_line, tokens);
+//    else if (strcasecmp(command, "JE") == 0)
+//        je_handler(arg1, current_line);
+//    else if (strcasecmp(command, "JNE") == 0)
+//        jne_handler(arg1, current_line);
+//    else if (strcasecmp(command, "JG") == 0)
+//        jg_handler(arg1, current_line);
+//    else if (strcasecmp(command, "JL") == 0)
+//        jl_handler(arg1, current_line);
+//
+//    else if (strcasecmp(command,"CALL") == 0)
+//        call_handler(arg1, current_line);
+//    else if (strcasecmp(command,"RET") == 0)
+//        ret_handler(arg1, tokens, current_line);
 //    else if (strcasecmp(command,"EQ") == 0)
 //        equal(arg1, arg2, arg3);
 //    else if (strcasecmp(command,"NEQ") == 0)
@@ -324,8 +356,6 @@ int check(char *line, int *current_line){
 
     else if (strcasecmp(command,"CLS") == 0)
         clear_screen();
-    else if (strcasecmp(command,"RUN") == 0)
-        run_app(arg1,arg2,current_line);
     else
         printf("Unknown command: %s\n",command);
     return 0;
@@ -335,79 +365,79 @@ int check(char *line, int *current_line){
 
 
 
-///////////////////////////////////////////////////////////////
-// pre_assign helps the language with multiple assign choices//
-///////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+//// pre_assign helps the language with multiple assign choices//
+/////////////////////////////////////////////////////////////////
+//
+//void load_program(FILE *file) {
+//    char buffer[LINE_LEN];
+//    while (fgets(buffer, sizeof(buffer), file) != NULL) {
+//        buffer[strcspn(buffer, "\n")] = '\0';
+//        lstrip(buffer);
+//        // Check if it's a label
+//        char *colon = strchr(buffer, ':');
+//        program_size++;
+//        if (colon && colon == buffer + strlen(buffer) - 1) {
+//            // It’s a label like L1:
+//            strncpy(program[program_size].label, buffer, colon - buffer);
+//            program[program_size].label[colon - buffer] = '\0';
+//            program[program_size].line[0] = '\0'; // No command
+//        } else {
+//            program[program_size].label[0] = '\0'; // No label
+//            strcpy(program[program_size].line, buffer);
+//        }
+//    }
+//}
+//
+//int find_label(const char *label) {
+//    for (int i = 0; i <= program_size; ++i) {
+//        if (strcasecmp(program[i].label, label) == 0)
+//            return i;
+//    }
+//    return -1;
+//}
+//
+//void go2(const char *label, int *current_line){
+//    int target_line = find_label(label);
+//    if (target_line != -1) {
+//        *current_line = target_line;
+//    } else {
+//        printf("Label not found: %s\n", label);
+//    }
+//}
 
-void load_program(FILE *file) {
-    char buffer[LINE_LEN];
-    while (fgets(buffer, sizeof(buffer), file) != NULL) {
-        buffer[strcspn(buffer, "\n")] = '\0';
-        lstrip(buffer);
-        // Check if it's a label
-        char *colon = strchr(buffer, ':');
-        program_size++;
-        if (colon && colon == buffer + strlen(buffer) - 1) {
-            // It’s a label like L1:
-            strncpy(program[program_size].label, buffer, colon - buffer);
-            program[program_size].label[colon - buffer] = '\0';
-            program[program_size].line[0] = '\0'; // No command
-        } else {
-            program[program_size].label[0] = '\0'; // No label
-            strcpy(program[program_size].line, buffer);
-        }
-    }
-}
-
-int find_label(const char *label) {
-    for (int i = 0; i <= program_size; ++i) {
-        if (strcasecmp(program[i].label, label) == 0)
-            return i;
-    }
-    return -1;
-}
-
-void go2(const char *label, int *current_line){
-    int target_line = find_label(label);
-    if (target_line != -1) {
-        *current_line = target_line;
-    } else {
-        printf("Label not found: %s\n", label);
-    }
-}
 
 
-
-void run_app(char* filename, char* arg2, int* current_line) {
-    int flag = find_any_value(arg2);
-    if (flag == 0) return;
-    FILE* f = fopen(filename, "r");
-    if (!f) {
-        printf("run: file not found: %s\n", filename);
-        return;
-    }
-    // Save current interpreter state (if needed)
-    int saved_program_size = program_size;
-    LineEntry saved_program[MAX_LINES];
-    memcpy(saved_program, program, sizeof(program));
-
-    // Load the new program
-    program_size = 0;
-    load_program(f);
-    fclose(f);
-
-    // Run the loaded program
-    int run_line;
-    for (run_line = 1; run_line <= program_size; run_line++) {
-        int result = check(program[run_line].line, &run_line);
-        if (result == 1) break; // allow the called app to "exit"
-    }
-
-    // Restore previous program (the shell)
-    memcpy(program, saved_program, sizeof(program));
-    program_size = saved_program_size;
-    // Return to next line in shell after RUN
-}
+//void run_app(char* filename, char* arg2, int* current_line) {
+//    int flag = find_any_value(arg2);
+//    if (flag == 0) return;
+//    FILE* f = fopen(filename, "r");
+//    if (!f) {
+//        printf("run: file not found: %s\n", filename);
+//        return;
+//    }
+//    // Save current interpreter state (if needed)
+//    int saved_program_size = program_size;
+//    LineEntry saved_program[MAX_LINES];
+//    memcpy(saved_program, program, sizeof(program));
+//
+//    // Load the new program
+//    program_size = 0;
+//    load_program(f);
+//    fclose(f);
+//
+//    // Run the loaded program
+//    int run_line;
+//    for (run_line = 1; run_line <= program_size; run_line++) {
+//        int result = check(program[run_line].line, &run_line);
+//        if (result == 1) break; // allow the called app to "exit"
+//    }
+//
+//    // Restore previous program (the shell)
+//    memcpy(program, saved_program, sizeof(program));
+//    program_size = saved_program_size;
+//    // Return to next line in shell after RUN
+//}
 
 void clear_screen() {
 #ifdef _WIN32

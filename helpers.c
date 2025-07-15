@@ -1,11 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
+#include <stdint.h>
 #include "main.h"
 #include "helpers.h"
-#include "ctype.h"
-#include "stdint.h"
-#include "tables.h"
 
 void* get_register(const char* reg, int size) {
     if (size == 4) {
@@ -19,6 +18,7 @@ void* get_register(const char* reg, int size) {
         else if (strcasecmp(reg, "esp") == 0) return esp;
         else if (strcasecmp(reg, "ip") == 0)  return ip;
         else if (strcasecmp(reg, "cs") == 0)  return cs;
+        else if (strcasecmp(reg, "ss") == 0)  return ss;
     }
     if (size == 2) {
         if      (strcasecmp(reg, "ax") == 0) return ax;
@@ -212,21 +212,3 @@ void my_strcpy(char *des,char *src,int len){
     }
     *(des+len)='\0';
 }
-
-// string related
-// Add a symbol (label) to the table
-void add_symbol(const char* name, int addr) {
-    strcpy(symbol_table[symbol_count].name, name);
-    symbol_table[symbol_count].addr = addr;
-    symbol_count++;
-}
-
-// Look up a symbol by name, returns -1 if not found
-int find_symbol(const char* name) {
-    for (int i = 0; i < symbol_count; i++) {
-        if (strcmp(symbol_table[i].name, name) == 0)
-            return symbol_table[i].addr;
-    }
-    return -1;
-}
-

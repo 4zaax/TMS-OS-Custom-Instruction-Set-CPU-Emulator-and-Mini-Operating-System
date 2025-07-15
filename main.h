@@ -36,6 +36,7 @@ int* find_var_addr(char* name);
 void run_app(char* arg1, char* arg2, int* current_line);
 void conditional_jmp(char* command, char* arg1, char* arg2, char* arg3, int* current_line);
 void clear_screen();
+int parse_and_execute(char* line);
 
 
 
