@@ -67,8 +67,15 @@ int is_mem_addr(char* arg);
 int is_char(char* arg);
 int is_immediate(const char* s);
 
+extern struct symbole_table;
+extern int symbol_count;
+
+
+
 // General
 int char_to_i(char* arg);
+int find_mem_addr(char* arg);
+void my_strcpy(char *des,char *src,int len);
 
 
 

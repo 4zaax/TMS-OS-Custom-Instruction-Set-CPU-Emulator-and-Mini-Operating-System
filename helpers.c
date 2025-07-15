@@ -5,6 +5,7 @@
 #include "helpers.h"
 #include "ctype.h"
 #include "stdint.h"
+#include "tables.h"
 
 void* get_register(const char* reg, int size) {
     if (size == 4) {
@@ -56,6 +57,16 @@ int find_immediate_value(const char* s){
         return (char_to_i(s));
     printf("find_immediate_value: invalid operand\n");
     return 0;
+}
+
+int find_mem_addr(char* arg){
+    if ((*arg) != '[') return -1;
+    char* end_bracket = strchr(arg, ']');
+    if(!end_bracket) return -1;
+    int len = end_bracket-arg-1;
+    char *index= (char*) malloc(sizeof (char) * (len+1));
+    my_strcpy(index,arg+1,len);
+    return atoi(index);
 }
 
 int find_mem32_value(int addr) {
@@ -195,5 +206,27 @@ int char_to_i(char* arg){
             printf("char_to_i: Invalid character, couldn't convert to integer.\n");
 }
 
+void my_strcpy(char *des,char *src,int len){
+    for (int i=0;i<len;i++) {
+        *(des + i) = *(src + i);
+    }
+    *(des+len)='\0';
+}
 
+// string related
+// Add a symbol (label) to the table
+void add_symbol(const char* name, int addr) {
+    strcpy(symbol_table[symbol_count].name, name);
+    symbol_table[symbol_count].addr = addr;
+    symbol_count++;
+}
+
+// Look up a symbol by name, returns -1 if not found
+int find_symbol(const char* name) {
+    for (int i = 0; i < symbol_count; i++) {
+        if (strcmp(symbol_table[i].name, name) == 0)
+            return symbol_table[i].addr;
+    }
+    return -1;
+}
 

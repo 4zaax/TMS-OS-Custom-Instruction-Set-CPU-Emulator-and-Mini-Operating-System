@@ -1,4 +1,13 @@
-addw ax 00 1
-showw ax
+_main: mov eax 30
+mov ebx 40
+call _ADD_AB
+jmp _end
 
-show_flags
+_ADD_AB:
+    add eax eax ebx
+    show_all_regs
+    ret
+
+_end:
+show eax
+exit

@@ -6,6 +6,7 @@
 #include "stdint.h"
 #include "helpers.h"
 #include "handlers.h"
+#include "tables.h"
 
 #define MEMORY_SIZE 128000 // RAM
 #define MAX_LINES 500   // OS supports programs of maximum 500 lines
@@ -76,20 +77,13 @@ typedef struct {
     char label[20];
 } LineEntry;
 
-typedef struct {
-    char name[20];
-    int value;
-} Variable;
-
-Variable variables[1000];
-int variable_count = 0;
 LineEntry program[MAX_LINES];
 int program_size = 0;
 
 
 int main() {
-    printf("%d\n",find_immediate_value("[100]"));
-    return 0;
+//    printf("%d\n",find_any_value(""));
+//    return 0;
     *esp = MEMORY_SIZE;
     file = open_file("../Apps/boot.txt");
     if (file == NULL) printf("Shutting down OS\n");else  printf("boot file loaded successfully\n");
@@ -117,80 +111,83 @@ int check(char *line, int *current_line){
     char command[30],arg1[30],arg2[30],arg3[30];
     int tokens = sscanf(program[*current_line].line, "%s %s %s %s", command, arg1, arg2, arg3);
     if (tokens < 1) return -1;
-    if (strcasecmp(command,"exit") == 0){
+
+    if (strcasecmp(command,"exit") == 0)
         return 1;
-    }
     else if (strcasecmp(command, "MOV") == 0)
         mov_handler(arg1, arg2);
-    else if (strcasecmp(command, "MOVB") == 0)
-        movb_handler(arg1, arg2);
     else if (strcasecmp(command, "MOVW") == 0)
         movw_handler(arg1, arg2);
+    else if (strcasecmp(command, "MOVB") == 0)
+        movb_handler(arg1, arg2);
+
+
+
     else if (strcasecmp(command, "SHOWD") == 0)
         showd(arg1);
     else if (strcasecmp(command, "SHOWW") == 0)
         showw(arg1);
     else if (strcasecmp(command, "SHOWB") == 0)
         showb(arg1);
+
+
     else if (strcasecmp(command, "SHOWSD") == 0)
         showsd(arg1);
     else if (strcasecmp(command, "SHOWSW") == 0)
         showsw(arg1);
     else if (strcasecmp(command, "SHOWSB") == 0)
         showsb(arg1);
+
+    else if (strcasecmp(command,"SHOW") == 0) // exactly the same as SHOWSD -> for ease of use
+        showsd(arg1);
+
     else if (strcasecmp(command, "SHOWD_MEM") == 0)
         showd_mem(find_any_value(arg1));
     else if (strcasecmp(command, "SHOWW_MEM") == 0)
         showw_mem(find_any_value(arg1));
     else if (strcasecmp(command, "SHOWB_MEM") == 0)
         showb_mem(find_any_value(arg1));
+
     else if (strcasecmp(command, "SHOWSD_MEM") == 0)
         showsd_mem(find_any_value(arg1));
     else if (strcasecmp(command, "SHOWSW_MEM") == 0)
         showsw_mem(find_any_value(arg1));
     else if (strcasecmp(command, "SHOWSB_MEM") == 0)
         showsb_mem(find_any_value(arg1));
+
+    else if (strcasecmp(command,"SHOWC") == 0)
+        showc(arg1);
+
     else if (strcasecmp(command, "SHOW_ALL_REGS") == 0)
         show_all_registers();
-//    else if (strcasecmp(command,"EQ") == 0)
-//        equal(arg1, arg2, arg3);
-//    else if (strcasecmp(command,"NEQ") == 0)
-//        not_equal(arg1, arg2, arg3);
-//    else if (strcasecmp(command,"GT") == 0)
-//        is_greater(arg1, arg2, arg3);
-//    else if (strcasecmp(command,"GTE") == 0)
-//        is_greater_equal(arg1, arg2, arg3);
-//    else if (strcasecmp(command,"LS") == 0)
-//        is_less_than(arg1, arg2, arg3);
-//    else if (strcasecmp(command,"LSE") == 0)
-//        is_less_than_equal(arg1, arg2, arg3);
 
-//    else if (strcasecmp(command,"GET") == 0)
-//        get_input(arg1);
     else if (strcasecmp(command, "ADD") == 0)
         add_handler(arg1, arg2, arg3);
-    else if (strcasecmp(command, "ADDB") == 0)
-        addb_handler(arg1, arg2, arg3);
     else if (strcasecmp(command, "ADDW") == 0)
         addw_handler(arg1, arg2, arg3);
+    else if (strcasecmp(command, "ADDB") == 0)
+        addb_handler(arg1, arg2, arg3);
+
     else if (strcasecmp(command, "SUB") == 0)
         sub_handler(arg1, arg2, arg3);
     else if (strcasecmp(command, "SUBW") == 0)
         subw_handler(arg1, arg2, arg3);
     else if (strcasecmp(command, "SUBB") == 0)
         subb_handler(arg1, arg2, arg3);
+
     else if (strcasecmp(command, "MUL") == 0)
         mul_handler(arg1, arg2, arg3);
-    else if (strcasecmp(command, "IMUL") == 0)
-        imul_handler(arg1, arg2, arg3);
     else if (strcasecmp(command, "MULW") == 0)
         mulw_handler(arg1, arg2, arg3);
     else if (strcasecmp(command, "MULB") == 0)
         mulb_handler(arg1, arg2, arg3);
+    else if (strcasecmp(command, "IMUL") == 0)
+        imul_handler(arg1, arg2, arg3);
     else if (strcasecmp(command, "IMULW") == 0)
         imulw_handler(arg1, arg2, arg3);
     else if (strcasecmp(command, "IMULB") == 0)
         imulb_handler(arg1, arg2, arg3);
+
     else if (strcasecmp(command, "DIV") == 0)
         div_handler(arg1, arg2, arg3);
     else if (strcasecmp(command, "DIVW") == 0)
@@ -203,6 +200,22 @@ int check(char *line, int *current_line){
         idivw_handler(arg1, arg2, arg3);
     else if (strcasecmp(command, "IDIVB") == 0)
         idivb_handler(arg1, arg2, arg3);
+
+
+    else if (strcasecmp(command, "INC") == 0)
+        inc_handler(arg1);
+    else if (strcasecmp(command, "INCW") == 0)
+        incw_handler(arg1);
+    else if (strcasecmp(command, "INCB") == 0)
+        incb_handler(arg1);
+
+    else if (strcasecmp(command, "DEC") == 0)
+        dec_handler(arg1);
+    else if (strcasecmp(command, "DECW") == 0)
+        decw_handler(arg1);
+    else if (strcasecmp(command, "DECB") == 0)
+        decb_handler(arg1);
+
 
     else if (strcasecmp(command, "AND") == 0)
         and_handler(arg1, arg2, arg3);
@@ -246,20 +259,6 @@ int check(char *line, int *current_line){
     else if (strcasecmp(command, "SHRB") == 0)
         shrb_handler(arg1, arg2, arg3);
 
-    else if (strcasecmp(command, "INC") == 0)
-        inc_handler(arg1);
-    else if (strcasecmp(command, "INCW") == 0)
-        incw_handler(arg1);
-    else if (strcasecmp(command, "INCB") == 0)
-        incb_handler(arg1);
-
-    else if (strcasecmp(command, "DEC") == 0)
-        dec_handler(arg1);
-    else if (strcasecmp(command, "DECW") == 0)
-        decw_handler(arg1);
-    else if (strcasecmp(command, "DECB") == 0)
-        decb_handler(arg1);
-
     else if (strcasecmp(command, "PUSH") == 0)
         push_handler(arg1);
     else if (strcasecmp(command, "PUSHW") == 0)
@@ -274,26 +273,13 @@ int check(char *line, int *current_line){
     else if (strcasecmp(command, "POPB") == 0)
         popb_handler(arg1);
 
-    else if (strcasecmp(command,"SHOW") == 0)
-        showd(arg1);
-    else if (strcasecmp(command,"SHOWC") == 0)
-        showc(arg1);
-    else if (strcasecmp(command, "SHOW_FLAGS") == 0)
+    else if (strcasecmp(command, "SHOWF") == 0)
         show_flags();
-    else if (strcasecmp(command, "CLEAR_FLAGS") == 0)
+    else if (strcasecmp(command, "CLF") == 0)
         clear_flags();
 
-//    else if (strcasecmp(command,"MOD") == 0)
-//        modulo(arg1, arg2, arg3);
-    else if (strcasecmp(command,"JMP") == 0){
-        int arglen = strlen(arg2);
-        if (tokens == 2)
-            go2(arg1, current_line);
-        else if (arglen == 1 && arg2[0] == '1')
-            go2(arg1,current_line);
-        else if (find_any_value(arg2)!=0){
-            go2(arg1,current_line);}
-    }
+    else if (strcasecmp(command,"JMP") == 0)
+        jmp_handler(arg1, arg2, current_line, tokens);
     else if (strcasecmp(command, "JE") == 0)
         je_handler(arg1, current_line);
     else if (strcasecmp(command, "JNE") == 0)
@@ -307,7 +293,21 @@ int check(char *line, int *current_line){
         call_handler(arg1, current_line);
     else if (strcasecmp(command,"RET") == 0)
         ret_handler(arg1, tokens, current_line);
+//    else if (strcasecmp(command,"EQ") == 0)
+//        equal(arg1, arg2, arg3);
+//    else if (strcasecmp(command,"NEQ") == 0)
+//        not_equal(arg1, arg2, arg3);
+//    else if (strcasecmp(command,"GT") == 0)
+//        is_greater(arg1, arg2, arg3);
+//    else if (strcasecmp(command,"GTE") == 0)
+//        is_greater_equal(arg1, arg2, arg3);
+//    else if (strcasecmp(command,"LS") == 0)
+//        is_less_than(arg1, arg2, arg3);
+//    else if (strcasecmp(command,"LSE") == 0)
+//        is_less_than_equal(arg1, arg2, arg3);
 
+//    else if (strcasecmp(command,"GET") == 0)
+//        get_input(arg1);
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////
     /////////////////////////////////////     optional commands /////////////////////////////////////////////
@@ -322,9 +322,9 @@ int check(char *line, int *current_line){
     /////////////////////////////////////     system commands   /////////////////////////////////////////////
     /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    else if (strcasecmp(command,"clear") == 0)
+    else if (strcasecmp(command,"CLS") == 0)
         clear_screen();
-    else if (strcasecmp(command,"run") == 0)
+    else if (strcasecmp(command,"RUN") == 0)
         run_app(arg1,arg2,current_line);
     else
         printf("Unknown command: %s\n",command);

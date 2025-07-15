@@ -6,6 +6,8 @@
 #include "main.h"
 #include "helpers.h"
 #include "handlers.h"
+#include "tables.h"
+
 
 // INC
 void inc_handler(const char* reg) {
@@ -80,10 +82,19 @@ void showsb(const char* reg) {
     else printf("showsb: %s is not a byte register\n", reg);
 }
 
-void showc(const char* reg) {
-    uint8_t* r = get_register(reg, 1);
-    if (r) printf("%s = 0x%02X (%c)\n", reg, *r, *r);
-    else printf("showc: %s is not a character register\n", reg);
+void showc(const char* arg) {
+    if (is_mem_addr(arg)){
+        uint8_t r = find_mem8_value_unsigned(find_mem_addr(arg));
+        printf("%s = 0x%02X (%c))\n", arg, r, r, r);
+        showb_mem(find_mem_addr(arg));
+        return;
+    }
+    else if (get_register(arg,1)){
+        uint8_t* r = get_register(arg, 1);
+        printf("%s = 0x%02X (%c)\n", arg, *r, *r);
+        return;
+    }
+    else printf("showc: %s is not a character register\n", arg);
 }
 
 // Unsigned
@@ -211,22 +222,8 @@ void shrb_handler(const char* d, const char* s1, const char* s2) {
     *r = (uint8_t)find_any_value(s1) >> (uint8_t)find_any_value(s2);
 }
 
-void my_strcpy(char *des,char * sourc,int len){
-    for (int i=0;i<len;i++) {
-        *(des + i) = *(sourc + i);
-    }
-    *(des+len)='\0';
-}
-int find_mem_addr(char* arg){
-    if ((*arg) != '[') return -1;
-    char* end_bracket = strchr(arg, ']');
-    if(!end_bracket) return -1;
-    int len = end_bracket-arg-1;
-    int index;
-    char *c= (char*) malloc(sizeof (char) * (len+1));
-    my_strcpy(c,arg+1,len);
-    return index;
-}
+
+
 
 // PUSH dword (4 bytes)
 void push_handler(const char* src) {
@@ -697,6 +694,16 @@ void set_flags_imul8(int8_t op1, int8_t op2, int8_t result) {
     }
 }
 
+
+void jmp_handler(const char* label,const char* arg, int* current_line, int tokens){
+    int arglen = strlen(arg);
+    if (tokens == 2)
+        go2(label, current_line);
+    else if (arglen == 1 && arg[0] == '1')
+        go2(label,current_line);
+    else if (find_any_value(arg)!=0){
+        go2(label,current_line);}
+}
 void je_handler(const char* label, int* current_line) {
     if (*ZF) go2(label, current_line);
 }
