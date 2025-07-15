@@ -276,32 +276,19 @@ void popb_handler(const char* dest) {
 }
 
 void mov_handler (char* dest, char* src) {
-
     uint32_t* d_reg = get_register(dest, 4);
     uint32_t* s_reg = get_register(src, 4);
 
-    // Case 3: dest is 4bytes register, src is memory
+    // dest is 4bytes register, src is memory
     if (d_reg && is_mem_addr(src)) {
         int addr = find_mem_addr(src);
         *d_reg = *((uint32_t*)&memory[addr]);
         return;
     }
-    // Case 4: dest is memory, src is 4byte register
+    // dest is memory, src is 4byte register
     if (is_mem_addr(dest) && s_reg) {
         int addr = find_mem_addr(dest);
         *((uint32_t*)&memory[addr]) = *s_reg;
-        return;
-    }
-    // Case 5: immediate to 4 bytes register
-    if (d_reg && is_immediate(src)) {
-
-        *d_reg = find_any_value(src);
-        return;
-    }
-    // Case 6: immediate to memory
-    if (is_mem_addr(dest) && is_immediate(src)) {
-        int addr = find_mem_addr(dest);
-        *((uint32_t*)&memory[addr]) = find_any_value(src);
         return;
     }
     // Register to Register
@@ -309,9 +296,21 @@ void mov_handler (char* dest, char* src) {
         *d_reg = *s_reg;
         return;
     }
-
+    //anything else that yields a value (label, immediate)
+    if (d_reg) {
+        uint32_t value = find_any_value(src);
+        *d_reg = value;
+        return;
+    }
+    // memory destination and label/immediate source
+    if (is_mem_addr(dest)) {
+        int addr = find_mem_addr(dest);
+        *((uint32_t*)&memory[addr]) = find_any_value(src);
+        return;
+    }
     printf("MOV: Invalid operands (%s, %s)\n", dest, src);
 }
+
 
 void movb_handler(char* dest, char* src) {
     uint8_t* d_reg = get_register(dest, 1);
@@ -804,4 +803,19 @@ void lse_handler(const char* dest, const char* src1, const char* src2) {
     uint8_t* d = get_register(dest, 1);
     if (!d) { printf("LSE: dest must be 1-byte reg (%s)\n", dest); return; }
     *d = ((int32_t)find_any_value(src1) <= (int32_t)find_any_value(src2)) ? 1 : 0;
+}
+
+void showstr(const char* regname) {
+    uint32_t* addr_ptr = get_register(regname, 4);
+    if (!addr_ptr) {
+        printf("SHOWSTR: %s is not a valid 32-bit reg\n", regname);
+        return;
+    }
+    uint32_t addr = *addr_ptr;
+    printf("STR[%s] = \"", regname);
+    while (memory[addr] && addr < MEMORY_SIZE) {
+        putchar(memory[addr]);
+        addr++;
+    }
+    printf("\"\n");
 }

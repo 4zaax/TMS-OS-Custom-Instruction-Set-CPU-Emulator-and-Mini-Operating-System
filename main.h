@@ -1,15 +1,24 @@
-#ifndef UNTITLED_MAIN_H
-#define UNTITLED_MAIN_H
+#ifndef MAIN_H
+#define MAIN_H
 #include "stdint.h"
-#endif //UNTITLED_MAIN_H
 #define MEMORY_SIZE 128000 // RAM
-#define MAX_LINES 500   // OS supports programs of maximum 500 lines
 #define LINE_LEN 512
-#define MAX_VARIABLES 1000
 extern uint8_t* ZF;
 extern uint8_t* SF;
 extern uint8_t* CF;
 extern uint8_t* OF;
+
+
+#define MAX_LABELS 1024
+
+typedef struct {
+    char name[32];
+    int offset;
+    int is_data; // 1 for data, 0 for code
+} LabelEntry;
+
+extern LabelEntry label_table[MAX_LABELS];
+extern int label_count;
 
 FILE* open_file(char address[]);
 int check(char* line, int* current_line);
@@ -39,7 +48,6 @@ void clear_screen();
 int parse_and_execute(char* line);
 void scan_labels(int prog_size);
 int lookup_label_offset(const char* name);
+int lookup_label_index(const char* name);
 
-
-
-
+#endif

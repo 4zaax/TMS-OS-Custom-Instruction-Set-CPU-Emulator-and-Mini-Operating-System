@@ -3,14 +3,7 @@ MOV ss 18000
 MOV esp 2000
 MOV eax 42
 _start:
-MOV eax 3
-CALL MYFUNC
-SHOWD eax
-JMP END
-
-MYFUNC:
-ADD eax eax eax
-RET
-
-END:
-SHOWD eax
+MOV ds 13000
+msg: db "Hello, World!", 0, 0
+MOV esi msg
+SHOWSTR esi

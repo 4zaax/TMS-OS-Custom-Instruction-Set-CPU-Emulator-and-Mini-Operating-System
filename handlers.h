@@ -19,6 +19,8 @@ extern uint32_t* ebp;
 extern uint32_t* esp;
 extern uint32_t* ip;
 extern uint32_t* cs;
+extern uint32_t* ss;
+extern uint32_t* ds;
 
 // Bitwise
 void and_handler(const char*, const char*, const char*);
@@ -149,5 +151,7 @@ void gt_handler(const char* dest, const char* src1, const char* src2);
 void gte_handler(const char* dest, const char* src1, const char* src2);
 void ls_handler(const char* dest, const char* src1, const char* src2);
 void lse_handler(const char* dest, const char* src1, const char* src2);
+
+void showstr(const char* arg);
 
 #endif

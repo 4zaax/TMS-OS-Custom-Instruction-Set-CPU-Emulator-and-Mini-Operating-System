@@ -19,6 +19,7 @@ void* get_register(const char* reg, int size) {
         else if (strcasecmp(reg, "ip") == 0)  return ip;
         else if (strcasecmp(reg, "cs") == 0)  return cs;
         else if (strcasecmp(reg, "ss") == 0)  return ss;
+        else if (strcasecmp(reg, "ds") == 0)  return ds;
     }
     if (size == 2) {
         if      (strcasecmp(reg, "ax") == 0) return ax;
@@ -46,6 +47,13 @@ uint32_t find_any_value(const char* s) {
     if ((ptr = get_register(s, 1))) return *((uint8_t*)ptr);
     if (is_immediate(s)) return find_immediate_value(s);
     if (is_mem_addr(s)) return find_mem32_value(find_mem_addr(s));
+    int label_idx = lookup_label_index(s);
+    if (label_idx >= 0) {
+        if (label_table[label_idx].is_data)
+            return label_table[label_idx].offset; // Data label: return address (for MOV esi msg, etc.)
+        else
+            return label_table[label_idx].offset; // Code label: usually for JMP
+    }
     printf("Unknown operand: %s\n", s);
     return 0;
 }
@@ -212,3 +220,4 @@ void my_strcpy(char *des,char *src,int len){
     }
     *(des+len)='\0';
 }
+

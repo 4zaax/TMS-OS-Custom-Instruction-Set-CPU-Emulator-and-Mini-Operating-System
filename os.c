@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include "main.h"
 #include "stdint.h"
 #include "helpers.h"
@@ -10,15 +11,8 @@
 #define LINE_LEN 512
 
 uint8_t memory[MEMORY_SIZE];
-uint8_t reg_mem[44]; // 40 bytes (10 * 4 bytes) -> 10 extended registers
+uint8_t reg_mem[48]; // 40 bytes (10 * 4 bytes) -> 10 extended registers
 uint8_t flags_mem[4]; // ZF, SF, CF, OF (one byte each)
-
-#define MAX_LABELS 1024
-
-typedef struct {
-    char name[32];    // label name
-    int offset;       // offset from cs (position in loaded program)
-} LabelEntry;
 
 LabelEntry label_table[MAX_LABELS];
 int label_count = 0;
@@ -64,9 +58,6 @@ uint16_t* dx  = (uint16_t*)&reg_mem[EDX_OFFSET];
 uint8_t*  dl  = (uint8_t*)&reg_mem[EDX_OFFSET];
 uint8_t*  dh  = (uint8_t*)&reg_mem[EDX_OFFSET + 1];
 
-////////////////////////////////////////////////////////////////
-////////////////// INDEX & POINTER REGISTERS ///////////////////
-////////////////////////////////////////////////////////////////
 
 uint32_t* esi = (uint32_t*)&reg_mem[16];
 uint32_t* edi = (uint32_t*)&reg_mem[20];
@@ -75,19 +66,88 @@ uint32_t* esp = (uint32_t*)&reg_mem[28];
 uint32_t* ip = (uint32_t*)&reg_mem[32];
 uint32_t* cs = (uint32_t*)&reg_mem[36];
 uint32_t* ss  = (uint32_t*)&reg_mem[40];
-
+uint32_t* ds  = (uint32_t*)&reg_mem[44];
 
 // Loader: load program from file into memory at given *cs
-// Returns program size
+// returns program size
 uint32_t load_program_linear(FILE* file) {
     char buffer[LINE_LEN];
     int offset = 0;
     while (fgets(buffer, sizeof(buffer), file) != NULL) {
+        // Check if this is a data definition line
+        char label[32], cmd[8];
+        if (sscanf(buffer, "%31[^:]: %7s", label, cmd) == 2 && strcasecmp(cmd, "db") == 0) {
+            continue; // skip db lines in code segment
+        }
         int len = strlen(buffer);
         memcpy(&memory[*cs + offset], buffer, len);
         offset += len;
     }
     return offset;
+}
+
+void load_data_segment(FILE* file) {
+    char buffer[LINE_LEN];
+    int data_ptr = 0; // Offset from ds
+    rewind(file); // Rewind to start
+
+    while (fgets(buffer, sizeof(buffer), file) != NULL) {
+        // Remove leading whitespace
+        lstrip(buffer);
+
+        // Check for label: look for 'label: db'
+        char label[32], cmd[8], rest[LINE_LEN];
+        if (sscanf(buffer, "%31[^:]: %7s %[^\n]", label, cmd, rest) == 3 && strcasecmp(cmd, "db") == 0) {
+            int addr = *ds + data_ptr;
+
+            // Add label to label_table with is_data=1
+            if (label_count < MAX_LABELS) {
+                strncpy(label_table[label_count].name, label, 31);
+                label_table[label_count].name[31] = 0;
+                label_table[label_count].offset = addr;
+                label_table[label_count].is_data = 1;
+                label_count++;
+            }
+
+            // Parse the rest for string and/or byte values
+            char* p = rest;
+            while (*p) {
+                // String literal
+                if (*p == '"') {
+                    p++;
+                    while (*p && *p != '"') {
+                        memory[addr++] = *p++;
+                        data_ptr++;
+                    }
+                    if (*p == '"') p++;
+                }
+                    // Comma or whitespace
+                else if (*p == ',' || isspace((unsigned char)*p)) {
+                    p++;
+                }
+                    // Numeric or char literal
+                else if (*p == '\'') {
+                    // Char literal e.g. 'A'
+                    p++;
+                    memory[addr++] = *p++;
+                    data_ptr++;
+                    if (*p == '\'') p++;
+                }
+                else if (isdigit((unsigned char)*p) || *p == '-') {
+                    int val;
+                    int n = sscanf(p, "%d", &val);
+                    memory[addr++] = (uint8_t)val;
+                    data_ptr++;
+                    // Advance past the number
+                    while (*p && (isdigit((unsigned char)*p) || *p == '-')) p++;
+                }
+                else {
+                    // Unknown character, skip
+                    p++;
+                }
+            }
+        }
+    }
 }
 
 // Reads a line from memory at *cs + *ip, returns line length
@@ -117,21 +177,23 @@ int main() {
     FILE* f = fopen("../Apps/terminal.txt", "r");
     if (!f) { puts("terminal.txt not found"); return 1; }
 
-    // Optionally, zero registers/memory here.
     memset(reg_mem, 0, sizeof(reg_mem));
     memset(flags_mem, 0, sizeof(flags_mem));
     memset(memory, 0, sizeof(memory));
-
+    *ds = 13000;
     // DO NOT set cs, ip, ss, esp here! Program does it in code!
+    // 1. Load DATA segment first!
+    load_data_segment(f);
 
+    // 2. Load code segment (rewind file)
+    rewind(f);
     uint32_t prog_size = load_program_linear(f);
     fclose(f);
 
     scan_labels(prog_size);
 
-    // Now, execute (your parser should now support MOV cs, ...)
+    // Now, execute
     execute_program(prog_size);
-
     return 0;
 }
 
@@ -344,6 +406,8 @@ int parse_and_execute(char* line){
     else if (strcasecmp(command,"LSE") == 0)
         lse_handler(arg1, arg2, arg3);
 
+    else if (strcasecmp(command,"SHOWSTR") == 0)
+        showstr(arg1);
 //    else if (strcasecmp(command,"GET") == 0)
 //        get_input(arg1);
 
@@ -372,7 +436,6 @@ int parse_and_execute(char* line){
 
 // Scans loaded program in memory, builds label table
 void scan_labels(int prog_size) {
-    label_count = 0;
     int offset = 0;
     char line[LINE_LEN];
 
@@ -395,6 +458,7 @@ void scan_labels(int prog_size) {
                 strncpy(label_table[label_count].name, line, len-1);
                 label_table[label_count].name[len-1] = '\0';  // Remove ':'
                 label_table[label_count].offset = offset;
+                label_table[label_count].is_data = 0;
                 label_count++;
             }
         }
@@ -421,6 +485,14 @@ int lookup_label_offset(const char* name) {
     return -1;
 }
 
+// Returns the index of the label in the table, or -1 if not found
+int lookup_label_index(const char* name) {
+    for (int i = 0; i < label_count; ++i) {
+        if (strcasecmp(label_table[i].name, name) == 0)
+            return i;
+    }
+    return -1;
+}
 
 // old functions :
 

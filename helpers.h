@@ -43,6 +43,7 @@ extern uint32_t* esp;
 extern uint32_t* ip;
 extern uint32_t* cs;
 extern uint32_t* ss;
+extern uint32_t* ds;
 
 void* get_register(const char* reg, int size);
 // Generic value fetcher for any type of register
