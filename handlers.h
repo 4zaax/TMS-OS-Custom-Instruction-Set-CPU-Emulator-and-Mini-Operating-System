@@ -154,5 +154,6 @@ void lse_handler(const char* dest, const char* src1, const char* src2);
 
 void showstr(const char* arg);
 void get_handler(const char* reg);
+void int_handler(const char* arg);
 
 #endif

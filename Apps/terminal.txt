@@ -10,3 +10,13 @@ SHOWSTR esi
 
 movb al 254
 showsb al
+
+movb ah 2
+movb dl 'a'
+int 0x21
+movb dl 'b'
+int 0x21
+movb dl '\n'
+int 0x21
+movb dl 'c'
+int 0x21

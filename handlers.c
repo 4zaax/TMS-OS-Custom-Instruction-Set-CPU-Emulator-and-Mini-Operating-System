@@ -834,3 +834,30 @@ void get_handler(const char* reg) {
     printf("GET: Only 1-byte registers are allowed (%s)\n", reg);
 }
 
+// INT handler (for INT xx)
+void int_handler(const char* arg) {
+    int int_num = 0;
+    if (is_num((char*)arg)) {
+        int_num = my_atoi(arg);
+    }else {
+        printf("INT: invalid interrupt number (%s)\n", arg);
+        return;
+    }
+
+    if (int_num == 0x21) { // INT 21h (DOS style)
+        uint8_t ah_val = *ah;
+        if (ah_val == 0x02) {  // Display character in DL
+            putchar(*dl);
+            fflush(stdout);
+        }
+        else if (ah_val == 0x08) { // Get character from input, return in AL
+            int ch = getchar();
+            if (ch != EOF) *al = (uint8_t)ch;
+        }
+        else {
+            printf("INT 21h: unknown function in AH = 0x%02X\n", ah_val);
+        }
+    } else {
+        printf("INT: unknown interrupt 0x%02X\n", int_num);
+    }
+}
