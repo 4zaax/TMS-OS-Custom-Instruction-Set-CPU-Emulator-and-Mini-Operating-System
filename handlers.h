@@ -153,5 +153,6 @@ void ls_handler(const char* dest, const char* src1, const char* src2);
 void lse_handler(const char* dest, const char* src1, const char* src2);
 
 void showstr(const char* arg);
+void get_handler(const char* reg);
 
 #endif

@@ -60,9 +60,9 @@ uint32_t find_any_value(const char* s) {
 
 int find_immediate_value(const char* s){
     if(is_num(s))
-        return (atoi(s));
+        return my_atoi(s);   // Use your new function here
     else if (is_char(s))
-        return (char_to_i(s));
+        return char_to_i(s);
     printf("find_immediate_value: invalid operand\n");
     return 0;
 }
@@ -146,18 +146,41 @@ char first_char(char* line){
 }
 
 
-int is_num(char* arg){
+//int is_num(char* arg){
+//    int len = strlen(arg);
+//    if (len == 1 && !isdigit(arg[0])){
+//        return 0;
+//    }
+//    char* c = arg;
+//    for(; isspace(*c); c++);
+//    if (!(isdigit(*c) || *c == '-' || *c == '+'))
+//        return 0;
+//    for(c++;*c != '\0' ;c++){
+//        if (!isdigit(*c))
+//            return 0;
+//    }
+//    return 1;
+//}
+
+int is_num(char* arg) {
     int len = strlen(arg);
-    if (len == 1 && !isdigit(arg[0])){
-        return 0;
+    // Check for 0x... or ...h style
+    if (len > 2 && arg[0] == '0' && (arg[1] == 'x' || arg[1] == 'X')) return 1;
+    if (len > 1 && (arg[len-1] == 'h' || arg[len-1] == 'H')) {
+        // Must be valid hex digits before the h
+        for (int i = 0; i < len-1; i++) {
+            if (!isxdigit(arg[i])) return 0;
+        }
+        return 1;
     }
+    // Decimal number
+    // (old implementation)
+    if (len == 1 && !isdigit(arg[0])) return 0;
     char* c = arg;
     for(; isspace(*c); c++);
-    if (!(isdigit(*c) || *c == '-' || *c == '+'))
-        return 0;
-    for(c++;*c != '\0' ;c++){
-        if (!isdigit(*c))
-            return 0;
+    if (!(isdigit(*c) || *c == '-' || *c == '+')) return 0;
+    for(c++; *c != '\0' ; c++) {
+        if (!isdigit(*c)) return 0;
     }
     return 1;
 }
@@ -219,5 +242,25 @@ void my_strcpy(char *des,char *src,int len){
         *(des + i) = *(src + i);
     }
     *(des+len)='\0';
+}
+
+int my_atoi(const char* s) {
+    // Handle 0x or 0X prefix (standard C hex notation)
+    if (s[0] == '0' && (s[1] == 'x' || s[1] == 'X')) {
+        return (int)strtol(s, NULL, 16);
+    }
+    // Handle 'h' or 'H' (assembly style: 2Ah, FFh)
+    int len = strlen(s);
+    if ((len > 1) && (s[len-1] == 'h' || s[len-1] == 'H')) {
+        char buf[32];
+        if (len-1 >= sizeof(buf)) {  // too long, fallback to decimal
+            return atoi(s);
+        }
+        strncpy(buf, s, len-1); // Copy everything except 'h'
+        buf[len-1] = '\0';
+        return (int)strtol(buf, NULL, 16);
+    }
+    // Otherwise, treat as decimal
+    return atoi(s);
 }
 

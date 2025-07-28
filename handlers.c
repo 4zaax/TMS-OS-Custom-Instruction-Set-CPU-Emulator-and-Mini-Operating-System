@@ -70,14 +70,14 @@ void showsd(const char* reg) {
 // Show signed word (16 bits)
 void showsw(const char* reg) {
     int16_t* r = get_register(reg, 2);
-    if (r) printf("%s = 0x%04X (%d)\n", reg, *r, *r);
+    if (r) printf("%s = 0x%04X (%d)\n", reg, (uint16_t) *r, (int16_t) *r);
     else printf("showsw: %s is not a word register\n", reg);
 }
 
 // Show signed byte (8 bits)
 void showsb(const char* reg) {
     int8_t* r = get_register(reg, 1);
-    if (r) printf("%s = 0x%02X (%d)\n", reg, *r, *r);
+    if (r) printf("%s = 0x%02X (%d)\n", reg, (uint8_t)*r, (int8_t)*r);
     else printf("showsb: %s is not a byte register\n", reg);
 }
 
@@ -819,3 +819,18 @@ void showstr(const char* regname) {
     }
     printf("\"\n");
 }
+
+void get_handler(const char* reg) {
+    void* ptr = get_register(reg, 1);  // Only allow 1-byte registers!
+    if (ptr) {
+        int ch;
+        printf("Enter a character for %s: ", reg);
+        ch = getchar();
+        // skip any leftover newline
+        if (ch == '\n') ch = getchar();
+        *((char*)ptr) = (char)ch;
+        return;
+    }
+    printf("GET: Only 1-byte registers are allowed (%s)\n", reg);
+}
+

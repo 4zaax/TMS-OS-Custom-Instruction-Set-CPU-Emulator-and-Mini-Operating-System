@@ -7,3 +7,6 @@ MOV ds 13000
 msg: db "Hello, World!", 0, 0
 MOV esi msg
 SHOWSTR esi
+
+movb al 254
+showsb al

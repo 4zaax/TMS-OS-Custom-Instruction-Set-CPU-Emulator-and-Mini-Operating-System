@@ -408,8 +408,10 @@ int parse_and_execute(char* line){
 
     else if (strcasecmp(command,"SHOWSTR") == 0)
         showstr(arg1);
-//    else if (strcasecmp(command,"GET") == 0)
-//        get_input(arg1);
+    else if (strcasecmp(command, "GETC") == 0)
+        get_handler(arg1);
+    else if (strcasecmp(command, "INT") == 0)
+        int_handler(arg1);
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////
     /////////////////////////////////////     optional commands /////////////////////////////////////////////
@@ -493,6 +495,8 @@ int lookup_label_index(const char* name) {
     }
     return -1;
 }
+
+
 
 // old functions :
 
