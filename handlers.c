@@ -851,10 +851,18 @@ void int_handler(const char* arg) {
             fflush(stdout);
         }
         else if (ah_val == 0x08) { // Get character from input, return in AL
-            int ch = getchar();
+            int ch;
+            do {
+                ch = getchar();
+            } while (ch == '\n' || ch == '\r'); // skip newlines and carriage returns
             if (ch != EOF) *al = (uint8_t)ch;
         }
-        else {
+        else if (ah_val == 0x09) {
+            uint32_t addr = *esi;  // or *eax
+            while (memory[addr] && addr < MEMORY_SIZE) {
+            putchar(memory[addr++]);
+        }
+        } else {
             printf("INT 21h: unknown function in AH = 0x%02X\n", ah_val);
         }
     } else {

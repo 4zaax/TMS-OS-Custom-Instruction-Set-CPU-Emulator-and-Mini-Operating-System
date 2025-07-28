@@ -15,8 +15,37 @@ movb ah 2
 movb dl 'a'
 int 0x21
 movb dl 'b'
-int 0x21
+int 33
 movb dl '\n'
-int 0x21
+int 21h
 movb dl 'c'
 int 0x21
+
+movb ah 0x09
+mov esi msg
+int 21h
+
+movb ah 0x02
+movb dl '\n'
+int 21h
+
+movb ah 0x10
+int 21h
+
+movb ah 0x02
+movb dl '\n'
+int 21h
+
+movb ah 0x08
+int 21h
+
+movb dl al
+movb ah 0x02
+int 21h
+
+movb ah 0x08
+int 21h
+
+movb dl al
+movb ah 0x02
+int 21h
