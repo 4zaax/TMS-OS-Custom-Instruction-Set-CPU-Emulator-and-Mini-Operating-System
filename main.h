@@ -20,7 +20,13 @@ typedef struct {
 extern LabelEntry label_table[MAX_LABELS];
 extern int label_count;
 
+int load_program_data(const char* directory);
+void load_data_segment(FILE* file);
 int registers_initializer (FILE* file);
+uint32_t load_program_linear(FILE* file);
+void execute_program(int prog_size);
+int fetch_line(char* out, int prog_size);
+
 FILE* open_file(char address[]);
 int check(char* line, int* current_line);
 char first_char(char* line);
@@ -48,8 +54,8 @@ void conditional_jmp(char* command, char* arg1, char* arg2, char* arg3, int* cur
 void clear_screen();
 int parse_and_execute(char* line);
 void scan_labels(int prog_size);
-int lookup_label_offset(const char* name);
-int lookup_label_index(const char* name);
-int run_program(const char* directory);
+int find_label_offset(const char* name);
+int find_label_index(const char* name);
+
 
 #endif

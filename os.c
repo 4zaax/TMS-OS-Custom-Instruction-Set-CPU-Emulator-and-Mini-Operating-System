@@ -18,7 +18,7 @@ uint8_t flags_mem[4]; // ZF, SF, CF, OF (one byte each)
 
 LabelEntry label_table[MAX_LABELS];
 int label_count = 0;
-
+int terminal_size = 0;
 ////////////////////////////////////////////////////////////////
 //////////////////       setting flags       ///////////////////
 ////////////////////////////////////////////////////////////////
@@ -70,30 +70,31 @@ uint32_t* cs = (uint32_t*)&reg_mem[36];
 uint32_t* ss  = (uint32_t*)&reg_mem[40];
 uint32_t* ds  = (uint32_t*)&reg_mem[44];
 
-// Loader: load program from file into memory at given *cs
-// returns program size
-uint32_t load_program_linear(FILE* file) {
-    char buffer[LINE_LEN];
-    int offset = 0;
-    rewind(file);
-    // skips initializer lines
-    for(int i = 0; i < SKIP_LINE_COUNT; i++) fgets(buffer, sizeof(buffer), file);
 
-    while (fgets(buffer, sizeof(buffer), file) != NULL) {
-        // Check if this is a data definition line
-        char label[32], cmd[8];
-        if (sscanf(buffer, "%31[^:]: %7s", label, cmd) == 2 && strcasecmp(cmd, "db") == 0) {
-            continue; // skip db lines in code segment
-        }
-        int len = strlen(buffer);
-        memcpy(&memory[*cs + offset], buffer, len);
-        offset += len;
+int load_program_data(const char* directory){
+
+    FILE* f = fopen(directory, "r");
+    if (!f) { puts("Program not found"); return 1; }
+
+    // Program should initialize registers at the beginning
+    int reg_init_res = registers_initializer(f);
+
+    if (reg_init_res == -1) {
+        fprintf(stderr, "There was an error finding your initializer label in program.\n");
+        exit(1);
     }
-    return offset;
+    // 2. Now we should load data segment
+    // NOTE : !!!! : make sure initializer has assigned correct value to ds
+    load_data_segment(f);
+    //watch_memory(memory, 13000, 50); // you can always debug your memory with this helper function
+    // 3. Load code segment (rewind file)
+    uint32_t prog_size = load_program_linear(f);
+    // watch_memory(memory, 0, 100);
+    fclose(f);
+    scan_labels(prog_size);
+    push_int(prog_size);
 }
 
-
-int init_lines_count = 0;
 int registers_initializer (FILE* file) {
     char buffer[LINE_LEN];
     int flag_initializer_validation = 0;
@@ -186,7 +187,36 @@ void load_data_segment(FILE* file) {
     }
 }
 
+// Loader: load program from file into memory at given *cs
+// returns program size
+uint32_t load_program_linear(FILE* file) {
+    char buffer[LINE_LEN];
+    int offset = 0;
+    rewind(file);
+    // skips initializer lines
+    for(int i = 0; i < SKIP_LINE_COUNT; i++) fgets(buffer, sizeof(buffer), file);
 
+    while (fgets(buffer, sizeof(buffer), file) != NULL) {
+        // Check if this is a data definition line
+        char label[32], cmd[8];
+        if (sscanf(buffer, "%31[^:]: %7s", label, cmd) == 2 && strcasecmp(cmd, "db") == 0) {
+            continue; // skip db lines in code segment
+        }
+        int len = strlen(buffer);
+        memcpy(&memory[*cs + offset], buffer, len);
+        offset += len;
+    }
+    return offset;
+}
+
+void execute_program(int prog_size) {
+    char line[LINE_LEN];
+    while (*ip < prog_size) {
+        int current_line_len = fetch_line(line, prog_size);
+        *ip += current_line_len; // now ip is ready to execute next instruction
+        parse_and_execute(line);
+    }
+}
 
 // Reads a line from memory at *cs + *ip, returns line length
 int fetch_line(char* out, int prog_size) {
@@ -200,20 +230,20 @@ int fetch_line(char* out, int prog_size) {
 }
 
 
-void execute_program(int prog_size) {
-    char line[LINE_LEN];
-    while (*ip < prog_size) {
-        int n = fetch_line(line, prog_size);
-        *ip += n;
-        parse_and_execute(line);
-    }
-}
+
 
 int main() {
     memset(reg_mem, 0, sizeof(reg_mem));
     memset(flags_mem, 0, sizeof(flags_mem));
     memset(memory, 0, sizeof(memory));
-    int run_res = run_program("../Apps/terminal.txt");
+    int load_res = load_program_data("../Apps/terminal.txt");
+    terminal_size = pop_int();
+    load_res = load_program_data("../Apps/program2.txt");
+    int app2_size = pop_int();
+    // Now, execute
+    watch_memory(memory, 0, 100);
+    watch_memory(memory, 20000, 100);
+    execute_program(terminal_size);
     return 0;
 }
 
@@ -481,7 +511,7 @@ void clear_screen() {
 }
 
 // Returns offset in program for a given label name, or -1 if not found
-int lookup_label_offset(const char* name) {
+int find_label_offset(const char* name) {
     for (int i = 0; i < label_count; ++i) {
         if (strcasecmp(label_table[i].name, name) == 0)
             return label_table[i].offset;
@@ -490,7 +520,7 @@ int lookup_label_offset(const char* name) {
 }
 
 // Returns the index of the label in the table, or -1 if not found
-int lookup_label_index(const char* name) {
+int find_label_index(const char* name) {
     for (int i = 0; i < label_count; ++i) {
         if (strcasecmp(label_table[i].name, name) == 0)
             return i;
@@ -498,28 +528,5 @@ int lookup_label_index(const char* name) {
     return -1;
 }
 
-int run_program(const char* directory){
 
-    FILE* f = fopen(directory, "r");
-    if (!f) { puts("Program not found"); return 1; }
-
-    // Program should initialize registers at the beginning
-    int reg_init_res = registers_initializer(f);
-
-    if (reg_init_res == -1) {
-        fprintf(stderr, "There was an error finding your initializer label in program.\n");
-        exit(1);
-    }
-    // 2. Now we should load data segment
-    // NOTE : !!!! : make sure initializer has assigned correct value to ds
-    load_data_segment(f);
-    //watch_memory(memory, 13000, 50); // you can always debug your memory with this helper function
-    // 3. Load code segment (rewind file)
-    uint32_t prog_size = load_program_linear(f);
-    // watch_memory(memory, 0, 100);
-    fclose(f);
-    scan_labels(prog_size);
-    // Now, execute
-    execute_program(prog_size);
-}
 

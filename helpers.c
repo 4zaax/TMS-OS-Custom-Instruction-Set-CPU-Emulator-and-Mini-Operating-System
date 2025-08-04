@@ -47,7 +47,7 @@ uint32_t find_any_value(const char* s) {
     if ((ptr = get_register(s, 1))) return *((uint8_t*)ptr);
     if (is_immediate(s)) return find_immediate_value(s);
     if (is_mem_addr(s)) return find_mem32_value(find_mem_addr(s));
-    int label_idx = lookup_label_index(s);
+    int label_idx = find_label_index(s);
     if (label_idx >= 0) {
         if (label_table[label_idx].is_data)
             return label_table[label_idx].offset; // Data label: return address (for MOV esi msg, etc.)

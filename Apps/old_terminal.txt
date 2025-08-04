@@ -288,7 +288,7 @@ str_cmp:
     ret
 end_str_cmp:
 
-run_program:
+load_program_data:
     push idx
     push ecs
     AS ecx idx

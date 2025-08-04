@@ -694,7 +694,7 @@ void set_flags_imul8(int8_t op1, int8_t op2, int8_t result) {
 
 
 void jmp_handler(const char* label) {
-    int label_offset = lookup_label_offset(label);
+    int label_offset = find_label_offset(label);
     if (label_offset >= 0) {
         *ip = label_offset;
     } else {
@@ -703,7 +703,7 @@ void jmp_handler(const char* label) {
 }
 void je_handler(const char* label) {
     if (*ZF) {
-        int label_offset = lookup_label_offset(label);
+        int label_offset = find_label_offset(label);
         if (label_offset >= 0)
             *ip = label_offset;
         else
@@ -713,7 +713,7 @@ void je_handler(const char* label) {
 
 void jne_handler(const char* label) {
     if (!*ZF) {
-        int label_offset = lookup_label_offset(label);
+        int label_offset = find_label_offset(label);
         if (label_offset >= 0)
             *ip = label_offset;
         else
@@ -724,7 +724,7 @@ void jne_handler(const char* label) {
 void jg_handler(const char* label) {
     // JG (jump if greater, signed): ZF==0 && SF==OF
     if (!*ZF && (*SF == *OF)) {
-        int label_offset = lookup_label_offset(label);
+        int label_offset = find_label_offset(label);
         if (label_offset >= 0)
             *ip = label_offset;
         else
@@ -735,7 +735,7 @@ void jg_handler(const char* label) {
 void jl_handler(const char* label) {
     // JL (jump if less, signed): SF != OF
     if (*SF != *OF) {
-        int label_offset = lookup_label_offset(label);
+        int label_offset = find_label_offset(label);
         if (label_offset >= 0)
             *ip = label_offset;
         else
@@ -744,7 +744,7 @@ void jl_handler(const char* label) {
 }
 
 void call_handler(const char* label) {
-    int label_offset = lookup_label_offset(label);
+    int label_offset = find_label_offset(label);
     if (label_offset < 0) {
         printf("Unknown label: %s\n", label);
         return;
