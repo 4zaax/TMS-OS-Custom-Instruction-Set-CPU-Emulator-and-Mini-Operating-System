@@ -75,6 +75,6 @@ int char_to_i(char* arg);
 int find_mem_addr(char* arg);
 void my_strcpy(char *des,char *src,int len);
 int my_atoi(const char* s);
-
+void watch_memory(unsigned char *mem, int start, int count);
 
 #endif

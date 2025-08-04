@@ -264,3 +264,11 @@ int my_atoi(const char* s) {
     return atoi(s);
 }
 
+void watch_memory(unsigned char *mem, int start, int count) {
+    for (int i = 0; i < count; i++) {
+        int index = start + i;
+        unsigned char byte = mem[index];
+        printf("memory[%d] = 0x%02X (%c)\n", index, byte,
+               isprint(byte) ? byte : '.');
+    }
+}

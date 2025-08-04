@@ -20,6 +20,7 @@ typedef struct {
 extern LabelEntry label_table[MAX_LABELS];
 extern int label_count;
 
+int registers_initializer (FILE* file);
 FILE* open_file(char address[]);
 int check(char* line, int* current_line);
 char first_char(char* line);

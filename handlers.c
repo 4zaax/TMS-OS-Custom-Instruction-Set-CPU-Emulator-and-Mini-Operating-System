@@ -844,9 +844,9 @@ void int_handler(const char* arg) {
         return;
     }
 
-    if (int_num == 0x21) { // INT 21h (DOS style)
+    if (int_num == 0x21) { // INT 21h
         uint8_t ah_val = *ah;
-        if (ah_val == 0x02) {  // Display character in DL
+        if (ah_val == 0x02) {  // Display character
             putchar(*dl);
             fflush(stdout);
         }
@@ -854,7 +854,7 @@ void int_handler(const char* arg) {
             int ch;
             do {
                 ch = getchar();
-            } while (ch == '\n' || ch == '\r'); // skip newlines and carriage returns
+            } while (ch == '\n' || ch == '\r'); // skip newlines
             if (ch != EOF) *al = (uint8_t)ch;
         }
         else if (ah_val == 0x09) {

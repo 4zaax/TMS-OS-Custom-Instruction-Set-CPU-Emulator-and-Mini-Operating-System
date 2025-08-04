@@ -6,9 +6,11 @@
 #include "stdint.h"
 #include "helpers.h"
 #include "handlers.h"
+#include <windows.h>
 
 #define MEMORY_SIZE 128000 // RAM
 #define LINE_LEN 512
+#define SKIP_LINE_COUNT 5
 
 uint8_t memory[MEMORY_SIZE];
 uint8_t reg_mem[48]; // 40 bytes (10 * 4 bytes) -> 10 extended registers
@@ -73,6 +75,10 @@ uint32_t* ds  = (uint32_t*)&reg_mem[44];
 uint32_t load_program_linear(FILE* file) {
     char buffer[LINE_LEN];
     int offset = 0;
+    rewind(file);
+    // skips initializer lines
+    for(int i = 0; i < SKIP_LINE_COUNT; i++) fgets(buffer, sizeof(buffer), file);
+
     while (fgets(buffer, sizeof(buffer), file) != NULL) {
         // Check if this is a data definition line
         char label[32], cmd[8];
@@ -86,10 +92,40 @@ uint32_t load_program_linear(FILE* file) {
     return offset;
 }
 
+
+int init_lines_count = 0;
+int registers_initializer (FILE* file) {
+    char buffer[LINE_LEN];
+    int flag_initializer_validation = 0;
+    rewind(file);
+
+    while(fgets(buffer, sizeof (buffer), file) != NULL){
+
+        lstrip(buffer); // skips white spaces
+
+        if((strcasecmp(buffer, "_initial:") == 0) || (strcasecmp(buffer, "_initial:\n") == 0)){
+            flag_initializer_validation = 1;
+            for (int i = 0; i < 4; i++){
+                fgets(buffer, sizeof (buffer), file) != NULL;
+                parse_and_execute(buffer);
+            }
+        }
+
+        if (flag_initializer_validation){
+            return 0;
+        } else {
+            MessageBox(NULL, "Program should be started with a register initializer label.", "Error", MB_ICONERROR | MB_OK);
+            return -1;
+        }
+    }
+
+}
+
 void load_data_segment(FILE* file) {
     char buffer[LINE_LEN];
-    int data_ptr = 0; // Offset from ds
+
     rewind(file); // Rewind to start
+    int data_ptr = 0; // Offset from ds
 
     while (fgets(buffer, sizeof(buffer), file) != NULL) {
         // Remove leading whitespace
@@ -150,6 +186,8 @@ void load_data_segment(FILE* file) {
     }
 }
 
+
+
 // Reads a line from memory at *cs + *ip, returns line length
 int fetch_line(char* out, int prog_size) {
     int i = 0;
@@ -180,18 +218,22 @@ int main() {
     memset(reg_mem, 0, sizeof(reg_mem));
     memset(flags_mem, 0, sizeof(flags_mem));
     memset(memory, 0, sizeof(memory));
-    *ds = 13000;
     // DO NOT set cs, ip, ss, esp here! Program does it in code!
-    // 1. Load DATA segment first!
+    int reg_init_res = registers_initializer(f);
+
+    if (reg_init_res == -1) {
+        fprintf(stderr, "There was an error finding your initializer.\n");
+        exit(1);
+    }
+    // 2. Load DATA segment first!
+    // NOTE : !!!! : make sure initializer has assigned correct value to ds
     load_data_segment(f);
-
-    // 2. Load code segment (rewind file)
-    rewind(f);
+    //watch_memory(memory, 13000, 50);
+    // 3. Load code segment (rewind file)
     uint32_t prog_size = load_program_linear(f);
+    watch_memory(memory, 0, 100);
     fclose(f);
-
     scan_labels(prog_size);
-
     // Now, execute
     execute_program(prog_size);
     return 0;
@@ -405,26 +447,8 @@ int parse_and_execute(char* line){
         ls_handler(arg1, arg2, arg3);
     else if (strcasecmp(command,"LSE") == 0)
         lse_handler(arg1, arg2, arg3);
-
-    else if (strcasecmp(command,"SHOWSTR") == 0)
-        showstr(arg1);
-    else if (strcasecmp(command, "GETC") == 0)
-        get_handler(arg1);
     else if (strcasecmp(command, "INT") == 0)
         int_handler(arg1);
-
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////
-    /////////////////////////////////////     optional commands /////////////////////////////////////////////
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-//    else if (strcasecmp(command,"READ") == 0)
-//        read_mem(arg1);
-//    else if (strcasecmp(command,"SHOWSTR") == 0)
-//        show_str(arg1);
-
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////
-    /////////////////////////////////////     system commands   /////////////////////////////////////////////
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     else if (strcasecmp(command,"CLS") == 0)
         clear_screen();
@@ -496,78 +520,3 @@ int lookup_label_index(const char* name) {
     return -1;
 }
 
-
-
-// old functions :
-
-/////////////////////////////////////////////////////////////////
-//// pre_assign helps the language with multiple assign choices//
-/////////////////////////////////////////////////////////////////
-//
-//void load_program(FILE *file) {
-//    char buffer[LINE_LEN];
-//    while (fgets(buffer, sizeof(buffer), file) != NULL) {
-//        buffer[strcspn(buffer, "\n")] = '\0';
-//        lstrip(buffer);
-//        // Check if it's a label
-//        char *colon = strchr(buffer, ':');
-//        program_size++;
-//        if (colon && colon == buffer + strlen(buffer) - 1) {
-//            // It’s a label like L1:
-//            strncpy(program[program_size].label, buffer, colon - buffer);
-//            program[program_size].label[colon - buffer] = '\0';
-//            program[program_size].line[0] = '\0'; // No command
-//        } else {
-//            program[program_size].label[0] = '\0'; // No label
-//            strcpy(program[program_size].line, buffer);
-//        }
-//    }
-//}
-//
-//int find_label(const char *label) {
-//    for (int i = 0; i <= program_size; ++i) {
-//        if (strcasecmp(program[i].label, label) == 0)
-//            return i;
-//    }
-//    return -1;
-//}
-//
-//void go2(const char *label, int *current_line){
-//    int target_line = find_label(label);
-//    if (target_line != -1) {
-//        *current_line = target_line;
-//    } else {
-//        printf("Label not found: %s\n", label);
-//    }
-//}
-
-//void run_app(char* filename, char* arg2, int* current_line) {
-//    int flag = find_any_value(arg2);
-//    if (flag == 0) return;
-//    FILE* f = fopen(filename, "r");
-//    if (!f) {
-//        printf("run: file not found: %s\n", filename);
-//        return;
-//    }
-//    // Save current interpreter state (if needed)
-//    int saved_program_size = program_size;
-//    LineEntry saved_program[MAX_LINES];
-//    memcpy(saved_program, program, sizeof(program));
-//
-//    // Load the new program
-//    program_size = 0;
-//    load_program(f);
-//    fclose(f);
-//
-//    // Run the loaded program
-//    int run_line;
-//    for (run_line = 1; run_line <= program_size; run_line++) {
-//        int result = check(program[run_line].line, &run_line);
-//        if (result == 1) break; // allow the called app to "exit"
-//    }
-//
-//    // Restore previous program (the shell)
-//    memcpy(program, saved_program, sizeof(program));
-//    program_size = saved_program_size;
-//    // Return to next line in shell after RUN
-//}
