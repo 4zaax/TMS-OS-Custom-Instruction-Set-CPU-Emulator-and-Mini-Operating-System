@@ -1,0 +1,57 @@
+_initial:
+MOV cs 20001
+MOV ds 33000
+MOV ss 38000
+MOV esp 40000
+
+
+_start:
+
+MOV eax 42
+msg: db "Hello, World!", 0, 0
+MOV esi msg
+movb ah 0x09
+int 21h
+
+# prints \n ab after our message
+MOVB ah 0x02
+MOVB dl '\n'
+int 0x21
+
+movb ah 2
+movb dl 'a'
+int 0x21
+
+movb dl 'b'
+int 33
+
+movb dl '\n'
+int 21h
+
+# prints hello world again
+movb ah 0x09
+mov esi msg
+int 21h
+
+# prints \n after hello wold
+movb ah 0x02
+movb dl '\n'
+int 21h
+
+# shows error since there is no handling for 0x010
+movb ah 0x10
+int 21h
+
+# gets a character from input -> puts it in al reg
+movb ah 0x08
+int 21h
+
+# moves prev character from al to dl then prints out that char
+movb dl al
+movb ah 0x02
+int 21h
+
+
+msg2: db "hi" "Hello" 0
+
+

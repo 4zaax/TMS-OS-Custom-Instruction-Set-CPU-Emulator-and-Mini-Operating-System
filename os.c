@@ -200,9 +200,7 @@ int fetch_line(char* out, int prog_size) {
 }
 
 
-// Trivial parser (for demo: just print lines)
 void execute_program(int prog_size) {
-    *ip = 0;
     char line[LINE_LEN];
     while (*ip < prog_size) {
         int n = fetch_line(line, prog_size);
@@ -212,30 +210,10 @@ void execute_program(int prog_size) {
 }
 
 int main() {
-    FILE* f = fopen("../Apps/terminal.txt", "r");
-    if (!f) { puts("terminal.txt not found"); return 1; }
-
     memset(reg_mem, 0, sizeof(reg_mem));
     memset(flags_mem, 0, sizeof(flags_mem));
     memset(memory, 0, sizeof(memory));
-    // DO NOT set cs, ip, ss, esp here! Program does it in code!
-    int reg_init_res = registers_initializer(f);
-
-    if (reg_init_res == -1) {
-        fprintf(stderr, "There was an error finding your initializer.\n");
-        exit(1);
-    }
-    // 2. Load DATA segment first!
-    // NOTE : !!!! : make sure initializer has assigned correct value to ds
-    load_data_segment(f);
-    //watch_memory(memory, 13000, 50);
-    // 3. Load code segment (rewind file)
-    uint32_t prog_size = load_program_linear(f);
-    watch_memory(memory, 0, 100);
-    fclose(f);
-    scan_labels(prog_size);
-    // Now, execute
-    execute_program(prog_size);
+    int run_res = run_program("../Apps/terminal.txt");
     return 0;
 }
 
@@ -518,5 +496,30 @@ int lookup_label_index(const char* name) {
             return i;
     }
     return -1;
+}
+
+int run_program(const char* directory){
+
+    FILE* f = fopen(directory, "r");
+    if (!f) { puts("Program not found"); return 1; }
+
+    // Program should initialize registers at the beginning
+    int reg_init_res = registers_initializer(f);
+
+    if (reg_init_res == -1) {
+        fprintf(stderr, "There was an error finding your initializer label in program.\n");
+        exit(1);
+    }
+    // 2. Now we should load data segment
+    // NOTE : !!!! : make sure initializer has assigned correct value to ds
+    load_data_segment(f);
+    //watch_memory(memory, 13000, 50); // you can always debug your memory with this helper function
+    // 3. Load code segment (rewind file)
+    uint32_t prog_size = load_program_linear(f);
+    // watch_memory(memory, 0, 100);
+    fclose(f);
+    scan_labels(prog_size);
+    // Now, execute
+    execute_program(prog_size);
 }
 

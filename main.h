@@ -50,5 +50,6 @@ int parse_and_execute(char* line);
 void scan_labels(int prog_size);
 int lookup_label_offset(const char* name);
 int lookup_label_index(const char* name);
+int run_program(const char* directory);
 
 #endif
