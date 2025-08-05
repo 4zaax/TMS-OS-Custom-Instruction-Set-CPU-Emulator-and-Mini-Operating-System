@@ -1,17 +1,28 @@
 _initial:
 MOV cs 0
-MOV ds 13000
-MOV ss 18000
+MOV ds 10000
+MOV ss 13000
 MOV esp 20000
 
 
 _start:
 msg: db "hello" 10 "line 2" 10 0
 
-mov v1 101
-mov v2 200
-sub v3 v2 v1
-show v3
+show hp
+movb [14] 'c'
+inc hp
+movb [15] 'y'
+showb_mem 10014
+showb_mem 10015
+
+mov esi msg
+show esi
+
+movb ah 0x09
+int 21h
+hlt
+
+
 
 
 

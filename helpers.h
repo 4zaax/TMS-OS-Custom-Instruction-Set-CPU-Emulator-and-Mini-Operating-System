@@ -40,6 +40,7 @@ extern uint32_t* esi;
 extern uint32_t* edi;
 extern uint32_t* ebp;
 extern uint32_t* esp;
+extern uint32_t* hp;
 extern uint32_t* ip;
 extern uint32_t* cs;
 extern uint32_t* ss;

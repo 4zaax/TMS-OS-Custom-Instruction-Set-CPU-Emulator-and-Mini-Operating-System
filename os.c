@@ -13,7 +13,7 @@
 #define SKIP_LINE_COUNT 5
 
 uint8_t memory[MEMORY_SIZE];
-uint8_t reg_mem[48]; // 40 bytes (10 * 4 bytes) -> 10 extended registers
+uint8_t reg_mem[52]; // 40 bytes (10 * 4 bytes) -> 10 extended registers
 int reg_mem2[30];
 uint8_t flags_mem[4]; // ZF, SF, CF, OF (one byte each)
 
@@ -70,6 +70,7 @@ uint32_t* ip = (uint32_t*)&reg_mem[32];
 uint32_t* cs = (uint32_t*)&reg_mem[36];
 uint32_t* ss  = (uint32_t*)&reg_mem[40];
 uint32_t* ds  = (uint32_t*)&reg_mem[44];
+uint32_t* hp = (uint32_t*)&reg_mem[48];
 
 int* v0 = reg_mem2 + 0;
 int* v1 = reg_mem2 + 1;
@@ -136,7 +137,6 @@ int registers_initializer (const char* directory) {
                 fgets(buffer, sizeof (buffer), file) != NULL;
                 int execution_status = parse_and_execute(buffer);
             }
-            *ip = *cs;
         }
 
         if (flag_initializer_validation){
@@ -212,6 +212,7 @@ void load_data_segment(FILE* file) {
             }
         }
     }
+    *hp = *ds + data_ptr;
 }
 
 // Loader: load program from file into memory at given *cs
@@ -274,7 +275,7 @@ void scan_labels(int prog_size) {
 
 int execute_program(int prog_size) {
     char line[LINE_LEN];
-    while (*ip < MEMORY_SIZE) {
+    while (*ip < prog_size) {
         int current_line_len = fetch_instruction(line, prog_size);
         *ip += current_line_len ? current_line_len : 1; // now ip is ready to execute next instruction
         int execution_status =  parse_and_execute(line);
@@ -285,16 +286,13 @@ int execute_program(int prog_size) {
 // Reads a line from memory at *ip, returns line length
 int fetch_instruction(char* out, int prog_size) {
     int i = 0;
-    while ((*ip + i < *cs + prog_size) && (memory[*ip + i] != '\n')) {
-        out[i] = memory[*ip + i];
+    while ((*ip + i < prog_size) && (memory[*cs + *ip + i] != '\n')) {
+        out[i] = memory[*cs + *ip + i]; // <-- fixed here
         i++;
     }
     out[i] = '\0';
-    return i + (memory[*ip + i] == '\n' ? 1 : 0); // include newline if present
+    return i + (memory[*cs + *ip + i] == '\n' ? 1 : 0); // include newline if present
 }
-
-
-
 
 int main() {
     memset(reg_mem, 0, sizeof(reg_mem));
@@ -309,16 +307,17 @@ int main() {
         fprintf(stderr, "There was an error finding your initializer label in program.\n");
         exit(1);}
     // now we write program into the ram :
+
     terminal_size = load_program_data(directory);
 
     // Loading second app
-    directory = "../Apps/program2.txt";
-
-    reg_init_res = registers_initializer(directory);
-    if (reg_init_res == -1) {
-        fprintf(stderr, "There was an error finding your initializer label in program.\n");
-        exit(1);}
-    int program_size = load_program_data(directory);
+//    directory = "../Apps/program2.txt";
+//
+//    reg_init_res = registers_initializer(directory);
+//    if (reg_init_res == -1) {
+//        fprintf(stderr, "There was an error finding your initializer label in program.\n");
+//        exit(1);}
+//    int program_size = load_program_data(directory);
 
     registers_initializer("../Apps/terminal.txt");
 //    watch_memory(memory, 20000, 100);

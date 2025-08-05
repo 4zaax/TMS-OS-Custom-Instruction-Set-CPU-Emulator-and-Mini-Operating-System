@@ -20,6 +20,7 @@ void* get_register(const char* reg, int size) {
         else if (strcasecmp(reg, "cs") == 0)  return cs;
         else if (strcasecmp(reg, "ss") == 0)  return ss;
         else if (strcasecmp(reg, "ds") == 0)  return ds;
+        else if (strcasecmp(reg, "hp") == 0)  return hp;
         else if (strcasecmp(reg, "v0") == 0) return v0;
         else if (strcasecmp(reg, "v1") == 0) return v1;
         else if (strcasecmp(reg, "v2") == 0) return v2;
@@ -103,8 +104,32 @@ int find_mem_addr(char* arg){
     if(!end_bracket) return -1;
     int len = end_bracket-arg-1;
     char *index= (char*) malloc(sizeof (char) * (len+1));
-    my_strcpy(index,arg+1,len);
-    return atoi(index);
+    my_strcpy(index, arg+1, len);
+    // New logic:
+    // Check if it's a number or register/label
+    if (is_num(index)) {
+        int offset = atoi(index);
+        free(index);
+        return *ds + offset;
+    } else {
+        // Try to resolve as register
+        void* reg_ptr = get_register(index, 4); // supports 32-bit reg, like hp, eax, etc.
+        if (reg_ptr) {
+            int addr = *(uint32_t*)reg_ptr;
+            free(index);
+            return addr;
+        }
+        // Try label
+        int label_idx = find_label_index(index);
+        if (label_idx >= 0) {
+            int addr = label_table[label_idx].offset;
+            free(index);
+            return addr;
+        }
+    }
+    free(index);
+    printf("find_mem_addr: invalid address expression '%s'\n", arg);
+    return -1;
 }
 
 int find_mem32_value(int addr) {

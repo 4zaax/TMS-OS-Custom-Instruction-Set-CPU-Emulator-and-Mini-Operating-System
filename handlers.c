@@ -104,7 +104,7 @@ void showw_mem(int addr) {
     printf("MEM[%d] = 0x%04X (%u)\n", addr, *((uint16_t*)&memory[addr]), *((uint16_t*)&memory[addr]));
 }
 void showb_mem(int addr) {
-    printf("MEM[%d] = 0x%02X (%u)\n", addr, memory[addr], memory[addr]);
+    printf("MEM[%d] = 0x%02X (%u) (%c)\n", addr, memory[addr], memory[addr], memory[addr]);
 }
 
 // Signed
@@ -282,12 +282,20 @@ void mov_handler (char* dest, char* src) {
     // dest is 4bytes register, src is memory
     if (d_reg && is_mem_addr(src)) {
         int addr = find_mem_addr(src);
+        if (addr >= *ss){
+            fflush(stdout);
+            fflush(stdout); fprintf(stderr, "Warning : You are changing out of range memory.\n");
+        }
         *d_reg = *((uint32_t*)&memory[addr]);
         return;
     }
     // dest is memory, src is 4byte register
     if (is_mem_addr(dest) && s_reg) {
         int addr = find_mem_addr(dest);
+        if (addr >= *ss){
+            fflush(stdout);
+            fprintf(stderr, "Warning : You are changing out of range memory.\n");
+        }
         *((uint32_t*)&memory[addr]) = *s_reg;
         return;
     }
@@ -305,11 +313,16 @@ void mov_handler (char* dest, char* src) {
     // memory destination and label/immediate source
     if (is_mem_addr(dest)) {
         int addr = find_mem_addr(dest);
+        if (addr >= *ss){
+            fflush(stdout);
+            fprintf(stderr, "Warning : You are changing out of range memory.\n");
+        }
         *((uint32_t*)&memory[addr]) = find_any_value(src);
         return;
     }
     printf("MOV: Invalid operands (%s, %s)\n", dest, src);
 }
+
 
 
 void movb_handler(char* dest, char* src) {
@@ -319,12 +332,20 @@ void movb_handler(char* dest, char* src) {
     // dest is register, src is memory
     if (d_reg && is_mem_addr(src)) {
         int addr = find_mem_addr(src);
+        if (addr >= *ss){
+            fflush(stdout);
+            fprintf(stderr, "Warning : You are changing out of range memory.\n");
+        }
         *d_reg = memory[addr];
         return;
     }
     // dest is memory, src is register
     if (is_mem_addr((char*)dest) && s_reg) {
         int addr = find_mem_addr(dest);
+        if (addr >= *ss){
+            fflush(stdout);
+            fprintf(stderr, "Warning : You are changing out of range memory.\n");
+        }
         memory[addr] = *s_reg;
         return;
     }
@@ -336,6 +357,10 @@ void movb_handler(char* dest, char* src) {
     // immediate to memory
     if (is_mem_addr(dest) && is_immediate(src)) {
         int addr = find_mem_addr(dest);
+        if (addr >= *ss){
+            fflush(stdout);
+            fprintf(stderr, "Warning : You are changing out of range memory.\n");
+        }
         memory[addr] = (uint8_t)find_any_value(src);
         return;
     }
@@ -354,12 +379,20 @@ void movw_handler(char* dest, char* src) {
     // dest is register, src is memory
     if (d_reg && is_mem_addr(src)) {
         int addr = find_mem_addr(src);
+        if (addr >= *ss){
+            fflush(stdout);
+            fprintf(stderr, "Warning : You are changing out of range memory.\n");
+        }
         *d_reg = *((uint16_t*)&memory[addr]);
         return;
     }
     // dest is memory, src is register
     if (is_mem_addr(dest) && s_reg) {
         int addr = find_mem_addr((char*)dest);
+        if (addr >= *ss){
+            fflush(stdout);
+            fprintf(stderr, "Warning : You are changing out of range memory.\n");
+        }
         *((uint16_t*)&memory[addr]) = *s_reg;
         return;
     }
@@ -371,6 +404,10 @@ void movw_handler(char* dest, char* src) {
     // immediate to memory
     if (is_mem_addr((char*)dest) && is_immediate(src)) {
         int addr = find_mem_addr((char*)dest);
+        if (addr >= *ss){
+            fflush(stdout);
+            fprintf(stderr, "Warning : You are changing out of range memory.\n");
+        }
         *((uint16_t*)&memory[addr]) = (uint16_t)find_any_value((char*)src);
         return;
     }
@@ -861,7 +898,7 @@ void int_handler(const char* arg) {
             uint32_t addr = *esi;  // or *eax
             while (memory[addr] && addr < MEMORY_SIZE) {
             putchar(memory[addr++]);
-        }
+            }
         } else {
             printf("INT 21h: unknown function in AH = 0x%02X\n", ah_val);
         }
