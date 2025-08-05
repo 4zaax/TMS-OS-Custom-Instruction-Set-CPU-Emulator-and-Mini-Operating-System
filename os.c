@@ -509,7 +509,7 @@ int parse_and_execute(char* line){
         clear_flags();
 
     else if (strcasecmp(command,"JMP") == 0)
-        jmp_handler(arg1);
+        jmp_handler(arg1, tokens == 3 ? arg2 : "1");
     else if (strcasecmp(command, "JE") == 0)
         je_handler(arg1);
     else if (strcasecmp(command, "JNE") == 0)

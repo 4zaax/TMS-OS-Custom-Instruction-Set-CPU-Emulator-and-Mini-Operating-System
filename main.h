@@ -3,6 +3,7 @@
 #include "stdint.h"
 #define MEMORY_SIZE 128000 // RAM
 #define LINE_LEN 512
+#include <conio.h>
 
 extern uint8_t* ZF;
 extern uint8_t* SF;

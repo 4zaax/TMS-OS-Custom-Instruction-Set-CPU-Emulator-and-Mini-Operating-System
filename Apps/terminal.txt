@@ -7,20 +7,37 @@ MOV esp 20000
 
 _start:
 msg: db "hello" 10 "line 2" 10 0
+msg2: db "my name is shayan" 10 0
+msg3: db "this is our new mini os" 10 0
 
-show hp
-movb [14] 'c'
-inc hp
-movb [15] 'y'
-showb_mem 10014
-showb_mem 10015
+# hp is 10058
 
-mov esi msg
-show esi
-
+call _getstr
+mov esi 10058
 movb ah 0x09
 int 21h
 hlt
+
+_getstr:
+    # receives one character
+    movb ah 0x08
+    int 21h
+    eq bl al 10
+    jmp _getstr_end bl
+    mov [hp] al
+    inc hp
+    mov [hp] 10
+    jmp _getstr
+_getstr_end:
+    mov [hp] 10
+    inc hp
+    mov [hp] 0
+    inc hp
+    ret
+
+
+
+
 
 
 

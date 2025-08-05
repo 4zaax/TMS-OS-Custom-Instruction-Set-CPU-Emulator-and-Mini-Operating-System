@@ -56,7 +56,7 @@ void showw(const char* reg) {
 
 void showb(const char* reg) {
     uint8_t* r = get_register(reg, 1);
-    if (r) printf("%s = 0x%02X (%u)\n", reg, *r, *r);
+    if (r) printf("%s = 0x%02X (%u) (%c)\n", reg, *r, *r, *r);
     else printf("showb: %s is not a byte register\n", reg);
 }
 
@@ -730,10 +730,13 @@ void set_flags_imul8(int8_t op1, int8_t op2, int8_t result) {
 }
 
 
-void jmp_handler(const char* label) {
+void jmp_handler(const char* label, const char* reg) {
+    int condition = find_any_value(reg);
     int label_offset = find_label_offset(label);
-    if (label_offset >= 0) {
+    if (label_offset >= 0 && condition == 1) {
         *ip = label_offset;
+    }else if (condition == 0){
+        return;
     } else {
         printf("Unknown label: %s\n", label);
     }
@@ -888,10 +891,8 @@ void int_handler(const char* arg) {
             fflush(stdout);
         }
         else if (ah_val == 0x08) { // Get character from input, return in AL
-            int ch;
-            do {
-                ch = getchar();
-            } while (ch == '\n' || ch == '\r'); // skip newlines
+            int ch = _getch();
+            ch = ch == 13 ? 10 : ch;
             if (ch != EOF) *al = (uint8_t)ch;
         }
         else if (ah_val == 0x09) {
