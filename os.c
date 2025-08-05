@@ -76,26 +76,20 @@ int load_program_data(const char* directory){
     FILE* f = fopen(directory, "r");
     if (!f) { puts("Program not found"); return 1; }
 
-    // Program should initialize registers at the beginning
-    int reg_init_res = registers_initializer(f);
 
-    if (reg_init_res == -1) {
-        fprintf(stderr, "There was an error finding your initializer label in program.\n");
-        exit(1);
-    }
     // 2. Now we should load data segment
     // NOTE : !!!! : make sure initializer has assigned correct value to ds
     load_data_segment(f);
-    //watch_memory(memory, 13000, 50); // you can always debug your memory with this helper function
     // 3. Load code segment (rewind file)
     uint32_t prog_size = load_program_linear(f);
-    // watch_memory(memory, 0, 100);
     fclose(f);
     scan_labels(prog_size);
-    push_int(prog_size);
 }
 
-int registers_initializer (FILE* file) {
+int registers_initializer (const char* directory) {
+    FILE* file = fopen(directory, "r");
+    if (!file) fprintf(stderr, "register_initializer: file not found.\n");
+
     char buffer[LINE_LEN];
     int flag_initializer_validation = 0;
     rewind(file);
@@ -110,6 +104,7 @@ int registers_initializer (FILE* file) {
                 fgets(buffer, sizeof (buffer), file) != NULL;
                 parse_and_execute(buffer);
             }
+            *ip = *cs;
         }
 
         if (flag_initializer_validation){
@@ -194,7 +189,9 @@ uint32_t load_program_linear(FILE* file) {
     int offset = 0;
     rewind(file);
     // skips initializer lines
-    for(int i = 0; i < SKIP_LINE_COUNT; i++) fgets(buffer, sizeof(buffer), file);
+    for(int i = 0; i < SKIP_LINE_COUNT; i++) {
+        fgets(buffer, sizeof(buffer), file);
+    }
 
     while (fgets(buffer, sizeof(buffer), file) != NULL) {
         // Check if this is a data definition line
@@ -209,24 +206,58 @@ uint32_t load_program_linear(FILE* file) {
     return offset;
 }
 
+// Scans loaded program in memory, builds label table
+void scan_labels(int prog_size) {
+    int line_start = *cs;
+    char line[LINE_LEN];
+
+    while (line_start < prog_size + *cs) {
+        // Read one line from memory
+        int i = 0;
+        while ((line_start + i < prog_size + *cs) && memory[line_start + i] != '\n') {
+            line[i] = memory[line_start + i];
+            i++;
+        }
+        line[i] = '\0';
+
+        // Trim leading spaces
+        lstrip(line);
+
+        // Check if line is a label (ends with ':')
+        int len = strlen(line);
+        if (len > 1 && line[len-1] == ':') {
+            if (label_count < MAX_LABELS) {
+                strncpy(label_table[label_count].name, line, len-1);
+                label_table[label_count].name[len-1] = '\0';  // Remove ':'
+                label_table[label_count].offset = line_start;
+                label_table[label_count].is_data = 0;
+                label_count++;
+            }
+        }
+
+        // Move to next line (+1 for newline if present)
+        line_start += i + (memory[line_start + i] == '\n' ? 1 : 0);
+    }
+}
+
 void execute_program(int prog_size) {
     char line[LINE_LEN];
-    while (*ip < prog_size) {
-        int current_line_len = fetch_line(line, prog_size);
-        *ip += current_line_len; // now ip is ready to execute next instruction
+    while (*ip < MEMORY_SIZE) {
+        int current_line_len = fetch_instruction(line, prog_size);
+        *ip += current_line_len ? current_line_len : 1; // now ip is ready to execute next instruction
         parse_and_execute(line);
     }
 }
 
-// Reads a line from memory at *cs + *ip, returns line length
-int fetch_line(char* out, int prog_size) {
+// Reads a line from memory at *ip, returns line length
+int fetch_instruction(char* out, int prog_size) {
     int i = 0;
-    while ((*ip + i < prog_size) && (memory[*cs + *ip + i] != '\n')) {
-        out[i] = memory[*cs + *ip + i];
+    while ((*ip + i < *cs + prog_size) && (memory[*ip + i] != '\n')) {
+        out[i] = memory[*ip + i];
         i++;
     }
     out[i] = '\0';
-    return i + (memory[*cs + *ip + i] == '\n' ? 1 : 0); // include newline if present
+    return i + (memory[*ip + i] == '\n' ? 1 : 0); // include newline if present
 }
 
 
@@ -236,14 +267,31 @@ int main() {
     memset(reg_mem, 0, sizeof(reg_mem));
     memset(flags_mem, 0, sizeof(flags_mem));
     memset(memory, 0, sizeof(memory));
-    int load_res = load_program_data("../Apps/terminal.txt");
-    terminal_size = pop_int();
-    load_res = load_program_data("../Apps/program2.txt");
-    int app2_size = pop_int();
-    // Now, execute
-    watch_memory(memory, 0, 100);
-    watch_memory(memory, 20000, 100);
+
+    // Running Terminal
+    // Program should initialize registers at the beginning
+    char* directory = "../Apps/terminal.txt";
+    int reg_init_res = registers_initializer(directory);
+    if (reg_init_res == -1) {
+        fprintf(stderr, "There was an error finding your initializer label in program.\n");
+        exit(1);}
+    // now we write program into the ram :
+    terminal_size = load_program_data(directory);
+
+    // Loading second app
+    directory = "../Apps/program2.txt";
+
+    reg_init_res = registers_initializer(directory);
+    if (reg_init_res == -1) {
+        fprintf(stderr, "There was an error finding your initializer label in program.\n");
+        exit(1);}
+    int program_size = load_program_data(directory);
+
+    registers_initializer("../Apps/terminal.txt");
+//    watch_memory(memory, 20000, 100);
+
     execute_program(terminal_size);
+//    watch_memory(memory, 19900, 100);
     return 0;
 }
 
@@ -455,11 +503,13 @@ int parse_and_execute(char* line){
         ls_handler(arg1, arg2, arg3);
     else if (strcasecmp(command,"LSE") == 0)
         lse_handler(arg1, arg2, arg3);
+
     else if (strcasecmp(command, "INT") == 0)
         int_handler(arg1);
-
     else if (strcasecmp(command,"CLS") == 0)
         clear_screen();
+    else if (strcasecmp(command,"HLT") == 0)
+        return 0;
     else
         printf("Unknown command: %s\n",command);
     return 0;
@@ -468,39 +518,7 @@ int parse_and_execute(char* line){
 
 
 
-// Scans loaded program in memory, builds label table
-void scan_labels(int prog_size) {
-    int offset = 0;
-    char line[LINE_LEN];
 
-    while (offset < prog_size) {
-        // Read one line from memory
-        int i = 0;
-        while ((offset + i < prog_size) && (memory[*cs + offset + i] != '\n')) {
-            line[i] = memory[*cs + offset + i];
-            i++;
-        }
-        line[i] = '\0';
-
-        // Trim leading spaces
-        lstrip(line);
-
-        // Check if line is a label (ends with ':')
-        int len = strlen(line);
-        if (len > 1 && line[len-1] == ':') {
-            if (label_count < MAX_LABELS) {
-                strncpy(label_table[label_count].name, line, len-1);
-                label_table[label_count].name[len-1] = '\0';  // Remove ':'
-                label_table[label_count].offset = offset;
-                label_table[label_count].is_data = 0;
-                label_count++;
-            }
-        }
-
-        // Move to next line (+1 for newline if present)
-        offset += i + (memory[*cs + offset + i] == '\n' ? 1 : 0);
-    }
-}
 
 void clear_screen() {
     #ifdef _WIN32
