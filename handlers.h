@@ -156,4 +156,6 @@ void showstr(const char* arg);
 void get_handler(const char* reg);
 void int_handler(const char* arg);
 
+void getc_handler();
+void putc_handler();
 #endif

@@ -102,7 +102,7 @@ int registers_initializer (const char* directory) {
             flag_initializer_validation = 1;
             for (int i = 0; i < 4; i++){
                 fgets(buffer, sizeof (buffer), file) != NULL;
-                parse_and_execute(buffer);
+                int execution_status = parse_and_execute(buffer);
             }
             *ip = *cs;
         }
@@ -240,12 +240,13 @@ void scan_labels(int prog_size) {
     }
 }
 
-void execute_program(int prog_size) {
+int execute_program(int prog_size) {
     char line[LINE_LEN];
     while (*ip < MEMORY_SIZE) {
         int current_line_len = fetch_instruction(line, prog_size);
         *ip += current_line_len ? current_line_len : 1; // now ip is ready to execute next instruction
-        parse_and_execute(line);
+        int execution_status =  parse_and_execute(line);
+        if (execution_status == 401) return 401; // shuts down OS
     }
 }
 
@@ -290,8 +291,9 @@ int main() {
     registers_initializer("../Apps/terminal.txt");
 //    watch_memory(memory, 20000, 100);
 
-    execute_program(terminal_size);
+    int execution_status = execute_program(terminal_size);
 //    watch_memory(memory, 19900, 100);
+    fprintf(stderr, "Shutting down OS\n");
     return 0;
 }
 
@@ -508,8 +510,15 @@ int parse_and_execute(char* line){
         int_handler(arg1);
     else if (strcasecmp(command,"CLS") == 0)
         clear_screen();
-    else if (strcasecmp(command,"HLT") == 0)
-        return 0;
+
+    else if (strcasecmp(command, "GETC"))
+        getc_handler();
+    else if (strcasecmp(command, "PUTC"))
+        putc_handler();
+
+    else if (strcasecmp(command,"HLT") == 0){
+        return 401;
+    }
     else
         printf("Unknown command: %s\n",command);
     return 0;

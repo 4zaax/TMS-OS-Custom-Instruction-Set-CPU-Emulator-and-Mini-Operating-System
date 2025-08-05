@@ -24,7 +24,7 @@ int load_program_data(const char* directory);
 void load_data_segment(FILE* file);
 int registers_initializer (const char* directory);
 uint32_t load_program_linear(FILE* file);
-void execute_program(int prog_size);
+int execute_program(int prog_size);
 int fetch_instruction(char* out, int prog_size);
 
 FILE* open_file(char address[]);

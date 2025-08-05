@@ -869,3 +869,12 @@ void int_handler(const char* arg) {
         printf("INT: unknown interrupt 0x%02X\n", int_num);
     }
 }
+
+void getc_handler() {
+    char c = getchar();
+    *dl = (int) c;
+}
+
+void putc_handler() {
+    putchar(*dl);
+}

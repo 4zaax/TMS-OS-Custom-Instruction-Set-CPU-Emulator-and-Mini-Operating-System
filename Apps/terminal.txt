@@ -6,20 +6,9 @@ MOV esp 20000
 
 
 _start:
-
-msg1: db "salam this is terminal"  10 0
-msg2: db "last message" 10 0
-
-mov esi msg1
-movb ah 0x09
-int 21h
-
-mov esi msg2
-movb ah 0x09
-int 21h
-
-mov cs 25000
-jmp _program2start
+getc
+showb dl
+putc
 
 
 

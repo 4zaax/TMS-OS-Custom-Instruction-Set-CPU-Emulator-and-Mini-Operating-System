@@ -8,7 +8,7 @@ MOV esp 40000
 _program2start:
 
 
-msg3000: db "line1" 10 "line2" 10 "line3" 0
+msg3000: db "line1" 10 "line2" 10 "line3" 10 0
 
 mov esi msg3000
 movb ah 0x09
