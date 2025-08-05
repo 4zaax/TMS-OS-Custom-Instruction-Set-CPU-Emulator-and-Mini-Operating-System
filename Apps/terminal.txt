@@ -4,12 +4,22 @@ MOV ds 10000
 MOV ss 13000
 MOV esp 20000
 
+################################################
+jmp start
 
-_start:
-msg: db "hello" 10 "line 2" 10 0
-msg2: db "my name is shayan" 10 0
-msg3: db "this is our new mini os" 10 0
+INPUT:
+    movb ah 0x08
+    int 21h
+    mov [hp] al
+    neq bl al 10
+    inc hp
+    jmp INPUT bl
+    ret
 
+
+start:
+call INPUT
+###########################################
 # hp is 10058
 
 call _getstr
