@@ -3,11 +3,41 @@
 #include "stdint.h"
 #define MEMORY_SIZE 128000 // RAM
 #define LINE_LEN 512
+
 extern uint8_t* ZF;
 extern uint8_t* SF;
 extern uint8_t* CF;
 extern uint8_t* OF;
-
+extern int* v0;
+extern int* v1;
+extern int* v2;
+extern int* v3;
+extern int* v4;
+extern int* v5;
+extern int* v6;
+extern int* v7;
+extern int* v8;
+extern int* v9;
+extern int* v10;
+extern int* v11;
+extern int* v12;
+extern int* v13;
+extern int* v14;
+extern int* v15;
+extern int* v16;
+extern int* v17;
+extern int* v18;
+extern int* v19;
+extern int* v20;
+extern int* v21;
+extern int* v22;
+extern int* v23;
+extern int* v24;
+extern int* v25;
+extern int* v26;
+extern int* v27;
+extern int* v28;
+extern int* v29;
 
 #define MAX_LABELS 1024
 

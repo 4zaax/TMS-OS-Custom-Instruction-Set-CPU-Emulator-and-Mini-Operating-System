@@ -20,6 +20,36 @@ void* get_register(const char* reg, int size) {
         else if (strcasecmp(reg, "cs") == 0)  return cs;
         else if (strcasecmp(reg, "ss") == 0)  return ss;
         else if (strcasecmp(reg, "ds") == 0)  return ds;
+        else if (strcasecmp(reg, "v0") == 0) return v0;
+        else if (strcasecmp(reg, "v1") == 0) return v1;
+        else if (strcasecmp(reg, "v2") == 0) return v2;
+        else if (strcasecmp(reg, "v3") == 0) return v3;
+        else if (strcasecmp(reg, "v4") == 0) return v4;
+        else if (strcasecmp(reg, "v5") == 0) return v5;
+        else if (strcasecmp(reg, "v6") == 0) return v6;
+        else if (strcasecmp(reg, "v7") == 0) return v7;
+        else if (strcasecmp(reg, "v8") == 0) return v8;
+        else if (strcasecmp(reg, "v9") == 0) return v9;
+        else if (strcasecmp(reg, "v10") == 0) return v10;
+        else if (strcasecmp(reg, "v11") == 0) return v11;
+        else if (strcasecmp(reg, "v12") == 0) return v12;
+        else if (strcasecmp(reg, "v13") == 0) return v13;
+        else if (strcasecmp(reg, "v14") == 0) return v14;
+        else if (strcasecmp(reg, "v15") == 0) return v15;
+        else if (strcasecmp(reg, "v16") == 0) return v16;
+        else if (strcasecmp(reg, "v17") == 0) return v17;
+        else if (strcasecmp(reg, "v18") == 0) return v18;
+        else if (strcasecmp(reg, "v19") == 0) return v19;
+        else if (strcasecmp(reg, "v20") == 0) return v20;
+        else if (strcasecmp(reg, "v21") == 0) return v21;
+        else if (strcasecmp(reg, "v22") == 0) return v22;
+        else if (strcasecmp(reg, "v23") == 0) return v23;
+        else if (strcasecmp(reg, "v24") == 0) return v24;
+        else if (strcasecmp(reg, "v25") == 0) return v25;
+        else if (strcasecmp(reg, "v26") == 0) return v26;
+        else if (strcasecmp(reg, "v27") == 0) return v27;
+        else if (strcasecmp(reg, "v28") == 0) return v28;
+        else if (strcasecmp(reg, "v29") == 0) return v29;
     }
     if (size == 2) {
         if      (strcasecmp(reg, "ax") == 0) return ax;

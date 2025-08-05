@@ -1,17 +1,12 @@
+_initial:
+MOV cs 20000
+MOV ds 33000
+MOV ss 38000
+MOV esp 40000
 
-##################Calculator####################
-MOV [10] 'x'    #c
-MOV [11] 0    #a
-MOV [12] 108   #l
-MOV [13] 99    #c
-MOV [14] 117   #u
-MOV [15] 108   #l
-MOV [16] 97    #a
-MOV [17] 116   #t
-MOV [18] 111   #o
-MOV [19] 114   #r
-MOV [20] 0
 ##########################  Functions #########################
+_start_calculator:
+msg1: db "calculator" 0 0 0 0
 jmp Start
 
 
@@ -73,7 +68,7 @@ ret
 
 
 Start:
-AS flag_end 0
+MOV ebx 0
 call get_input_function
 call Calculator_input
 

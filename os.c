@@ -14,6 +14,7 @@
 
 uint8_t memory[MEMORY_SIZE];
 uint8_t reg_mem[48]; // 40 bytes (10 * 4 bytes) -> 10 extended registers
+int reg_mem2[30];
 uint8_t flags_mem[4]; // ZF, SF, CF, OF (one byte each)
 
 LabelEntry label_table[MAX_LABELS];
@@ -69,6 +70,37 @@ uint32_t* ip = (uint32_t*)&reg_mem[32];
 uint32_t* cs = (uint32_t*)&reg_mem[36];
 uint32_t* ss  = (uint32_t*)&reg_mem[40];
 uint32_t* ds  = (uint32_t*)&reg_mem[44];
+
+int* v0 = reg_mem2 + 0;
+int* v1 = reg_mem2 + 1;
+int* v2 = reg_mem2 + 2;
+int* v3 = reg_mem2 + 3;
+int* v4 = reg_mem2 + 4;
+int* v5 = reg_mem2 + 5;
+int* v6 = reg_mem2 + 6;
+int* v7 = reg_mem2 + 7;
+int* v8 = reg_mem2 + 8;
+int* v9 = reg_mem2 + 9;
+int* v10 = reg_mem2 + 10;
+int* v11 = reg_mem2 + 11;
+int* v12 = reg_mem2 + 12;
+int* v13 = reg_mem2 + 13;
+int* v14 = reg_mem2 + 14;
+int* v15 = reg_mem2 + 15;
+int* v16 = reg_mem2 + 16;
+int* v17 = reg_mem2 + 17;
+int* v18 = reg_mem2 + 18;
+int* v19 = reg_mem2 + 19;
+int* v20 = reg_mem2 + 20;
+int* v21 = reg_mem2 + 21;
+int* v22 = reg_mem2 + 22;
+int* v23 = reg_mem2 + 23;
+int* v24 = reg_mem2 + 24;
+int* v25 = reg_mem2 + 25;
+int* v26 = reg_mem2 + 26;
+int* v27 = reg_mem2 + 27;
+int* v28 = reg_mem2 + 28;
+int* v29 = reg_mem2 + 29;
 
 
 int load_program_data(const char* directory){
@@ -510,12 +542,6 @@ int parse_and_execute(char* line){
         int_handler(arg1);
     else if (strcasecmp(command,"CLS") == 0)
         clear_screen();
-
-    else if (strcasecmp(command, "GETC"))
-        getc_handler();
-    else if (strcasecmp(command, "PUTC"))
-        putc_handler();
-
     else if (strcasecmp(command,"HLT") == 0){
         return 401;
     }

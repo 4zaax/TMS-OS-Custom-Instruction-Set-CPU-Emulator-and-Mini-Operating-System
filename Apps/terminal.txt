@@ -6,9 +6,21 @@ MOV esp 20000
 
 
 _start:
-getc
-showb dl
-putc
+msg: db "hello" 10 "line 2" 10 0
+
+mov v1 101
+mov v2 200
+sub v3 v2 v1
+show v3
+
+
+
+
+
+
+
+
+
 
 
 
