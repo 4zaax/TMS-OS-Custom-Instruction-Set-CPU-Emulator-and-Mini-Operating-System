@@ -4,19 +4,28 @@ MOV ds 10000
 MOV ss 13000
 MOV esp 20000
 
+_terminal_start:
+    msg_directory: db "~/" 0
+    msg_help: db "help:     -helps you right? brilliant" 10 "echo:          -shows message on screen" 10 0
+    msg2: db "echo encountered." 10 0
+    msg3: db "this is our new mini os" 10 0
 
-_start:
-msg: db "hello" 10 "line 2" 10 0
-msg2: db "my name is shayan" 10 0
-msg3: db "this is our new mini os" 10 0
-
-# hp is 10058
-
-call _getstr
-mov esi 10058
-movb ah 0x09
-int 21h
-hlt
+	show hp
+_terminal_main_loop:
+	
+	# prints directory first
+	mov esi msg_directory
+	movb ah 0x09
+	int 21h
+	
+	mov esi hp
+	call _getstr
+	
+	movb ah 0x09
+	int 21h
+	mov v1 esi
+	call _check_user_command
+	jmp _terminal_main_loop
 
 _getstr:
     # receives one character
@@ -35,7 +44,99 @@ _getstr_end:
     inc hp
     ret
 
+_check_user_command:
 
+	# each check function sets bl 1 if the check result is true
+	call _check_for_echo
+	call _echo_handler bl		
+	
+	call _check_for_help
+	call _help_handler bl	
+	
+
+	
+	JMP _check_user_command_end
+	
+	_check_for_echo:
+		mov v2 v1
+		
+		MOVb bh [v2]
+		neq bl bh 'e'
+		jmp _check_for_echo_end bl
+		inc v2
+		
+		MOVB bh [v2]
+		neq bl bh 'c'
+		jmp _check_for_echo_end bl
+		inc v2		
+		
+		MOVB bh [v2]
+		neq bl bh 'h'
+		jmp _check_for_echo_end bl
+		inc v2		
+		
+		MOVB bh [v2]
+		neq bl bh 'o'
+		jmp _check_for_echo_end bl
+		inc v2
+		
+		MOVB bl 1
+		MOV v2 0
+		ret
+		
+		_check_for_echo_end:
+		MOVB bl 0
+		ret	
+		
+	_check_for_help:
+		mov v2 v1
+		
+		MOVb bh [v2]
+		neq bl bh 'h'
+		jmp _check_for_help_end bl
+		inc v2
+		
+		MOVB bh [v2]
+		neq bl bh 'e'
+		jmp _check_for_help_end bl
+		inc v2		
+		
+		MOVB bh [v2]
+		neq bl bh 'l'
+		jmp _check_for_help_end bl
+		inc v2		
+		
+		MOVB bh [v2]
+		neq bl bh 'p'
+		jmp _check_for_help_end bl
+		inc v2
+		
+		MOVB bl 1
+		MOV v2 0
+		ret
+		
+		_check_for_help_end:
+		MOVB bl 0
+		ret
+		
+		
+	_check_user_command_end:
+	RET
+	
+	
+_echo_handler:
+	mov esi msg2
+	movb ah 0x09
+	int 21h
+	
+	RET
+
+_help_handler:
+	mov esi msg_help
+	movb ah 0x09
+	int 21h
+	
+	RET
 
 
 

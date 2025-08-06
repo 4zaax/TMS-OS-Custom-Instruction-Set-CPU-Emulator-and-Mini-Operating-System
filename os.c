@@ -12,6 +12,9 @@
 #define LINE_LEN 512
 #define SKIP_LINE_COUNT 5
 
+int call_count = 0;
+int ret_count = 0;
+
 uint8_t memory[MEMORY_SIZE];
 uint8_t reg_mem[52]; // 40 bytes (10 * 4 bytes) -> 10 extended registers
 int reg_mem2[30];
@@ -103,6 +106,20 @@ int* v27 = reg_mem2 + 27;
 int* v28 = reg_mem2 + 28;
 int* v29 = reg_mem2 + 29;
 
+
+void print_os_info() {
+#ifdef _WIN32
+    printf("Device is running on Windows\n");
+#elif __linux__
+    printf("Device is running on Linux\n");
+#elif __APPLE__
+    printf("Device is running on macOS\n");
+#elif __unix__
+    printf("Device is running on UNIX\n");
+#else
+    printf("Device OS could not be detected\n");
+#endif
+}
 
 int load_program_data(const char* directory){
 
@@ -295,6 +312,7 @@ int fetch_instruction(char* out, int prog_size) {
 }
 
 int main() {
+    print_os_info();
     memset(reg_mem, 0, sizeof(reg_mem));
     memset(flags_mem, 0, sizeof(flags_mem));
     memset(memory, 0, sizeof(memory));
@@ -324,6 +342,7 @@ int main() {
 
     int execution_status = execute_program(terminal_size);
 //    watch_memory(memory, 19900, 100);
+    fprintf(stderr, "There must be a problem in program since total calls doesnt match total returns.");
     fprintf(stderr, "Shutting down OS\n");
     return 0;
 }
@@ -519,10 +538,14 @@ int parse_and_execute(char* line){
     else if (strcasecmp(command, "JL") == 0)
         jl_handler(arg1);
 
-    else if (strcasecmp(command,"CALL") == 0)
-        call_handler(arg1);
-    else if (strcasecmp(command,"RET") == 0)
+    else if (strcasecmp(command,"CALL") == 0){
+        if ((tokens == 3 && find_any_value(arg2) == 1) || (tokens == 2)) call_handler(arg1);
+        call_count++;
+    }
+    else if (strcasecmp(command,"RET") == 0){
         ret_handler();
+        ret_count++;
+    }
 
     else if (strcasecmp(command,"EQ") == 0)
         eq_handler(arg1, arg2, arg3);
@@ -543,8 +566,10 @@ int parse_and_execute(char* line){
         clear_screen();
     else if (strcasecmp(command,"HLT") == 0){
         return 401;
-    }
-    else
+    } else if (strcasecmp(command, "DEBUGGER") == 0){
+        printf("Debugger started working.\n");
+        fflush(stdout);
+    } else
         printf("Unknown command: %s\n",command);
     return 0;
 }

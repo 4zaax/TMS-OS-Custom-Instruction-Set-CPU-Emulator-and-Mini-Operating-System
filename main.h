@@ -51,6 +51,9 @@ typedef struct {
 extern LabelEntry label_table[MAX_LABELS];
 extern int label_count;
 
+void print_os_info();
+
+
 int load_program_data(const char* directory);
 void load_data_segment(FILE* file);
 int registers_initializer (const char* directory);
