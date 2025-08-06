@@ -4,28 +4,6 @@ MOV ds 10000
 MOV ss 13000
 MOV esp 20000
 
-_terminal_start:
-    msg_directory: db "~/" 0
-    msg_help: db "help:     -helps you right? brilliant" 10 "echo:          -shows message on screen" 10 0
-    msg2: db "echo encountered." 10 0
-    msg3: db "this is our new mini os" 10 0
-
-	show hp
-_terminal_main_loop:
-	
-	# prints directory first
-	mov esi msg_directory
-	movb ah 0x09
-	int 21h
-	
-	mov esi hp
-	call _getstr
-	
-	movb ah 0x09
-	int 21h
-	mov v1 esi
-	call _check_user_command
-	jmp _terminal_main_loop
 
 _getstr:
     # receives one character
