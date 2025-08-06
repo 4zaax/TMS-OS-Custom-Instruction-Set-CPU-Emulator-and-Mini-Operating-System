@@ -4,29 +4,6 @@ MOV ds 10000
 MOV ss 13000
 MOV esp 20000
 
-################################################
-jmp start
-
-INPUT:
-    movb ah 0x08
-    int 21h
-    mov [hp] al
-    neq bl al 10
-    inc hp
-    jmp INPUT bl
-    ret
-
-
-start:
-call INPUT
-###########################################
-# hp is 10058
-
-call _getstr
-mov esi 10058
-movb ah 0x09
-int 21h
-hlt
 
 _getstr:
     # receives one character
@@ -45,7 +22,99 @@ _getstr_end:
     inc hp
     ret
 
+_check_user_command:
 
+	# each check function sets bl 1 if the check result is true
+	call _check_for_echo
+	call _echo_handler bl		
+	
+	call _check_for_help
+	call _help_handler bl	
+	
+
+	
+	JMP _check_user_command_end
+	
+	_check_for_echo:
+		mov v2 v1
+		
+		MOVb bh [v2]
+		neq bl bh 'e'
+		jmp _check_for_echo_end bl
+		inc v2
+		
+		MOVB bh [v2]
+		neq bl bh 'c'
+		jmp _check_for_echo_end bl
+		inc v2		
+		
+		MOVB bh [v2]
+		neq bl bh 'h'
+		jmp _check_for_echo_end bl
+		inc v2		
+		
+		MOVB bh [v2]
+		neq bl bh 'o'
+		jmp _check_for_echo_end bl
+		inc v2
+		
+		MOVB bl 1
+		MOV v2 0
+		ret
+		
+		_check_for_echo_end:
+		MOVB bl 0
+		ret	
+		
+	_check_for_help:
+		mov v2 v1
+		
+		MOVb bh [v2]
+		neq bl bh 'h'
+		jmp _check_for_help_end bl
+		inc v2
+		
+		MOVB bh [v2]
+		neq bl bh 'e'
+		jmp _check_for_help_end bl
+		inc v2		
+		
+		MOVB bh [v2]
+		neq bl bh 'l'
+		jmp _check_for_help_end bl
+		inc v2		
+		
+		MOVB bh [v2]
+		neq bl bh 'p'
+		jmp _check_for_help_end bl
+		inc v2
+		
+		MOVB bl 1
+		MOV v2 0
+		ret
+		
+		_check_for_help_end:
+		MOVB bl 0
+		ret
+		
+		
+	_check_user_command_end:
+	RET
+	
+	
+_echo_handler:
+	mov esi msg2
+	movb ah 0x09
+	int 21h
+	
+	RET
+
+_help_handler:
+	mov esi msg_help
+	movb ah 0x09
+	int 21h
+	
+	RET
 
 
 

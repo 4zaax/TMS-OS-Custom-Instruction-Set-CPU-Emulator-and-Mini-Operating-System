@@ -894,17 +894,21 @@ void int_handler(const char* arg) {
             int ch = _getch();
             ch = ch == 13 ? 10 : ch;
             if (ch != EOF) *al = (uint8_t)ch;
+            fflush(stdout);
         }
         else if (ah_val == 0x09) {
             uint32_t addr = *esi;  // or *eax
             while (memory[addr] && addr < MEMORY_SIZE) {
             putchar(memory[addr++]);
             }
+            fflush(stdout);
         } else {
             printf("INT 21h: unknown function in AH = 0x%02X\n", ah_val);
+            fflush(stdout);
         }
     } else {
         printf("INT: unknown interrupt 0x%02X\n", int_num);
+        fflush(stdout);
     }
 }
 
