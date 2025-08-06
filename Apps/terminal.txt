@@ -51,7 +51,10 @@ _check_user_command:
 	call _echo_handler bl		
 	
 	call _check_for_help
-	call _help_handler bl	
+	call _help_handler bl
+
+	call _check_for_halt
+	call _halt_handler bl
 	
 
 	
@@ -118,6 +121,29 @@ _check_user_command:
 		_check_for_help_end:
 		MOVB bl 0
 		ret
+
+
+		_check_for_halt:
+		    mov v2 v1
+            MOVb bh [v2]
+            neq bl bh 'h'
+            jmp _check_for_help_end bl
+            inc v2
+
+            MOVB bh [v2]
+            neq bl bh 'l'
+            jmp _check_for_help_end bl
+            inc v2
+
+            MOVB bh [v2]
+            neq bl bh 't'
+            jmp _check_for_help_end bl
+            inc v2
+
+            MOVB bl 1
+            MOV v2 0
+            ret
+
 		
 		
 	_check_user_command_end:
@@ -137,6 +163,12 @@ _help_handler:
 	int 21h
 	
 	RET
+
+
+_halt_handler:
+    hlt
+
+
 
 
 

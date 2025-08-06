@@ -342,7 +342,7 @@ int main() {
 
     int execution_status = execute_program(terminal_size);
 //    watch_memory(memory, 19900, 100);
-    fprintf(stderr, "There must be a problem in program since total calls doesnt match total returns.");
+    fprintf(stderr, "There must be a problem in program since total calls doesnt match total returns.\n");
     fprintf(stderr, "Shutting down OS\n");
     return 0;
 }
