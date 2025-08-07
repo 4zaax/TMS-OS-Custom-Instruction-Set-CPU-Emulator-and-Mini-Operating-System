@@ -2,25 +2,26 @@ _initial:
 MOV cs 0
 MOV ds 10000
 MOV ss 13000
-MOV esp 20000
+MOV esp 19998
 
 _terminal_start:
     msg_directory: db "~/" 0
     msg_help: db "help:     -helps you right? brilliant" 10 "echo:          -shows message on screen" 10 0
     msg2: db "echo encountered." 10 0
     msg3: db "this is our new mini os" 10 0
-
+    msg_history: db "Showing commands history: (type clh to clear ram and free up memory)" 10 0
 	show hp
+	mov v0 hp
 _terminal_main_loop:
 	
 	# prints directory first
 	mov esi msg_directory
 	movb ah 0x09
 	int 21h
-	
+
 	mov esi hp
 	call _getstr
-	
+
 	movb ah 0x09
 	int 21h
 	mov v1 esi
@@ -55,7 +56,12 @@ _check_user_command:
 
 	call _check_for_halt
 	call _halt_handler bl
-	
+
+	call _check_for_history
+	call _history_handler bl
+
+	call _check_for_clh
+	call _clh_handler bl
 
 	
 	JMP _check_user_command_end
@@ -144,6 +150,64 @@ _check_user_command:
             MOV v2 0
             ret
 
+        _check_for_history:
+            mov v2 v1
+
+            MOVb bh [v2]
+            neq bl bh 'h'
+            jmp _check_for_history_end bl
+            inc v2
+
+            MOVB bh [v2]
+            neq bl bh 'i'
+            jmp _check_for_history_end bl
+            inc v2
+
+            MOVB bh [v2]
+            neq bl bh 's'
+            jmp _check_for_history_end bl
+            inc v2
+
+            MOVB bh [v2]
+            neq bl bh 't'
+            jmp _check_for_history_end bl
+            inc v2
+
+            MOVB bl 1
+            MOV v2 0
+            ret
+
+            _check_for_history_end:
+            MOVB bl 0
+            ret
+
+
+        _check_for_clh:
+            mov v2 v1
+
+            MOVb bh [v2]
+            neq bl bh 'c'
+            jmp _check_for_clh_end bl
+            inc v2
+
+            MOVB bh [v2]
+            neq bl bh 'l'
+            jmp _check_for_clh_end bl
+            inc v2
+
+            MOVB bh [v2]
+            neq bl bh 'h'
+            jmp _check_for_clh_end bl
+            inc v2
+
+
+            MOVB bl 1
+            MOV v2 0
+            ret
+
+            _check_for_clh_end:
+            MOVB bl 0
+            ret
 		
 		
 	_check_user_command_end:
@@ -168,6 +232,43 @@ _help_handler:
 _halt_handler:
     hlt
 
+_history_handler:
+    push esi
+    mov esi msg_history
+    movb ah 0x09
+    int 21h
+
+    push v1
+    pushb bh
+    pushb bl
+    mov v1 v0
+
+    _history_handler_main_loop:
+        eq bh v1 hp
+        jmp _history_handler_end bh
+
+        movb dl [v1]
+        neq bl dl 0
+        jmp _history_handler_putc bl
+        inc v1
+        jmp _history_handler_main_loop
+
+    _history_handler_putc:
+        movb ah 0x02
+        int 21h
+        inc v1
+        jmp _history_handler_main_loop
+
+    _history_handler_end:
+        popb bl
+        popb bh
+        pop v1
+        pop esi
+        ret
+
+_clh_handler:
+    mov hp v0
+    ret
 
 
 
