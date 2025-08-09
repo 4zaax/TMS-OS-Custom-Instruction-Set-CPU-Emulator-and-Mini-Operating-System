@@ -1,0 +1,106 @@
+_initial:
+MOV cs 0
+MOV ds 10000
+MOV ss 13000
+MOV esp 19998
+
+
+msg_result: db "the result value is :"
+################################################
+jmp start
+
+
+start:
+   call get_int
+   mov v1 v4
+    movb ah 0x08
+    int 21h
+    mov v2 al
+
+    movb ah 0x08
+    int 21h
+
+   call get_int
+   mov v3 v4
+   jmp check_operator
+
+
+get_int:
+   mov v4 0
+    int_loop:
+     movb ah 0x08
+     int 21h
+     eq bl al 101
+     jmp end_program bl
+     eq bl al 10
+     jmp end_input bl
+     eq bl al 32
+     jmp end_input bl 
+     sub v5 al '0'
+     mul v4 v4 10
+     add v4 v4 v5
+     jmp int_loop
+
+end_input:
+  ret
+
+
+
+check_operator:
+   eq bl v2 '*'
+   jmp MUL_lable bl
+   eq bl v2 '+'
+   jmp ADD_lable bl
+   eq bl v2 '/'
+   jmp DIV_lable bl
+   eq bl v2 '-'
+   jmp SUB_lable bl
+
+
+
+
+
+
+ADD_lable:
+  add v1 v1 v3
+  mov esi msg_result
+  movb ah 0x09
+  int 21h
+  show v1
+  jmp start
+
+
+
+SUB_lable:
+  sub v1 v1 v3
+  mov esi msg_result
+  movb ah 0x09
+  int 21h
+  show v1
+  jmp start
+
+
+MUL_lable:
+
+  mul v1 v1 v3
+  mov esi msg_result
+  movb ah 0x09
+  int 21h
+  show v1
+  jmp start
+
+
+DIV_lable:
+  div v1 v1 v3
+  mov esi msg_result
+  movb ah 0x09
+  int 21h
+  show v1
+  jmp start
+
+end_program:
+hlt
+
+
+
+
