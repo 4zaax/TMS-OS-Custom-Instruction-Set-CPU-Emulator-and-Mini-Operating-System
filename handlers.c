@@ -734,7 +734,7 @@ void jmp_handler(const char* label, const char* reg) {
     int condition = find_any_value(reg);
     int label_offset = find_label_offset(label);
     if (label_offset >= 0 && condition == 1) {
-        *ip = label_offset;
+        *ip = label_offset - *cs;
     }else if (condition == 0){
         return;
     } else {
@@ -745,7 +745,7 @@ void je_handler(const char* label) {
     if (*ZF) {
         int label_offset = find_label_offset(label);
         if (label_offset >= 0)
-            *ip = label_offset;
+            *ip = label_offset - *cs;
         else
             printf("Unknown label: %s\n", label);
     }
@@ -755,7 +755,7 @@ void jne_handler(const char* label) {
     if (!*ZF) {
         int label_offset = find_label_offset(label);
         if (label_offset >= 0)
-            *ip = label_offset;
+            *ip = label_offset - *cs;
         else
             printf("Unknown label: %s\n", label);
     }
@@ -791,13 +791,13 @@ void call_handler(const char* label) {
     }
     // Push the *next* instruction's offset onto stack (where we return)
     push_int(*ip);
-    *ip = label_offset;
+    *ip = label_offset - *cs;
 }
 
 void ret_handler(void) {
     int ret_addr = pop_int();
     if (ret_addr >= 0 && ret_addr < MEMORY_SIZE) {
-        *ip = ret_addr;
+        *ip = ret_addr - *cs;
     } else {
         printf("RET: invalid return address %d\n", ret_addr);
     }

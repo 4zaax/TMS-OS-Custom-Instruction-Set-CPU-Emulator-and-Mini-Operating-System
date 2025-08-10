@@ -1,0 +1,42 @@
+_initial:
+MOV cs 60000
+MOV ds 70000
+MOV ss 72000
+MOV esp 80000
+
+
+_msg_fib_start: db "Enter your number:" 10 0
+
+_fib_main_loop:
+    mov esi _msg_fib_start
+    movb ah 0x09
+    INT 21h
+    call _fib_get_num
+    jmp fib_end
+_fib_get_num:
+    push v1
+    mov v1 0
+_fib_get_num_loop:
+    movb ah 0x08
+    int 21h
+    eq bl al 32
+    eq cl al 10
+    orb bl bl cl
+    jmp _fib_get_num_end bl
+    jmp _fib_is_digit
+_fib_is_digit:
+    subb bl al '0'
+    MUL v1 v1 10
+    ADD v1 v1 bl
+    showb bl
+    show v1
+    int 21h
+    jmp _fib_get_num_loop
+_fib_get_num_end:
+    RET
+
+fib_end:
+pop v1
+hlt
+
+

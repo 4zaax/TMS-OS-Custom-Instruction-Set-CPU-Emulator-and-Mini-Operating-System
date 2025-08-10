@@ -319,7 +319,7 @@ int main() {
 
     // Running Terminal
     // Program should initialize registers at the beginning
-    char* directory = "../Apps/terminal.txt";
+    char* directory = "../Apps/fib.tms";
     int reg_init_res = registers_initializer(directory);
     if (reg_init_res == -1) {
         fprintf(stderr, "There was an error finding your initializer label in program.\n");
@@ -337,12 +337,13 @@ int main() {
 //        exit(1);}
 //    int program_size = load_program_data(directory);
 
-    registers_initializer("../Apps/terminal.txt");
-//    watch_memory(memory, 20000, 100);
+    registers_initializer("../Apps/fib.tms");
+//    watch_memory(memory, 60000, 100);
+//    watch_memory(memory, 70000, 100);
 
     int execution_status = execute_program(terminal_size);
 //    watch_memory(memory, 19900, 100);
-    fprintf(stderr, "There must be a problem in program since total calls doesnt match total returns.\n");
+    if (ret_count != call_count) fprintf(stderr, "There must be a problem in program since total calls doesnt match total returns.\n");
     fprintf(stderr, "Shutting down OS\n");
     return 0;
 }
