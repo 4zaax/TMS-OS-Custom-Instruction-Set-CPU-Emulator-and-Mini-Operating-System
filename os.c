@@ -287,21 +287,28 @@ void scan_labels(int prog_size) {
 
 int execute_program(int prog_size) {
     char line[LINE_LEN];
+
+
     while (*ip < prog_size) {
+
         int current_line_len = fetch_instruction(line, prog_size);
         *ip += current_line_len ? current_line_len : 1; // now ip is ready to execute next instruction
         int execution_status =  parse_and_execute(line);
-        if (execution_status == 401) return 401; // shuts down OS
+        if (execution_status == 401){
+            return 401;}; // shuts down OS
     }
 }
 
 // Reads a line from memory at *ip, returns line length
 int fetch_instruction(char* out, int prog_size) {
     int i = 0;
+
     while ((*ip + i < prog_size) && (memory[*cs + *ip + i] != '\n')) {
+
         out[i] = memory[*cs + *ip + i]; // <-- fixed here
         i++;
     }
+
     out[i] = '\0';
     return i + (memory[*cs + *ip + i] == '\n' ? 1 : 0); // include newline if present
 }
@@ -314,7 +321,7 @@ int main() {
 
     // Running Terminal
     // Program should initialize registers at the beginning
-    char* directory = "../Apps/fact.tms";
+    char* directory = "../Apps/new_calculator.txt";
     int reg_init_res = registers_initializer(directory);
     if (reg_init_res == -1) {
         fprintf(stderr, "There was an error finding your initializer label in program.\n");
@@ -332,7 +339,8 @@ int main() {
 //        exit(1);}
 //    int program_size = load_program_data(directory);
 
-    registers_initializer(directory);
+    registers_initializer("../Apps/fib.tms");
+//    watch_memory(memory, 60000, 100);
 //    watch_memory(memory, 70000, 100);
 
     int execution_status = execute_program(terminal_size);
@@ -343,6 +351,7 @@ int main() {
 }
 
 int parse_and_execute(char* line){
+
     lstrip(line);
     // Ignore empty lines
     if (line[0] == '\0') return 0;

@@ -734,7 +734,7 @@ void jmp_handler(const char* label, const char* reg) {
     int condition = find_any_value(reg);
     int label_offset = find_label_offset(label);
     if (label_offset >= 0 && condition == 1) {
-        *ip = label_offset - *cs;
+        *ip = label_offset - *cs ;
     }else if (condition == 0){
         return;
     } else {
@@ -800,8 +800,8 @@ void ret_handler(const char* cond) {
         int ret_addr = pop_int();
         if (ret_addr >= 0 && ret_addr < MEMORY_SIZE) {
             *ip = ret_addr ;
-        } else {
             printf("RET: invalid return address %d\n", ret_addr);
+        } else {
         }
     }
 }
