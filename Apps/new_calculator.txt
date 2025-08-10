@@ -1,8 +1,8 @@
 _initial:
-MOV cs 0
-MOV ds 10000
-MOV ss 13000
-MOV esp 19998
+MOV cs 20000
+MOV ds 23000
+MOV ss 25000
+MOV esp 30000
 
 
 msg_result: db "the result value is :"
