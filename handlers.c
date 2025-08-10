@@ -800,8 +800,8 @@ void ret_handler(const char* cond) {
         int ret_addr = pop_int();
         if (ret_addr >= 0 && ret_addr < MEMORY_SIZE) {
             *ip = ret_addr ;
-            printf("RET: invalid return address %d\n", ret_addr);
         } else {
+            printf("RET: invalid return address %d\n", ret_addr);
         }
     }
 }

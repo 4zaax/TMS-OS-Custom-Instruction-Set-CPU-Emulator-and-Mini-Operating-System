@@ -339,7 +339,7 @@ int main() {
 //        exit(1);}
 //    int program_size = load_program_data(directory);
 
-    registers_initializer("../Apps/fib.tms");
+    registers_initializer(directory);
 //    watch_memory(memory, 60000, 100);
 //    watch_memory(memory, 70000, 100);
 
