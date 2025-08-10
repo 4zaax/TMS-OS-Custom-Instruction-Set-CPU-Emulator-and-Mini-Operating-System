@@ -23,18 +23,13 @@ uint8_t flags_mem[4]; // ZF, SF, CF, OF (one byte each)
 LabelEntry label_table[MAX_LABELS];
 int label_count = 0;
 int terminal_size = 0;
-////////////////////////////////////////////////////////////////
-//////////////////       setting flags       ///////////////////
-////////////////////////////////////////////////////////////////
+
 uint8_t* ZF = &flags_mem[0];
 uint8_t* SF = &flags_mem[1];
 uint8_t* CF = &flags_mem[2];
 uint8_t* OF = &flags_mem[3];
 
 
-////////////////////////////////////////////////////////////////
-////////////////// GENERAL PURPOSE REGISTERS ///////////////////
-////////////////////////////////////////////////////////////////
 
 // EAX
 #define EAX_OFFSET 0
@@ -138,7 +133,7 @@ int load_program_data(const char* directory){
 
 int registers_initializer (const char* directory) {
     FILE* file = fopen(directory, "r");
-    if (!file) fprintf(stderr, "register_initializer: file not found.\n");
+    if (!file) fprintf(stderr, "register_initializer: file [%s] not found.\n", directory);
 
     char buffer[LINE_LEN];
     int flag_initializer_validation = 0;
@@ -319,7 +314,7 @@ int main() {
 
     // Running Terminal
     // Program should initialize registers at the beginning
-    char* directory = "../Apps/fib.tms";
+    char* directory = "../Apps/fact.tms";
     int reg_init_res = registers_initializer(directory);
     if (reg_init_res == -1) {
         fprintf(stderr, "There was an error finding your initializer label in program.\n");
@@ -337,8 +332,7 @@ int main() {
 //        exit(1);}
 //    int program_size = load_program_data(directory);
 
-    registers_initializer("../Apps/fib.tms");
-//    watch_memory(memory, 60000, 100);
+    registers_initializer(directory);
 //    watch_memory(memory, 70000, 100);
 
     int execution_status = execute_program(terminal_size);
@@ -544,7 +538,7 @@ int parse_and_execute(char* line){
         call_count++;
     }
     else if (strcasecmp(command,"RET") == 0){
-        ret_handler();
+        ret_handler(tokens == 2 ? arg1 : "1");
         ret_count++;
     }
 

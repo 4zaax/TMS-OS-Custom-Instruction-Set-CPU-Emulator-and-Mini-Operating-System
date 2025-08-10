@@ -794,12 +794,15 @@ void call_handler(const char* label) {
     *ip = label_offset - *cs;
 }
 
-void ret_handler(void) {
-    int ret_addr = pop_int();
-    if (ret_addr >= 0 && ret_addr < MEMORY_SIZE) {
-        *ip = ret_addr - *cs;
-    } else {
-        printf("RET: invalid return address %d\n", ret_addr);
+void ret_handler(const char* cond) {
+    int condition = find_any_value(cond);
+    if (condition == 1){
+        int ret_addr = pop_int();
+        if (ret_addr >= 0 && ret_addr < MEMORY_SIZE) {
+            *ip = ret_addr ;
+        } else {
+            printf("RET: invalid return address %d\n", ret_addr);
+        }
     }
 }
 
@@ -891,10 +894,9 @@ void int_handler(const char* arg) {
             fflush(stdout);
         }
         else if (ah_val == 0x08) { // Get character from input, return in AL
-            int ch = _getch();
+            int ch = getchar();
             ch = ch == 13 ? 10 : ch;
             if (ch != EOF) *al = (uint8_t)ch;
-            fflush(stdout);
         }
         else if (ah_val == 0x09) {
             uint32_t addr = *esi;  // or *eax

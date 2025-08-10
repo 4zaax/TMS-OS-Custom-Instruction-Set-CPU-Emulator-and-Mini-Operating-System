@@ -2,9 +2,7 @@
 #define HANDLERS_H
 
 #define MEMORY_SIZE 128000 // RAM
-#define MAX_LINES 500   // OS supports programs of maximum 500 lines
 #define LINE_LEN 512
-#define MAX_VARIABLES 1000
 
 extern uint8_t memory[];
 extern uint8_t reg_mem[];
@@ -143,7 +141,7 @@ void jg_handler(const char* label);
 void jl_handler(const char* label);
 
 void call_handler(const char* label);
-void ret_handler(void);
+void ret_handler(const char* condition);
 
 void eq_handler(const char* dest, const char* src1, const char* src2);
 void neq_handler(const char* dest, const char* src1, const char* src2);

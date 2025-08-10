@@ -1,0 +1,76 @@
+_initial:
+MOV cs 60000
+MOV ds 70000
+MOV ss 72000
+MOV esp 80000
+
+
+_msg_fact_start: db "Enter your number:" 10 0
+_msg_fact_overflow: db "Warning: the result is not valid since you have entered a big number"
+_fact_main_loop:
+    mov esi _msg_fact_start
+    movb ah 0x09
+    INT 21h
+    call _fact_get_num
+    jmp fact_end
+_fact_get_num:
+    push v1
+    mov v1 0
+_fact_get_num_loop:
+    movb ah 0x08
+    int 21h
+    eq bl al 32
+    eq cl al 10
+    orb bl bl cl
+    jmp _fact_get_num_end bl
+    jmp _fact_is_digit
+_fact_is_digit:
+    subb bl al '0'
+    IMUL v1 v1 10
+    ADD v1 v1 bl
+    jmp _fact_get_num_loop
+_fact_get_num_end:
+	mov v3 0
+	push v1
+    call _fact_eval_v1
+    call _fact_num_print
+    pop v1
+    RET
+
+_fact_eval_v1:
+
+		inc v3
+        eq bl v1 1
+
+        ret bl
+        push v1
+        dec v1
+        call _fact_eval_v1
+		dec v3
+        pop v2
+        IMUL v1 v1 v2
+        ret 
+
+_fact_num_print:
+    # v2 represents count of saved digits in memory
+    mov v2 0
+    _fact_digit_save:
+    div v1 v1 10
+    addb dl dl '0'
+    movb [hp] dl
+    inc hp
+    neq al v1 0
+    inc v2
+    jmp _fact_digit_save al
+
+    _fact_print_res:
+    dec hp
+    movb dl [hp]
+    movb ah 0x02
+    INT 21h
+    dec v2
+    neq bl v2 0
+    jmp _fact_print_res bl
+    MOVB dl 10
+    INT 21h
+    ret
