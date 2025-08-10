@@ -1,0 +1,48 @@
+_initial:
+MOV cs 30000
+MOV ds 33000
+MOV ss 35000
+MOV esp 40000
+
+
+
+start:
+mov [hp] 10
+inc hp
+
+call get_str
+call print_reverse
+  
+
+get_str:
+     str_loop:
+     movb ah 0x08
+     int 21h
+     mov [hp] al
+     inc hp
+     eq bl al 101
+     jmp end_program bl
+     eq bl al 10
+     jmp end_input bl 
+     jmp str_loop
+end_input:
+dec hp
+dec hp
+ret
+
+
+print_reverse:
+
+ revers_loop:
+ movb dl [hp]
+ movb ah 0x02
+ int 21h
+ dec hp
+ eq bl hp 32999
+ jmp start bl
+ jmp revers_loop
+
+
+
+end_program:
+hlt
