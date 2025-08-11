@@ -22,7 +22,7 @@ uint8_t flags_mem[4]; // ZF, SF, CF, OF (one byte each)
 
 LabelEntry label_table[MAX_LABELS];
 int label_count = 0;
-int terminal_size = 0;
+int image_size = 0;
 
 uint8_t* ZF = &flags_mem[0];
 uint8_t* SF = &flags_mem[1];
@@ -116,11 +116,45 @@ void print_os_info() {
 #endif
 }
 
-int load_program_data(const char* directory){
+static char* trim_trailing_newline(char* s) {
+    size_t n = strlen(s);
+    while (n && (s[n-1] == '\n' || s[n-1] == '\r' || s[n-1] == ' ' || s[n-1] == '\t'))
+        s[--n] = 0;
+    return s;
+}
 
+static char* read_boot_target(const char* bootfile) {
+    FILE* f = fopen(bootfile, "r");
+    if (!f) {
+        fprintf(stderr, "boot: couldn't open %s; falling back to ./Apps/terminal.txt\n", bootfile);
+        char* fallback = (char*)malloc(64);
+        strcpy(fallback, "./Apps/terminal.txt");
+        return fallback;
+    }
+    char buf[LINE_LEN];
+    while (fgets(buf, sizeof buf, f)) {
+        lstrip(buf);                       // you already have this helper :contentReference[oaicite:2]{index=2}
+        if (buf[0] == 0)        continue;  // empty after lstrip
+        if (buf[0] == '#')      continue;  // comment
+        trim_trailing_newline(buf);
+        const char* p = buf;
+        if (strncasecmp(buf, "APP=", 4) == 0) p = buf + 4;  // allow APP=./Apps/terminal.txt
+        // duplicate to heap
+        char* path = (char*)malloc(strlen(p)+1);
+        strcpy(path, p);
+        fclose(f);
+        return path;
+    }
+    fclose(f);
+    // no usable line
+    char* fallback = (char*)malloc(64);
+    strcpy(fallback, "./Apps/terminal.txt");
+    return fallback;
+}
+
+int load_program_data(const char* directory){
     FILE* f = fopen(directory, "r");
     if (!f) { puts("Program not found"); return 1; }
-
 
     // 2. Now we should load data segment
     // NOTE : !!!! : make sure initializer has assigned correct value to ds
@@ -129,6 +163,7 @@ int load_program_data(const char* directory){
     uint32_t prog_size = load_program_linear(f);
     fclose(f);
     scan_labels(prog_size);
+    return (int)prog_size;
 }
 
 int registers_initializer (const char* directory) {
@@ -319,36 +354,39 @@ int main() {
     memset(flags_mem, 0, sizeof(flags_mem));
     memset(memory, 0, sizeof(memory));
 
-    // Running Terminal
-    // Program should initialize registers at the beginning
-    char* directory = "../Apps/new_calculator.txt";
+
+    char* directory = read_boot_target("./boot.txt");
+
+    /*--- Now boot.txt should target terminal ---*/
+
+    // 1) Initializing Target File Registers
     int reg_init_res = registers_initializer(directory);
     if (reg_init_res == -1) {
         fprintf(stderr, "There was an error finding your initializer label in program.\n");
-        exit(1);}
-    // now we write program into the ram :
+        free(directory);
+        exit(1);
+    }
 
-    terminal_size = load_program_data(directory);
 
-    // Loading second app
-//    directory = "../Apps/program2.txt";
-//
-//    reg_init_res = registers_initializer(directory);
-//    if (reg_init_res == -1) {
-//        fprintf(stderr, "There was an error finding your initializer label in program.\n");
-//        exit(1);}
-//    int program_size = load_program_data(directory);
+    // 2) It's time to load Targe File codes into code section and datas in data section of RAM
+    image_size = load_program_data(directory);
+    if (image_size < 0) {
+        fprintf(stderr, "Failed to load program: %s\n", directory);
+        free(directory);
+        exit(1);
+    }
 
-    registers_initializer(directory);
-//    watch_memory(memory, 60000, 100);
-//    watch_memory(memory, 70000, 100);
+    // 3) execution
+    int execution_status = execute_program(image_size);
 
-    int execution_status = execute_program(terminal_size);
-//    watch_memory(memory, 19900, 100);
-    if (ret_count != call_count) fprintf(stderr, "There must be a problem in program since total calls doesnt match total returns.\n");
+    if (ret_count != call_count)
+        fprintf(stderr, "There must be a problem in program since total calls doesnt match total returns.\n");
+
     fprintf(stderr, "Shutting down OS\n");
     return 0;
 }
+
+/* --- Parse and execute is part of our kernel/CPU emulator ---*/
 
 int parse_and_execute(char* line){
 
@@ -356,7 +394,7 @@ int parse_and_execute(char* line){
     // Ignore empty lines
     if (line[0] == '\0') return 0;
     // Ignore comment lines
-    if (first_char(line) == '#') return 0;
+    if (first_char(line) == '#' || first_char(line) == ';') return 0;
     // Ignore label lines
     int len = strlen(line);
     if (len > 1 && line[len-1] == ':') return 0;
