@@ -848,63 +848,86 @@ void lse_handler(const char* dest, const char* src1, const char* src2) {
     *d = ((int32_t)find_any_value(src1) <= (int32_t)find_any_value(src2)) ? 1 : 0;
 }
 
-void showstr(const char* regname) {
-    uint32_t* addr_ptr = get_register(regname, 4);
-    if (!addr_ptr) {
-        printf("SHOWSTR: %s is not a valid 32-bit reg\n", regname);
-        return;
-    }
-    uint32_t addr = *addr_ptr;
-    printf("STR[%s] = \"", regname);
-    while (memory[addr] && addr < MEMORY_SIZE) {
-        putchar(memory[addr]);
-        addr++;
-    }
-    printf("\"\n");
-}
-
-void get_handler(const char* reg) {
-    void* ptr = get_register(reg, 1);  // Only allow 1-byte registers!
-    if (ptr) {
-        int ch;
-        printf("Enter a character for %s: ", reg);
-        ch = getchar();
-        // skip any leftover newline
-        if (ch == '\n') ch = getchar();
-        *((char*)ptr) = (char)ch;
-        return;
-    }
-    printf("GET: Only 1-byte registers are allowed (%s)\n", reg);
-}
-
+// INT handler (for "INT xx")
 // INT handler (for INT xx)
 void int_handler(const char* arg) {
     int int_num = 0;
     if (is_num((char*)arg)) {
         int_num = my_atoi(arg);
-    }else {
+    } else {
         printf("INT: invalid interrupt number (%s)\n", arg);
         return;
     }
 
     if (int_num == 0x21) { // INT 21h
-        uint8_t ah_val = *ah;
-        if (ah_val == 0x02) {  // Display character
+        uint8_t ah_val = *ah;  // AH is already exposed from reg_mem
+        if (ah_val == 0x02) {  // Display character (DL)
             putchar(*dl);
             fflush(stdout);
         }
         else if (ah_val == 0x08) { // Get character from input, return in AL
             int ch = getchar();
-            ch = ch == 13 ? 10 : ch;
-            if (ch != EOF) *al = (uint8_t)ch;
+            if (ch != EOF) *al = (uint8_t)map_cr_to_lf(ch);
         }
-        else if (ah_val == 0x09) {
-            uint32_t addr = *esi;  // or *eax
-            while (memory[addr] && addr < MEMORY_SIZE) {
-            putchar(memory[addr++]);
+        else if (ah_val == 0x09) { // Print 0-terminated string at [ESI]
+            uint32_t addr = *esi;  // or *eax if you prefer
+            if (addr >= MEMORY_SIZE) {
+                printf("INT 21h/09: ESI out of bounds (0x%08X)\n", addr);
+            } else {
+                while (addr < MEMORY_SIZE && memory[addr]) {
+                    putchar(memory[addr++]);
+                }
+                fflush(stdout);
             }
-            fflush(stdout);
-        } else {
+        }
+        else if (ah_val == 0x4B) { // EXEC: filename pointer in [ESI]
+            char path[512];
+            if (!read_emu_cstr(*esi, path, sizeof(path)) || path[0] == '\0') {
+                printf("INT 21h/4B: empty or invalid filename at [ESI]\n");
+            } else {
+                /* save minimal caller state so we can return to the terminal */
+                uint32_t saved_cs  = *cs;
+                uint32_t saved_ip  = *ip;
+                uint32_t saved_ds  = *ds;
+                uint32_t saved_ss  = *ss;
+                uint32_t saved_esp = *esp;
+                uint32_t saved_hp  = *hp;
+                uint32_t saved_esi = *esi;
+                uint32_t saved_edi = *edi;
+                uint32_t saved_eax = *eax;
+                uint32_t saved_ebx = *ebx;
+                uint32_t saved_ecx = *ecx;
+                uint32_t saved_edx = *edx;
+
+                /* load & run child program using your existing pipeline */
+                int reg_init_res = registers_initializer(path);      // runs _initial:
+                if (reg_init_res != -1) {
+                    int image_size = load_program_data(path);        // loads DS & code, builds labels
+                    if (image_size > 0) {
+                        execute_program(image_size);                 // returns when child app halts/exits
+                    } else {
+                        printf("INT 21h/4B: load failed for %s\n", path);
+                    }
+                } else {
+                    printf("INT 21h/4B: no _initial: in %s\n", path);
+                }
+
+                /* restore caller state (back to terminal) */
+                *cs  = saved_cs;
+                *ip  = saved_ip;
+                *ds  = saved_ds;
+                *ss  = saved_ss;
+                *esp = saved_esp;
+                *hp  = saved_hp;
+                *esi = saved_esi;
+                *edi = saved_edi;
+                *eax = saved_eax;
+                *ebx = saved_ebx;
+                *ecx = saved_ecx;
+                *edx = saved_edx;
+            }
+        }
+        else {
             printf("INT 21h: unknown function in AH = 0x%02X\n", ah_val);
             fflush(stdout);
         }
@@ -914,11 +937,18 @@ void int_handler(const char* arg) {
     }
 }
 
-void getc_handler() {
-    char c = getchar();
-    *dl = (int) c;
+static int map_cr_to_lf(int ch) {
+    return ch == 13 ? 10 : ch;
 }
 
-void putc_handler() {
-    putchar(*dl);
+static int read_emu_cstr(uint32_t addr, char* out, size_t out_sz) {
+    if (addr >= MEMORY_SIZE || out_sz == 0) return 0;
+    size_t i = 0;
+    while (i + 1 < out_sz && addr < MEMORY_SIZE) {
+        unsigned char b = memory[addr++];
+        if (b == 0) break;
+        out[i++] = (char)b;
+    }
+    out[i] = '\0';
+    return 1;
 }
