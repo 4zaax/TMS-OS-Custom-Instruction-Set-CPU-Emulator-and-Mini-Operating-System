@@ -133,13 +133,12 @@ static char* read_boot_target(const char* bootfile) {
     }
     char buf[LINE_LEN];
     while (fgets(buf, sizeof buf, f)) {
-        lstrip(buf);                       // you already have this helper :contentReference[oaicite:2]{index=2}
+        lstrip(buf);
         if (buf[0] == 0)        continue;  // empty after lstrip
-        if (buf[0] == '#')      continue;  // comment
+        if (buf[0] == '#' || buf[0] == ';')      continue;  // comment
         trim_trailing_newline(buf);
         const char* p = buf;
         if (strncasecmp(buf, "APP=", 4) == 0) p = buf + 4;  // allow APP=./Apps/terminal.txt
-        // duplicate to heap
         char* path = (char*)malloc(strlen(p)+1);
         strcpy(path, p);
         fclose(f);
@@ -615,10 +614,6 @@ int parse_and_execute(char* line){
         printf("Unknown command: %s\n",command);
     return 0;
 }
-
-
-
-
 
 
 void clear_screen() {

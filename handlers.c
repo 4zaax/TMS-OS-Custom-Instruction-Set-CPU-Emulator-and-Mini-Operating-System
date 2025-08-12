@@ -870,7 +870,7 @@ void int_handler(const char* arg) {
             if (ch != EOF) *al = (uint8_t)map_cr_to_lf(ch);
         }
         else if (ah_val == 0x09) { // Print 0-terminated string at [ESI]
-            uint32_t addr = *esi;  // or *eax if you prefer
+            uint32_t addr = *esi;
             if (addr >= MEMORY_SIZE) {
                 printf("INT 21h/09: ESI out of bounds (0x%08X)\n", addr);
             } else {
@@ -885,7 +885,7 @@ void int_handler(const char* arg) {
             if (!read_emu_cstr(*esi, path, sizeof(path)) || path[0] == '\0') {
                 printf("INT 21h/4B: empty or invalid filename at [ESI]\n");
             } else {
-                /* save minimal caller state so we can return to the terminal */
+                /* save state so we can return to the terminal */
                 uint32_t saved_cs  = *cs;
                 uint32_t saved_ip  = *ip;
                 uint32_t saved_ds  = *ds;
@@ -899,7 +899,6 @@ void int_handler(const char* arg) {
                 uint32_t saved_ecx = *ecx;
                 uint32_t saved_edx = *edx;
 
-                /* load & run child program using your existing pipeline */
                 int reg_init_res = registers_initializer(path);      // runs _initial:
                 if (reg_init_res != -1) {
                     int image_size = load_program_data(path);        // loads DS & code, builds labels
@@ -912,7 +911,7 @@ void int_handler(const char* arg) {
                     printf("INT 21h/4B: no _initial: in %s\n", path);
                 }
 
-                /* restore caller state (back to terminal) */
+                /* restore state (back to terminal) */
                 *cs  = saved_cs;
                 *ip  = saved_ip;
                 *ds  = saved_ds;
