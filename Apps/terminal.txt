@@ -10,6 +10,11 @@ _terminal_start:
     msg2: db "echo encountered." 10 0
     msg3: db "this is our new mini os" 10 0
     msg_history: db "Showing commands history: (type clh to clear ram and free up memory)" 10 0
+    name1: db "shayan" 0
+    name2: db "tannaz" 0
+    name3: db "mani" 0
+    name4: db "shahab" 0
+    name5: db "shayan" 0
 	show hp
 	mov v0 hp
 _terminal_main_loop:
@@ -18,8 +23,12 @@ _terminal_main_loop:
 	mov esi msg_directory
 	movb ah 0x09
 	int 21h
-
 	mov esi hp
+	;delete these lines :
+	;mov esi name1
+	;mov ecx name5
+	;call _strcmp
+	;showb al
 	call _getstr
 
 	movb ah 0x09
@@ -62,6 +71,11 @@ _check_user_command:
 
 	call _check_for_clh
 	call _clh_handler bl
+
+
+    call _check_for_strcmp
+    call _strcmp bl
+
 
 	
 	JMP _check_user_command_end
@@ -208,6 +222,48 @@ _check_user_command:
             _check_for_clh_end:
             MOVB bl 0
             ret
+
+        _check_for_strcmp:
+            mov v2 v1
+
+            MOVb bh [v2]
+            neq bl bh 's'
+            jmp _check_for_strcmp_end bl
+            inc v2
+
+            MOVB bh [v2]
+            neq bl bh 't'
+            jmp _check_for_strcmp_end bl
+            inc v2
+
+            MOVB bh [v2]
+            neq bl bh 'r'
+            jmp _check_for_strcmp_end bl
+            inc v2
+
+            MOVB bh [v2]
+            neq bl bh 'c'
+            jmp _check_for_strcmp_end bl
+            inc v2
+
+            MOVB bh [v2]
+            neq bl bh 'm'
+            jmp _check_for_strcmp_end bl
+            inc v2
+
+            MOVB bh [v2]
+            neq bl bh 'p'
+            jmp _check_for_strcmp_end bl
+            inc v2
+
+
+            MOVB bl 1
+            MOV v2 0
+            ret
+
+            _check_for_strcmp_end:
+            MOVB bl 0
+            ret
 		
 		
 	_check_user_command_end:
@@ -270,6 +326,48 @@ _clh_handler:
     mov hp v0
     ret
 
+# expect first string to be in esi register and the second string pointer to be in ecx -> sets al to 0 if those 2 are not equal
+_strcmp:
+    MOVB al 0
+    push esi
+    push ecx
+    mov esi name5
+    _strcmp_main:
+        movb ah [esi]
+        movb bh [ecx]
+        neq al ah bh
+        jmp _strcmp_end al
+        eq bl ah 0
+        jmp _strcmp_eq bl
+        inc esi
+        inc ecx
+        jmp _strcmp_main
+
+_strcmp_eq:
+    movb al 1
+    pop ecx
+    pop esi
+    ret
+_strcmp_end:
+    pop ecx
+    pop esi
+    ret
+
+# put your string in esi call strlen and receive length in eax register
+_strlen:
+    push esi
+    pushb bl
+    mov eax 0
+    _strlen_main:
+        eq  bl [esi] 0
+        jmp _strlen_end bl
+        inc eax
+        inc esi
+        jmp _strlen_main
+_strlen_end:
+    popb bl
+    pop esi
+    ret
 
 
 

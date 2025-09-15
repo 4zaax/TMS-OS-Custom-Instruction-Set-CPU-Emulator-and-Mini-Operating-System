@@ -1,1 +1,1 @@
-./Apps/terminal.txt
+./Apps/app2.txt

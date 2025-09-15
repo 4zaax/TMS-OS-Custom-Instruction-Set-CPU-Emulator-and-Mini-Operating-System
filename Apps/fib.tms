@@ -6,7 +6,7 @@ MOV esp 80000
 
 
 _msg_fib_start: db "Enter your number:" 10 0
-
+_msg_fib_overflow: db "Warning: the result is not valid since you have entered a big number"
 _fib_main_loop:
     mov esi _msg_fib_start
     movb ah 0x09
@@ -26,17 +26,30 @@ _fib_get_num_loop:
     jmp _fib_is_digit
 _fib_is_digit:
     subb bl al '0'
-    MUL v1 v1 10
+    IMUL v1 v1 10
     ADD v1 v1 bl
-    showb bl
-    show v1
-    int 21h
     jmp _fib_get_num_loop
 _fib_get_num_end:
+	mov v3 0
+	push v1
+    call _fib_eval_v1
+    call _fib_num_print
+    pop v1
     RET
 
-fib_end:
-pop v1
-hlt
+_fib_eval_v1:
+		inc v3
+        eq bl v1 1
 
+        ret bl
+        push v1
+        dec v1
+        call _fib_eval_v1
+		dec v3
+        pop v2
+        ADD v1 v1 v2
+        ret
 
+_fib_num_print:
+    show v1
+    show v2

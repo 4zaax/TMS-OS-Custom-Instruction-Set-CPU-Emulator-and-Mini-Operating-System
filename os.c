@@ -30,7 +30,6 @@ uint8_t* CF = &flags_mem[2];
 uint8_t* OF = &flags_mem[3];
 
 
-
 // EAX
 #define EAX_OFFSET 0
 uint32_t* eax = (uint32_t*)&reg_mem[EAX_OFFSET];
@@ -445,8 +444,8 @@ int parse_and_execute(char* line){
     else if (strcasecmp(command, "SHOWSB_MEM") == 0)
         showsb_mem(find_any_value(arg1));
 
-    else if (strcasecmp(command,"SHOWC") == 0)
-        showc(arg1);
+//    else if (strcasecmp(command,"SHOWC") == 0)
+//        showc(arg1);
 
     else if (strcasecmp(command, "SHOW_ALL_REGS") == 0)
         show_all_registers();

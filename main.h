@@ -43,7 +43,7 @@ extern int* v29;
 #define MAX_LABELS 1024
 
 typedef struct {
-    char name[32];
+    char name[64];
     int offset;
     int is_data; // 1 for data, 0 for code
 } LabelEntry;

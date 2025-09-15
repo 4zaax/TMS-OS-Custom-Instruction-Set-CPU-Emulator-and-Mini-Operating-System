@@ -893,6 +893,7 @@ void int_handler(const char* arg) {
                 uint32_t saved_esp = *esp;
                 uint32_t saved_hp  = *hp;
                 uint32_t saved_esi = *esi;
+                uint32_t saved_ebp = *ebp;
                 uint32_t saved_edi = *edi;
                 uint32_t saved_eax = *eax;
                 uint32_t saved_ebx = *ebx;
@@ -917,6 +918,7 @@ void int_handler(const char* arg) {
                 *ds  = saved_ds;
                 *ss  = saved_ss;
                 *esp = saved_esp;
+                *ebp = saved_ebp;
                 *hp  = saved_hp;
                 *esi = saved_esi;
                 *edi = saved_edi;
