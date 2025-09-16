@@ -1,0 +1,644 @@
+_initial:
+MOV cs 40000
+MOV ds 65000
+MOV ss 75000
+MOV esp 79996
+
+_array_management_start:
+    msg_directory: db "~/" 0
+    msg_help: db "help: add(one  | print_asc | print_desc | max | min | avg(floor) | delete | hist" 10 0
+	msg_add: db "how many numbers do you want to add?" 10 0
+	msg_add2: db "enter your number/numbers (each in a line)" 10 0
+	msg_max: db "the maximum number in this array is:" 32 0
+	msg_min: db "the minimum number in this array is:" 32 0
+    msg_new_line: db 10 0
+    msg_history: db "Showing commands history: (type clh to clear ram and free up memory)" 10 0
+	msg_debbug: db "just for debbugging" 10 0
+    show hp
+	mov v0 hp
+
+	mov v21 600
+	mov v25 v21
+	#v10 is the first number and v11 is the pointer
+
+
+_array_management_main_loop:
+    mov esi msg_directory
+	movb ah 0x09
+	int 21h
+	mov esi hp
+	call _getstr
+	mov v1 esi
+	call _check_user_command
+	jmp _array_management_main_loop
+
+_getstr:
+    # receives one character
+    movb ah 0x08
+    int 21h
+    eq bl al 10
+    jmp _getstr_end bl
+    mov [hp] al
+    inc hp
+    mov [hp] 10
+    jmp _getstr
+_getstr_end:
+    mov [hp] 10
+    inc hp
+    mov [hp] 0
+    inc hp
+    ret
+
+_check_user_command:
+	# if the check was succsseful bl=1
+	# each check function sets bl 1 if the check result is true
+
+	call _check_for_help
+	call _help_handler bl
+
+	call _check_for_add
+	call _add_handler bl
+
+	call _check_for_asc
+	call _inorder_handler bl
+
+	call _check_for_max
+	call _max_handler bl
+
+    call _check_for_min
+    call _min_handler bl
+
+	call _check_for_del
+	call _del_handler bl
+
+	call _check_for_desc
+	call _deorder_handler bl
+
+	call _check_for_history
+	call _history_handler bl
+
+	call _check_for_clh
+    call _clh_handler bl
+
+	jmp _check_user_command_end
+_check_user_command_end:
+	ret
+
+###########################################################checkers
+############################help
+_check_for_help:
+	mov v2 v1
+
+	MOVb bh [v2]
+	neq bl bh 'h'
+	jmp _check_for_help_end bl
+	inc v2
+
+	MOVB bh [v2]
+	neq bl bh 'e'
+	jmp _check_for_help_end bl
+	inc v2
+
+	MOVB bh [v2]
+	neq bl bh 'l'
+	jmp _check_for_help_end bl
+	inc v2
+
+	MOVB bh [v2]
+	neq bl bh 'p'
+	jmp _check_for_help_end bl
+	inc v2
+
+	MOVB bl 1
+	MOV v2 0
+	ret
+_check_for_help_end:
+	MOVB bl 0
+	ret
+
+###########################add
+_check_for_add:
+	mov v2 v1
+
+    MOVb bh [v2]
+    neq bl bh 'a'
+    jmp _check_for_add_end bl
+    inc v2
+
+    MOVB bh [v2]
+    neq bl bh 'd'
+    jmp _check_for_add_end bl
+    inc v2
+
+    MOVB bh [v2]
+    neq bl bh 'd'
+    jmp _check_for_add_end bl
+    inc v2
+
+    MOVB bl 1
+    MOV v2 0
+    ret
+_check_for_add_end:
+    MOVB bl 0
+    ret
+#################################asc
+_check_for_asc:
+	mov v2 v1
+
+    MOVb bh [v2]
+    neq bl bh 'p'
+    jmp _check_for_asc_end bl
+    inc v2
+
+    MOVB bh [v2]
+    neq bl bh 'r'
+    jmp _check_for_asc_end bl
+    inc v2
+
+    MOVB bh [v2]
+    neq bl bh 'i'
+    jmp _check_for_asc_end bl
+    inc v2
+
+    MOVB bh [v2]
+    neq bl bh 'n'
+    jmp _check_for_asc_end bl
+    inc v2
+
+
+    MOVB bh [v2]
+    neq bl bh 't'
+    jmp _check_for_asc_end bl
+    inc v2
+
+    MOVB bh [v2]
+    neq bl bh '_'
+    jmp _check_for_asc_end bl
+    inc v2
+
+    MOVB bh [v2]
+    neq bl bh 'a'
+    jmp _check_for_asc_end bl
+    inc v2
+
+    MOVB bh [v2]
+    neq bl bh 's'
+    jmp _check_for_asc_end bl
+    inc v2
+
+    MOVB bh [v2]
+    neq bl bh 'c'
+    jmp _check_for_asc_end bl
+    inc v2
+
+    mov esi msg_debbug
+    movb ah 0x09
+    int 21h
+
+    MOVB bl 1
+    MOV v2 0
+    ret
+_check_for_asc_end:
+    MOVB bl 0
+    ret
+
+#################################max
+_check_for_max:
+	mov v2 v1
+
+    MOVb bh [v2]
+    neq bl bh 'm'
+    jmp _check_for_max_end bl
+    inc v2
+
+    MOVB bh [v2]
+    neq bl bh 'a'
+    jmp _check_for_max_end bl
+    inc v2
+
+    MOVB bh [v2]
+    neq bl bh 'x'
+    jmp _check_for_max_end bl
+    inc v2
+
+    MOVB bl 1
+    MOV v2 0
+    ret
+_check_for_max_end:
+    MOVB bl 0
+    ret
+###############################min
+_check_for_min:
+	mov v2 v1
+
+    MOVb bh [v2]
+    neq bl bh 'm'
+    jmp _check_for_min_end bl
+    inc v2
+
+    MOVB bh [v2]
+    neq bl bh 'i'
+    jmp _check_for_min_end bl
+    inc v2
+
+    MOVB bh [v2]
+    neq bl bh 'n'
+    jmp _check_for_min_end bl
+    inc v2
+
+    MOVB bl 1
+    MOV v2 0
+    ret
+_check_for_min_end:
+    MOVB bl 0
+    ret
+
+##############################del
+_check_for_del:
+	mov v2 v1
+
+    MOVb bh [v2]
+    neq bl bh 'd'
+    jmp _check_for_del_end bl
+    inc v2
+
+    MOVB bh [v2]
+    neq bl bh 'e'
+    jmp _check_for_del_end bl
+    inc v2
+
+    MOVB bh [v2]
+    neq bl bh 'l'
+    jmp _check_for_del_end bl
+    inc v2
+
+    MOVB bl 1
+    MOV v2 0
+    ret
+_check_for_del_end:
+    MOVB bl 0
+    ret
+
+#################################desc
+_check_for_desc:
+	mov v2 v1
+
+    MOVb bh [v2]
+    neq bl bh 'p'
+    jmp _check_for_desc_end bl
+    inc v2
+
+    MOVB bh [v2]
+    neq bl bh 'r'
+    jmp _check_for_desc_end bl
+    inc v2
+
+    MOVB bh [v2]
+    neq bl bh 'i'
+    jmp _check_for_desc_end bl
+    inc v2
+
+    MOVB bh [v2]
+    neq bl bh 'n'
+    jmp _check_for_desc_end bl
+    inc v2
+
+    MOVB bh [v2]
+    neq bl bh 't'
+    jmp _check_for_desc_end bl
+    inc v2
+
+    MOVB bh [v2]
+    neq bl bh ' '
+    jmp _check_for_desc_end bl
+    inc v2
+
+    MOVB bh [v2]
+    neq bl bh 'd'
+    jmp _check_for_desc_end bl
+    inc v2
+
+    MOVB bh [v2]
+    neq bl bh 'e'
+    jmp _check_for_desc_end bl
+    inc v2
+
+    MOVB bh [v2]
+    neq bl bh 's'
+    jmp _check_for_desc_end bl
+    inc v2
+
+    MOVB bh [v2]
+    neq bl bh 'c'
+    jmp _check_for_desc_end bl
+    inc v2
+
+    MOVB bl 1
+    MOV v2 0
+    ret
+_check_for_desc_end:
+    MOVB bl 0
+    ret
+
+
+####################################history
+_check_for_history:
+	mov v2 v1
+
+    MOVb bh [v2]
+    neq bl bh 'h'
+    jmp _check_for_history_end bl
+    inc v2
+
+    MOVB bh [v2]
+    neq bl bh 'i'
+    jmp _check_for_history_end bl
+    inc v2
+
+    MOVB bh [v2]
+    neq bl bh 's'
+    jmp _check_for_history_end bl
+    inc v2
+
+    MOVB bh [v2]
+    neq bl bh 't'
+    jmp _check_for_history_end bl
+    inc v2
+
+    MOVB bl 1
+    MOV v2 0
+    ret
+_check_for_history_end:
+    MOVB bl 0
+    ret
+
+#############################clh
+_check_for_clh:
+    mov v2 v1
+
+    MOVb bh [v2]
+    neq bl bh 'c'
+	jmp _check_for_clh_end bl
+    inc v2
+
+    MOVB bh [v2]
+    neq bl bh 'l'
+    jmp _check_for_clh_end bl
+    inc v2
+
+    MOVB bh [v2]
+    neq bl bh 'h'
+    jmp _check_for_clh_end bl
+    inc v2
+
+
+    MOVB bl 1
+    MOV v2 0
+    ret
+_check_for_clh_end:
+    MOVB bl 0
+    ret
+
+_check_user_command_end:
+	RET
+##################################################################checkers
+
+_help_handler:
+	mov esi msg_help
+	movb ah 0x09
+	int 21h
+
+	RET
+
+_add_handler:
+
+    call _get_number_count
+    show v21
+    mov v25 v21
+    mov v20 0
+    show v25
+    call _get_array_numbers
+    ret
+
+_inorder_handler:
+    #bubble sort but always consider it in worst case
+
+    mov v25 v21
+    mov v10 1
+    mov v26 v21
+    mov v15 0
+    call _sort
+    mov v20 0
+    mov v26 v21
+    show edx
+    call _print_array
+    ret
+
+_max_handler:
+    #set max
+    mov v10 0
+    mov v25 v21
+    mov v20 0
+    show v25
+    show v21
+    call _find_max
+    mov esi msg_max
+    movb ah 0x09
+    int 21h
+    show v10
+    ret
+
+_min_handler:
+    #set min
+    mov v10 10000
+    _find_min
+    mov esi msg_min
+    mov ah 0x09
+    int 21h
+    show v10
+    ret
+
+_del_handler:
+    _read_int
+    mov edx v10
+    _del_num
+    ret
+
+_deorder_handler:
+
+_history_handler:
+    push esi
+    mov esi msg_history
+    movb ah 0x09
+    int 21h
+
+    push v1
+    pushb bh
+    pushb bl
+    mov v1 v0
+
+    _history_handler_main_loop:
+        eq bh v1 hp
+        jmp _history_handler_end bh
+
+        movb dl [v1]
+        neq bl dl 0
+        jmp _history_handler_putc bl
+        inc v1
+        jmp _history_handler_main_loop
+
+    _history_handler_putc:
+        movb ah 0x02
+        int 21h
+        inc v1
+        jmp _history_handler_main_loop
+
+_history_handler_end:
+    popb bl
+    popb bh
+    pop v1
+    pop esi
+    ret
+
+_clh_handler:
+    mov hp v0
+    ret
+
+_get_number_count:
+    mov esi msg_add
+    movb ah 0x09
+    int 21h
+
+    call _read_int
+    mov edx v1
+    jmp _get_number_count_end
+_get_number_count_end:
+    show edx
+    ret
+
+_get_array_numbers:
+
+
+    #v25 is a pointer to the first empty array indx
+    #v21 is the first indx of array
+    #v20 for my number count
+
+    #while condition
+    eq bl v20 edx
+    jmp _get_array_numbers_end bl
+
+    mov esi msg_add2
+    movb ah 0x09
+    int 21h
+
+    call _read_int
+    mov [v25] v1
+    add v25 v25 4
+    inc v20
+
+    jmp _get_array_numbers
+_get_array_numbers_end:
+    #return to the first array indx
+    #v10 is a pointer for sort
+    mov v10 1
+    ret
+
+_sort:
+
+    eq bl v10 edx
+    jmp _sort_end bl
+    mov v17 [v26]
+    add v26 v26 4
+    mov ecx [v26]
+    show v17
+    show ecx
+    inc v10
+    call _comp_two_numbers
+    mov esi msg_bebbug
+    int 21h
+    show v26
+    showd_mem v26
+    jmp _sort
+_sort_end:
+
+    inc v15
+    show v15
+    neq bl v15 edx
+    jmp _one_more_sort bl
+
+    ret
+
+_one_more_sort:
+    mov v26 v21
+    mov v10 1
+    jmp _sort
+
+_comp_two_numbers:
+    debugger
+    gte bl v17 ecx
+    showb bl
+    call _first_is_greater bl
+    ret
+
+_first_is_greater:
+    mov v27 v26
+    showd_mem v27
+    show v17
+    mov [v27] v17
+    showd_mem v27
+    sub v27 v27 4
+    showd_mem v27
+    mov [v27] ecx
+    showd_mem v27
+    ret
+_print_array:
+    eq bl v20 edx
+    jmp _print_array_end bl
+    showd_mem v26
+    add v26 v26 4
+    inc v20
+    jmp _print_array
+_print_array_end:
+    ret
+
+_find_max:
+    eq bl v20 edx
+    jmp _find_max_end bl
+    gte bl [v25] v10
+    call _is_bigger
+    add v25 v25 4
+    inc v20
+    jmp _find_max
+_find_max_end:
+    ret
+
+_is_bigger:
+    mov v10 [v25]
+
+
+###########################################read int
+_read_int:
+    mov v1 0
+_read_int_loop:
+    ; first receive one character put it in al
+    movb ah 0x08
+    int 21h
+
+    eq bl al 32
+    #for space
+
+    eq cl al 10
+    #for enter
+
+    orb bl bl cl
+    jmp _read_int_end bl
+    jmp is_digit 1
+is_digit:
+    subb bl al '0'
+    IMUL v1 v1 10
+    ADD v1 v1 bl
+    jmp _read_int_loop 1
+_read_int_end:
+    RET
+###########################################read int
+
