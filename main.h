@@ -1,7 +1,7 @@
 #ifndef MAIN_H
 #define MAIN_H
 #include "stdint.h"
-#define MEMORY_SIZE 128000 // RAM
+#define MEMORY_SIZE 1024000 // RAM
 #define LINE_LEN 512
 #include <conio.h>
 
@@ -40,7 +40,7 @@ extern int* v27;
 extern int* v28;
 extern int* v29;
 
-#define MAX_LABELS 1024
+#define MAX_LABELS 4096
 
 typedef struct {
     char name[64];

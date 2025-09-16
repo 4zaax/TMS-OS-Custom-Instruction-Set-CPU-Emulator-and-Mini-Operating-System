@@ -7,7 +7,6 @@
 #include "helpers.h"
 #include "handlers.h"
 #include <windows.h>
-#define MEMORY_SIZE 128000 // RAM
 #define LINE_LEN 512
 #define SKIP_LINE_COUNT 5
 
@@ -381,8 +380,8 @@ int main() {
 
     if (ret_count != call_count)
         fprintf(stderr, "There must be a problem in program since total calls doesnt match total returns.\n");
-
-    fprintf(stderr, "Shutting down OS\n");
+    fprintf(stderr, "Shutting down OS...\n");
+    Sleep(1000);
     return 0;
 }
 
@@ -619,6 +618,8 @@ int parse_and_execute(char* line){
 
 
 void clear_screen() {
+    Sleep(1000);
+
     #ifdef _WIN32
         system("cls");
     #else

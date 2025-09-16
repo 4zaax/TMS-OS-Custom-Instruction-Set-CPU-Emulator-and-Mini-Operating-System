@@ -1,7 +1,6 @@
 #ifndef HANDLERS_H
 #define HANDLERS_H
 
-#define MEMORY_SIZE 128000 // RAM
 #define LINE_LEN 512
 
 extern uint8_t memory[];
