@@ -6,11 +6,12 @@ MOV esp 79996
 
 _array_management_start:
     msg_directory: db "~/" 0
-    msg_help: db "help: add(one  | print_asc | print_desc | max | min | avg(floor) | delete | hist" 10 0
+    msg_help: db "help: add(one time for each array) | print_asc | print_desc | max | min | avg(floor) | hist | exit" 10 0
 	msg_add: db "how many numbers do you want to add?" 10 0
 	msg_add2: db "enter your number/numbers (each in a line)" 10 0
 	msg_max: db "the maximum number in this array is:" 32 0
 	msg_min: db "the minimum number in this array is:" 32 0
+	msg_div: db "the avarage of the array (without decimal point) is:" 32 0
     msg_new_line: db 10 0
     msg_history: db "Showing commands history: (type clh to clear ram and free up memory)" 10 0
 	msg_debbug: db "just for debbugging" 10 0
@@ -79,6 +80,12 @@ _check_user_command:
 
 	call _check_for_clh
     call _clh_handler bl
+
+    call _check_for_avg
+    call _avg_handler bl
+
+    call _check_for_exit
+    jmp _exit_handler bl
 
 	jmp _check_user_command_end
 _check_user_command_end:
@@ -191,9 +198,6 @@ _check_for_asc:
     jmp _check_for_asc_end bl
     inc v2
 
-    mov esi msg_debbug
-    movb ah 0x09
-    int 21h
 
     MOVB bl 1
     MOV v2 0
@@ -309,7 +313,7 @@ _check_for_desc:
     inc v2
 
     MOVB bh [v2]
-    neq bl bh ' '
+    neq bl bh '_'
     jmp _check_for_desc_end bl
     inc v2
 
@@ -399,8 +403,70 @@ _check_for_clh_end:
     MOVB bl 0
     ret
 
+#############################avg
+_check_for_avg:
+    mov v2 v1
+
+    MOVb bh [v2]
+    neq bl bh 'a'
+	jmp _check_for_avg_end bl
+    inc v2
+
+    MOVB bh [v2]
+    neq bl bh 'v'
+    jmp _check_for_avg_end bl
+    inc v2
+
+    MOVB bh [v2]
+    neq bl bh 'g'
+    jmp _check_for_avg_end bl
+    inc v2
+
+
+    MOVB bl 1
+    MOV v2 0
+    ret
+_check_for_avg_end:
+    MOVB bl 0
+    ret
+
+
+#############################exit
+_check_for_exit:
+    mov v2 v1
+
+    MOVb bh [v2]
+    neq bl bh 'e'
+	jmp _check_for_exit_end bl
+    inc v2
+
+    MOVB bh [v2]
+    neq bl bh 'x'
+    jmp _check_for_exit_end bl
+    inc v2
+
+    MOVB bh [v2]
+    neq bl bh 'i'
+    jmp _check_for_exit_end bl
+    inc v2
+
+    MOVB bh [v2]
+    neq bl bh 't'
+    jmp _check_for_exit_end bl
+    inc v2
+
+
+    MOVB bl 1
+    MOV v2 0
+    ret
+_check_for_exit_end:
+    MOVB bl 0
+    ret
+
+
 _check_user_command_end:
 	RET
+
 ##################################################################checkers
 
 _help_handler:
@@ -413,10 +479,8 @@ _help_handler:
 _add_handler:
 
     call _get_number_count
-    show v21
     mov v25 v21
     mov v20 0
-    show v25
     call _get_array_numbers
     ret
 
@@ -430,32 +494,31 @@ _inorder_handler:
     call _sort
     mov v20 0
     mov v26 v21
-    show edx
     call _print_array
     ret
 
 _max_handler:
-    #set max
-    mov v10 0
-    mov v25 v21
+    #set max v9=max
+    mov v9 0
+    mov v26 v21
     mov v20 0
-    show v25
-    show v21
     call _find_max
     mov esi msg_max
     movb ah 0x09
     int 21h
-    show v10
+    show v9
     ret
 
 _min_handler:
-    #set min
-    mov v10 10000
-    _find_min
+    #set max v9=min limit 1mil
+    mov v9 1000000
+    mov v26 v21
+    mov v20 0
+    call _find_min
     mov esi msg_min
-    mov ah 0x09
+    movb ah 0x09
     int 21h
-    show v10
+    show v9
     ret
 
 _del_handler:
@@ -465,6 +528,17 @@ _del_handler:
     ret
 
 _deorder_handler:
+    #bubble sort but always consider it in worst case
+    mov v25 v21
+    mov v10 1
+    mov v26 v21
+    mov v15 0
+    call _sort
+    mov v20 0
+    sub v8 v8 4
+    mov v26 v8
+    call _print_dec_array
+    ret
 
 _history_handler:
     push esi
@@ -504,6 +578,23 @@ _clh_handler:
     mov hp v0
     ret
 
+_avg_handler:
+    #set avg v9=avg
+    mov v9 0
+    mov v26 v21
+    mov v20 0
+    call _find_sum
+    div v9 v9 edx
+    mov esi msg_div
+    movb ah 0x09
+    int 21h
+    show v9
+    ret
+
+_exit_handler:
+    hlt
+
+#################################end handlers
 _get_number_count:
     mov esi msg_add
     movb ah 0x09
@@ -513,7 +604,6 @@ _get_number_count:
     mov edx v1
     jmp _get_number_count_end
 _get_number_count_end:
-    show edx
     ret
 
 _get_array_numbers:
@@ -541,6 +631,7 @@ _get_array_numbers_end:
     #return to the first array indx
     #v10 is a pointer for sort
     mov v10 1
+    mov v8 v25
     ret
 
 _sort:
@@ -550,19 +641,12 @@ _sort:
     mov v17 [v26]
     add v26 v26 4
     mov ecx [v26]
-    show v17
-    show ecx
     inc v10
     call _comp_two_numbers
-    mov esi msg_bebbug
-    int 21h
-    show v26
-    showd_mem v26
     jmp _sort
 _sort_end:
 
     inc v15
-    show v15
     neq bl v15 edx
     jmp _one_more_sort bl
 
@@ -574,22 +658,15 @@ _one_more_sort:
     jmp _sort
 
 _comp_two_numbers:
-    debugger
     gte bl v17 ecx
-    showb bl
     call _first_is_greater bl
     ret
 
 _first_is_greater:
     mov v27 v26
-    showd_mem v27
-    show v17
     mov [v27] v17
-    showd_mem v27
     sub v27 v27 4
-    showd_mem v27
     mov [v27] ecx
-    showd_mem v27
     ret
 _print_array:
     eq bl v20 edx
@@ -601,19 +678,55 @@ _print_array:
 _print_array_end:
     ret
 
+_print_dec_array:
+    eq bl v20 edx
+    jmp _print_array_dec_end bl
+    showd_mem v26
+    sub v26 v26 4
+    inc v20
+    jmp _print_dec_array
+_print_array_dec_end:
+    ret
+
 _find_max:
     eq bl v20 edx
     jmp _find_max_end bl
-    gte bl [v25] v10
-    call _is_bigger
-    add v25 v25 4
+    gte bl [v26] v9
+    call _is_bigger bl
+    add v26 v26 4
     inc v20
     jmp _find_max
 _find_max_end:
     ret
 
 _is_bigger:
-    mov v10 [v25]
+    mov v9 [v26]
+    ret
+
+_find_min:
+    eq bl v20 edx
+    jmp _find_min_end bl
+    lse bl [v26] v9
+    call _is_smaller bl
+    add v26 v26 4
+    inc v20
+    jmp _find_min
+_find_min_end:
+    ret
+
+_is_smaller:
+    mov v9 [v26]
+    ret
+
+_find_sum:
+    eq bl v20 edx
+    jmp _find_min_end bl
+    add v9 v9 [v26]
+    add v26 v26 4
+    inc v20
+    jmp _find_sum
+_find_sum_end:
+    ret
 
 
 ###########################################read int
