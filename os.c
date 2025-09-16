@@ -7,7 +7,6 @@
 #include "helpers.h"
 #include "handlers.h"
 #include <windows.h>
-
 #define MEMORY_SIZE 128000 // RAM
 #define LINE_LEN 512
 #define SKIP_LINE_COUNT 5
@@ -165,6 +164,12 @@ int load_program_data(const char* directory){
 }
 
 int registers_initializer (const char* directory) {
+    char* c;
+    for(c = directory; *c != '\0'; c++){
+        if (*c == '\n'){
+                *c = '\0';
+        }
+    }
     FILE* file = fopen(directory, "r");
     if (!file) fprintf(stderr, "register_initializer: file [%s] not found.\n", directory);
 
@@ -208,7 +213,6 @@ void load_data_segment(FILE* file) {
         char label[32], cmd[8], rest[LINE_LEN];
         if (sscanf(buffer, "%31[^:]: %7s %[^\n]", label, cmd, rest) == 3 && strcasecmp(cmd, "db") == 0) {
             int addr = *ds + data_ptr;
-
             // Add label to label_table with is_data=1
             if (label_count < MAX_LABELS) {
                 strncpy(label_table[label_count].name, label, 31);
@@ -320,8 +324,6 @@ void scan_labels(int prog_size) {
 
 int execute_program(int prog_size) {
     char line[LINE_LEN];
-
-
     while (*ip < prog_size) {
 
         int current_line_len = fetch_instruction(line, prog_size);
@@ -607,6 +609,7 @@ int parse_and_execute(char* line){
     else if (strcasecmp(command,"HLT") == 0){
         return 401;
     } else if (strcasecmp(command, "DEBUGGER") == 0){
+        int c = 32;
         printf("Debugger started working.\n");
         fflush(stdout);
     } else
