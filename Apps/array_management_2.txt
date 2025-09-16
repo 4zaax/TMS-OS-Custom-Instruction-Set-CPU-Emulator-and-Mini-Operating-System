@@ -15,7 +15,9 @@ _array_management_start:
     msg_new_line: db 10 0
     msg_history: db "Showing commands history: (type clh to clear ram and free up memory)" 10 0
 	msg_debbug: db "just for debbugging" 10 0
-    show hp
+    mov v2 hp
+    call _print_int
+
 	mov v0 hp
 
 	mov v21 600
@@ -463,7 +465,6 @@ _add_handler:
 _inorder_handler:
     #bubble sort but always consider it in worst case
     mov edx v29
-    show edx
     ;mov v25 v21
     mov v10 1
     mov v26 v21
@@ -483,7 +484,8 @@ _max_handler:
     mov esi msg_max
     movb ah 0x09
     int 21h
-    show v9
+    mov v2 v9
+    call _print_int
     ret
 
 _min_handler:
@@ -495,7 +497,8 @@ _min_handler:
     mov esi msg_min
     movb ah 0x09
     int 21h
-    show v9
+    mov v2 v9
+    call _print_int
     ret
 
 
@@ -576,7 +579,8 @@ _avg_handler:
     mov esi msg_div
     movb ah 0x09
     int 21h
-    show v9
+    mov v2 v9
+    call _print_int
     ret
 
 _exit_handler:
@@ -659,7 +663,8 @@ _first_is_greater:
 _print_array:
     eq bl v20 edx
     jmp _print_array_end bl
-    showd_mem v26
+    mov v2 [v26]
+    call _print_int
     add v26 v26 4
     inc v20
     jmp _print_array
@@ -669,7 +674,8 @@ _print_array_end:
 _print_dec_array:
     eq bl v20 edx
     jmp _print_array_dec_end bl
-    showd_mem v26
+    mov v2 [v26]
+    call _print_int
     sub v26 v26 4
     inc v20
     jmp _print_dec_array
@@ -742,3 +748,44 @@ is_digit:
 _read_int_end:
     RET
 ###########################################read int
+
+
+###########################################print int
+_print_int:
+    push ecx
+    push edx
+    push v3
+    push v2
+    jmp _print_loop:
+_print_loop:
+    eq bl v2 0
+    jmp _print_end_split bl
+    div v2 v2 10
+    add edx edx '0'
+    mov [hp] edx
+    inc hp
+    inc v3
+    jmp _print_loop
+_print_end_split:
+    mov v4 0
+    dec hp
+    jmp _print_loop_2
+_print_loop_2:
+    eq bl v3 v4
+    jmp _print_end_put bl
+    movb dl [hp]
+    movb ah 0x02
+    int 21h
+    inc v4
+    dec hp
+    jmp _print_loop_2
+_print_end_put:
+    movb dl 10
+    movb ah 0x02
+    int 21h
+    pop v2
+    pop v3
+    pop edx
+    pop ecx
+    ret
+#######################################print int
