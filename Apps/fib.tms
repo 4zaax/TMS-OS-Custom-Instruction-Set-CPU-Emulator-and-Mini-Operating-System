@@ -1,43 +1,55 @@
 _initial:
-MOV cs 60000
-MOV ds 70000
-MOV ss 72000
-MOV esp 80000
-
-
+MOV cs 20000
+MOV ds 25000
+MOV ss 30000
+MOV esp 39996
+_msg_fib_enter: db "Program is running. type 0 or hit" 32 "[enter]" 32 "to exit." 10 0
 _msg_fib_start: db "Enter your number:" 10 0
 _msg_fib_overflow: db "Warning: the result is not valid since you have entered a big number"
+_msg_fib_exit: db "Program finished. Terminal would take back control." 10 0
+_seperator: db "-----------------------------------" 10 0
+# v2 is our original number
+# v1 is the final result
+mov esi _msg_fib_enter
+movb ah 0x09
+int 21h
+
 _fib_main_loop:
     mov esi _msg_fib_start
     movb ah 0x09
     INT 21h
     call _fib_get_num
-    jmp fib_end
+    jmp _fib_main_loop 1
+
+
 _fib_get_num:
     push v1
     mov v1 0
 _fib_get_num_loop:
+    ; first receive one character put it in al
     movb ah 0x08
     int 21h
     eq bl al 32
     eq cl al 10
     orb bl bl cl
     jmp _fib_get_num_end bl
-    jmp _fib_is_digit
+    jmp _fib_is_digit 1
 _fib_is_digit:
     subb bl al '0'
     IMUL v1 v1 10
     ADD v1 v1 bl
-    jmp _fib_get_num_loop
+    jmp _fib_get_num_loop 1
 _fib_get_num_end:
 	mov v3 0
-	push v1
     call _fib_eval_v1
     call _fib_num_print
     pop v1
     RET
 
+# v3 is counter
 _fib_eval_v1:
+        eq bl v1 0
+        jmp _fib_end bl
 		inc v3
         eq bl v1 1
 
@@ -53,3 +65,13 @@ _fib_eval_v1:
 _fib_num_print:
     show v1
     show v2
+    mov esi _seperator
+    movb ah 0x09
+    int 21h
+    ret
+
+_fib_end:
+    mov esi _msg_fib_exit
+    movb ah 0x09
+    int 21h
+    hlt

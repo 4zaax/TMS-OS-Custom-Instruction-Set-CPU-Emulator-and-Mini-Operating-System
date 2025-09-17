@@ -1,0 +1,14 @@
+remove flags
+is memory big endian
+memory is big endian
+
+interrupts
+print os info
+read boot target
+
+scan label
+label in cs instruction in cs
+db in ds
+
+relative offset
+save current state of v0 --- v29

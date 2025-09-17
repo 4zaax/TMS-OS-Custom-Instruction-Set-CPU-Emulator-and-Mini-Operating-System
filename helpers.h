@@ -2,7 +2,6 @@
 #ifndef HELPERS_H
 #define HELPERS_H
 
-#define MEMORY_SIZE 128000 // RAM
 #define LINE_LEN 512
 
 #include "stdint.h"

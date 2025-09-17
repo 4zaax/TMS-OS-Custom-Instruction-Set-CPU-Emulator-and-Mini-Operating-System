@@ -284,7 +284,7 @@ void mov_handler (char* dest, char* src) {
         int addr = find_mem_addr(src);
         if (addr >= *ss){
             fflush(stdout);
-            fflush(stdout); fprintf(stderr, "Warning : You are changing out of range memory.\n");
+            fflush(stdout); fprintf(stdout, "Warning : You are changing out of range memory.\n");
         }
         *d_reg = *((uint32_t*)&memory[addr]);
         return;
@@ -294,7 +294,9 @@ void mov_handler (char* dest, char* src) {
         int addr = find_mem_addr(dest);
         if (addr >= *ss){
             fflush(stdout);
-            fprintf(stderr, "Warning : You are changing out of range memory.\n");
+            if (*cs != 0){
+                fprintf(stderr, "Warning : You are changing out of range memory.\n");
+            }
         }
         *((uint32_t*)&memory[addr]) = *s_reg;
         return;
@@ -313,7 +315,7 @@ void mov_handler (char* dest, char* src) {
     // memory destination and label/immediate source
     if (is_mem_addr(dest)) {
         int addr = find_mem_addr(dest);
-        if (addr >= *ss){
+        if (addr >= *ss && *cs != 0){
             fflush(stdout);
             fprintf(stderr, "Warning : You are changing out of range memory.\n");
         }
@@ -334,7 +336,9 @@ void movb_handler(char* dest, char* src) {
         int addr = find_mem_addr(src);
         if (addr >= *ss){
             fflush(stdout);
-            fprintf(stderr, "Warning : You are changing out of range memory.\n");
+            if (*cs != 0){
+                fprintf(stderr, "Warning : You are changing out of range memory.\n");
+            }
         }
         *d_reg = memory[addr];
         return;
@@ -344,7 +348,9 @@ void movb_handler(char* dest, char* src) {
         int addr = find_mem_addr(dest);
         if (addr >= *ss){
             fflush(stdout);
-            fprintf(stderr, "Warning : You are changing out of range memory.\n");
+            if (*cs != 0){
+                fprintf(stderr, "Warning : You are changing out of range memory.\n");
+            }
         }
         memory[addr] = *s_reg;
         return;
@@ -359,7 +365,9 @@ void movb_handler(char* dest, char* src) {
         int addr = find_mem_addr(dest);
         if (addr >= *ss){
             fflush(stdout);
-            fprintf(stderr, "Warning : You are changing out of range memory.\n");
+            if (*cs != 0){
+                fprintf(stderr, "Warning : You are changing out of range memory.\n");
+            }
         }
         memory[addr] = (uint8_t)find_any_value(src);
         return;
@@ -381,7 +389,9 @@ void movw_handler(char* dest, char* src) {
         int addr = find_mem_addr(src);
         if (addr >= *ss){
             fflush(stdout);
-            fprintf(stderr, "Warning : You are changing out of range memory.\n");
+            if (*cs != 0){
+                fprintf(stderr, "Warning : You are changing out of range memory.\n");
+            }
         }
         *d_reg = *((uint16_t*)&memory[addr]);
         return;
@@ -391,7 +401,9 @@ void movw_handler(char* dest, char* src) {
         int addr = find_mem_addr((char*)dest);
         if (addr >= *ss){
             fflush(stdout);
-            fprintf(stderr, "Warning : You are changing out of range memory.\n");
+            if (*cs != 0){
+                fprintf(stderr, "Warning : You are changing out of range memory.\n");
+            }
         }
         *((uint16_t*)&memory[addr]) = *s_reg;
         return;
@@ -872,7 +884,7 @@ void int_handler(const char* arg) {
         else if (ah_val == 0x09) { // Print 0-terminated string at [ESI]
             uint32_t addr = *esi;
             if (addr >= MEMORY_SIZE) {
-                printf("INT 21h/09: ESI out of bounds (0x%08X)\n", addr);
+                printf("INT 21h/09: ESI out of bounds (0x%08X) %d \n", addr, addr);
             } else {
                 while (addr < MEMORY_SIZE && memory[addr]) {
                     putchar(memory[addr++]);
@@ -880,57 +892,59 @@ void int_handler(const char* arg) {
                 fflush(stdout);
             }
         }
-        else if (ah_val == 0x4B) { // EXEC: filename pointer in [ESI]
+        else if (ah_val == 0x4B) {
             char path[512];
             if (!read_emu_cstr(*esi, path, sizeof(path)) || path[0] == '\0') {
                 printf("INT 21h/4B: empty or invalid filename at [ESI]\n");
             } else {
-                /* save state so we can return to the terminal */
-                uint32_t saved_cs  = *cs;
-                uint32_t saved_ip  = *ip;
-                uint32_t saved_ds  = *ds;
-                uint32_t saved_ss  = *ss;
-                uint32_t saved_esp = *esp;
-                uint32_t saved_hp  = *hp;
-                uint32_t saved_esi = *esi;
-                uint32_t saved_ebp = *ebp;
-                uint32_t saved_edi = *edi;
-                uint32_t saved_eax = *eax;
-                uint32_t saved_ebx = *ebx;
-                uint32_t saved_ecx = *ecx;
-                uint32_t saved_edx = *edx;
+                /* save CPU state */
+                uint32_t saved_cs=*cs,saved_ip=*ip,saved_ds=*ds,saved_ss=*ss,saved_esp=*esp;
+                uint32_t saved_hp=*hp,saved_esi=*esi,saved_edi=*edi,saved_eax=*eax,saved_ebx=*ebx;
+                uint32_t saved_ecx=*ecx,saved_edx=*edx;
+                int saved_v0= *v0;int saved_v1= *v1;int saved_v2= *v2;int saved_v3= *v3;int saved_v4= *v4;int saved_v5= *v5;int saved_v6= *v6;int saved_v7= *v7;int saved_v8= *v8;int saved_v9= *v9;int saved_v10= *v10;int saved_v11= *v11;int saved_v12= *v12;int saved_v13= *v13;int saved_v14= *v14;int saved_v15= *v15;int saved_v16= *v16;int saved_v17= *v17;int saved_v18= *v18;int saved_v19= *v19;int saved_v20= *v20;int saved_v21= *v21;int saved_v22= *v22;int saved_v23= *v23;int saved_v24= *v24;int saved_v25= *v25;int saved_v26= *v26;int saved_v27= *v27;int saved_v28= *v28;int saved_v29= *v29;
+                /* save caller labels */
+                int saved_label_count = label_count;
+                size_t L = sizeof(label_table);
+                void* label_backup = malloc(L);
+                if (!label_backup) { puts("exec: OOM backing up labels"); return; }
+                memcpy(label_backup, label_table, L);
 
-                int reg_init_res = registers_initializer(path);      // runs _initial:
-                if (reg_init_res != -1) {
-                    int image_size = load_program_data(path);        // loads DS & code, builds labels
+                /* clean label space for child */
+                label_count = 0;               // <- critical
+                // memset(label_table, 0, L);  // (optional)
+
+                int ok = registers_initializer(path);         // runs _initial:
+                if (ok != -1) {
+                    int image_size = load_program_data(path); // loads code + scans labels
                     if (image_size > 0) {
-                        execute_program(image_size);                 // returns when child app halts/exits
+                        *ip = 0;                              // <- start child from 0
+                        execute_program(image_size);
                     } else {
-                        printf("INT 21h/4B: load failed for %s\n", path);
+                        printf("exec load failed: %s\n", path);
                     }
-                } else {
-                    printf("INT 21h/4B: no _initial: in %s\n", path);
                 }
 
-                /* restore state (back to terminal) */
-                *cs  = saved_cs;
-                *ip  = saved_ip;
-                *ds  = saved_ds;
-                *ss  = saved_ss;
-                *esp = saved_esp;
-                *ebp = saved_ebp;
-                *hp  = saved_hp;
-                *esi = saved_esi;
-                *edi = saved_edi;
-                *eax = saved_eax;
-                *ebx = saved_ebx;
-                *ecx = saved_ecx;
-                *edx = saved_edx;
+                /* restore labels + CPU state */
+                memcpy(label_table, label_backup, L);
+                label_count = saved_label_count;
+                free(label_backup);
+
+                *cs=saved_cs; *ip=saved_ip; *ds=saved_ds; *ss=saved_ss; *esp=saved_esp;
+                *hp=saved_hp; *esi=saved_esi; *edi=saved_edi; *eax=saved_eax; *ebx=saved_ebx;
+                *ecx=saved_ecx; *edx=saved_edx;
+                *v0= saved_v0;*v1= saved_v1;*v2= saved_v2;*v3= saved_v3;*v4= saved_v4;*v5= saved_v5;*v6= saved_v6;*v7= saved_v7;*v8= saved_v8;*v9= saved_v9;*v10= saved_v10;*v11= saved_v11;*v12= saved_v12;*v13= saved_v13;*v14= saved_v14;*v15= saved_v15;*v16= saved_v16;*v17= saved_v17;*v18= saved_v18;*v19= saved_v19;*v20= saved_v20;*v21= saved_v21;*v22= saved_v22;*v23= saved_v23;*v24= saved_v24;*v25= saved_v25;*v26= saved_v26;*v27= saved_v27;*v28= saved_v28;*v29= saved_v29;
             }
         }
         else {
             printf("INT 21h: unknown function in AH = 0x%02X\n", ah_val);
             fflush(stdout);
+        }
+    } else if (int_num == 0x10) {                 // <<-- NEW
+        uint8_t ah_val = *ah;
+        if (ah_val == 0x00) {                   // AH=00: CLS
+            clear_screen();
+        } else {
+            printf("INT 10h: unknown AH=0x%02X\n", ah_val);
         }
     } else {
         printf("INT: unknown interrupt 0x%02X\n", int_num);
@@ -947,7 +961,7 @@ static int read_emu_cstr(uint32_t addr, char* out, size_t out_sz) {
     size_t i = 0;
     while (i + 1 < out_sz && addr < MEMORY_SIZE) {
         unsigned char b = memory[addr++];
-        if (b == 0) break;
+        if (b == 0 || b == 10) break;
         out[i++] = (char)b;
     }
     out[i] = '\0';

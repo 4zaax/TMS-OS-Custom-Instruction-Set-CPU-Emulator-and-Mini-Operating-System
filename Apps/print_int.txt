@@ -1,0 +1,75 @@
+_initial:
+MOV cs 40000
+MOV ds 65000
+MOV ss 75000
+MOV esp 79996
+
+_print_int_start:
+    msg_directory: db "~/" 0
+    msg_help: db "help: add(one time for each array) | print_asc | print_desc | max | min | avg(floor) | hist | exit" 10 0
+	msg_add: db "how many numbers do you want to add?" 10 0
+	msg_add2: db "enter your number/numbers (each in a line)" 10 0
+	msg_max: db "the maximum number in this array is:" 32 0
+	msg_min: db "the minimum number in this array is:" 32 0
+	msg_div: db "the avarage of the array (without decimal point) is:" 32 0
+    msg_new_line: db 10 0
+    msg_history: db "Showing commands history: (type clh to clear ram and free up memory)" 10 0
+	msg_debbug: db "just for debbugging" 10 0
+    show hp
+	mov v0 hp
+
+	mov v21 600
+	mov v25 v21
+	#v10 is the first number and v11 is the pointer
+
+
+_print_int_main_loop:
+    mov esi msg_directory
+	movb ah 0x09
+	int 21h
+	mov esi hp
+    mov v2 21
+    call _print_int
+    hlt
+	;jmp _array_management_main_loop
+
+_print_int:
+    push ecx
+    push edx
+    push v3
+    push v2
+    jmp _print_loop:
+_print_loop:
+    eq bl v2 0
+    jmp _print_end_split bl
+    div v2 v2 10
+    show edx
+    add edx edx '0'
+    show edx
+    mov [hp] edx
+    inc hp
+    inc v3
+    jmp _print_loop
+_print_end_split:
+    mov v4 0
+    dec hp
+    jmp _print_loop_2
+_print_loop_2:
+    eq bl v3 v4
+    jmp _print_end_put bl
+    movb dl [hp]
+    movb ah 0x02
+    int 21h
+    inc v4
+    dec hp
+    jmp _print_loop_2
+_print_end_put:
+    movb dl 10
+    movb ah 0x02
+    int 21h
+    pop v2
+    pop v3
+    pop edx
+    pop ecx
+    ret
+
