@@ -1,0 +1,131 @@
+_initial:
+MOV cs 256000
+MOV ds 306000
+MOV ss 336000
+MOV esp 360000
+
+
+_msg_sum_enter: db "Program is running. type 0 or hit" 32 "[enter]" 32 "to exit." 10 0
+_msg_sum_start: db "Enter your number:" 10 0
+_msg_sum_overflow: db "Warning: the result is not valid since you have entered a big number"
+_msg_sum_exit: db "Program finished. Terminal would take back control" 10 0
+# v2 is our original number
+# v1 is the final result
+mov esi _msg_sum_enter
+movb ah 0x09
+int 21h
+
+_sum_main_loop:
+
+    mov esi _msg_sum_start
+    movb ah 0x09
+    INT 21h
+
+    call _sum_get_num
+
+    jmp _sum_main_loop 1
+
+
+_sum_get_num:
+    push v1
+    push hp
+    mov v1 0
+_sum_get_num_loop:
+    ; first receive one character put it in al
+    movb ah 0x08
+    int 21h
+    eq bl al 32
+    eq cl al 10
+    orb bl bl cl
+    jmp _sum_get_num_end bl
+    jmp _sum_is_digit 1
+_sum_is_digit:
+    subb bl al '0'
+    IMUL v1 v1 10
+    ADD v1 v1 bl
+    jmp _sum_get_num_loop 1
+_sum_get_num_end:
+	mov v3 0
+    call _sum_eval_v1
+    call _sum_num_print
+    pop hp
+    pop v1
+    RET
+
+# v3 is counter
+_sum_eval_v1:
+        eq bl v1 0
+        jmp _sum_end bl
+		inc v3
+        eq bl v1 1
+
+        ret bl
+        push v1
+        dec v1
+        call _sum_eval_v1
+		dec v3
+        pop v2
+        ADD v1 v1 v2
+        ret
+
+_sum_num_print:
+    mov v29 v1
+    call _print_int
+    ;mov v29 v2
+    ;call _print_int
+    ;movb ah 0x09
+    ;int 21h
+    ret
+
+_sum_end:
+    mov esi _msg_sum_exit
+    movb ah 0x09
+    int 21h
+    hlt
+
+###########################################print int
+_print_int:
+    push hp
+    push ecx
+    push ebx
+    push edx
+    push v3
+    push v2
+    push v29
+    mov v2 v29
+    jmp _print_loop:
+_print_loop:
+    eq bl v2 0
+    jmp _print_end_split bl
+    div v2 v2 10
+    add edx edx '0'
+    mov [hp] edx
+    inc hp
+    inc v3
+    jmp _print_loop
+_print_end_split:
+    mov v4 0
+    dec hp
+    jmp _print_loop_2
+_print_loop_2:
+    eq bl v3 v4
+    jmp _print_end_put bl
+    movb dl [hp]
+    movb ah 0x02
+    int 21h
+    inc v4
+    dec hp
+    jmp _print_loop_2
+_print_end_put:
+    movb dl 10
+    movb ah 0x02
+    int 21h
+    pop v29
+    pop v2
+    pop v3
+    pop edx
+    pop ebx
+    pop ecx
+    pop hp
+    ret
+#######################################print int

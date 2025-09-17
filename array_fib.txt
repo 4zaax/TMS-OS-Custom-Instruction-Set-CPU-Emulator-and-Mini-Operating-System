@@ -1,0 +1,424 @@
+_initial:
+MOV cs 256000
+MOV ds 306000
+MOV ss 336000
+MOV esp 360000
+
+_array_management_start:
+    msg_directory: db "$/" 0
+    msg_help: db "help: add | hist | exit" 10 0
+	msg_add: db "Enter your (n):" 10 0
+    msg_new_line: db 10 0
+    msg_history: db "Showing commands history: (type clh to clear ram and free up memory)" 10 0
+	msg_debbug: db "just for debbugging" 10 0
+    SHOW hp
+
+	mov v0 hp
+
+	mov v21 31000
+	mov v25 v21
+	#v21 is the first number and v26 is the pointer and v25 is the last number
+
+
+_array_management_main_loop:
+    mov esi msg_directory
+	movb ah 0x09
+	int 21h
+	mov esi hp
+	call _getstr
+	mov v1 esi
+	call _check_user_command
+	jmp _array_management_main_loop
+
+_getstr:
+    # receives one character
+    movb ah 0x08
+    int 21h
+    eq bl al 10
+    jmp _getstr_end bl
+    mov [hp] al
+    inc hp
+    mov [hp] 10
+    jmp _getstr
+_getstr_end:
+    mov [hp] 10
+    inc hp
+    mov [hp] 0
+    inc hp
+    ret
+
+_check_user_command:
+	# each check function sets bl 1 if the check result is true
+
+	call ar_check_for_help
+	call _help_handler bl
+
+	call ar_check_for_add
+	call _add_handler bl
+
+	call ar_check_for_history
+	call _history_handler bl
+
+	call ar_check_for_clh
+    call _clh_handler bl
+
+    call ar_check_for_exit
+    jmp _exit_handler bl
+
+	jmp _check_user_command_end
+_check_user_command_end:
+
+	ret
+
+###########################################################checkers
+
+ar_check_for_help:
+	mov v2 v1
+
+	MOVb bh [v2]
+	neq bl bh 'h'
+	jmp ar_check_for_help_end bl
+	inc v2
+
+	MOVB bh [v2]
+	neq bl bh 'e'
+	jmp ar_check_for_help_end bl
+	inc v2
+
+	MOVB bh [v2]
+	neq bl bh 'l'
+	jmp ar_check_for_help_end bl
+	inc v2
+
+	MOVB bh [v2]
+	neq bl bh 'p'
+	jmp ar_check_for_help_end bl
+	inc v2
+
+	MOVB bl 1
+	MOV v2 0
+	ret
+ar_check_for_help_end:
+	MOVB bl 0
+	ret
+
+###########################add
+ar_check_for_add:
+	mov v2 v1
+
+    MOVb bh [v2]
+    neq bl bh 'a'
+    jmp ar_check_for_add_end bl
+    inc v2
+
+    MOVB bh [v2]
+    neq bl bh 'd'
+    jmp ar_check_for_add_end bl
+    inc v2
+
+    MOVB bh [v2]
+    neq bl bh 'd'
+    jmp ar_check_for_add_end bl
+    inc v2
+
+    MOVB bl 1
+    MOV v2 0
+    ret
+ar_check_for_add_end:
+    MOVB bl 0
+    ret
+####################################history
+ar_check_for_history:
+	mov v2 v1
+
+    MOVb bh [v2]
+    neq bl bh 'h'
+    jmp ar_check_for_history_end bl
+    inc v2
+
+    MOVB bh [v2]
+    neq bl bh 'i'
+    jmp ar_check_for_history_end bl
+    inc v2
+
+    MOVB bh [v2]
+    neq bl bh 's'
+    jmp ar_check_for_history_end bl
+    inc v2
+
+    MOVB bh [v2]
+    neq bl bh 't'
+    jmp ar_check_for_history_end bl
+    inc v2
+
+    MOVB bl 1
+    MOV v2 0
+    ret
+ar_check_for_history_end:
+    MOVB bl 0
+    ret
+
+#############################clh
+ar_check_for_clh:
+    mov v2 v1
+
+    MOVb bh [v2]
+    neq bl bh 'c'
+	jmp ar_check_for_clh_end bl
+    inc v2
+
+    MOVB bh [v2]
+    neq bl bh 'l'
+    jmp ar_check_for_clh_end bl
+    inc v2
+
+    MOVB bh [v2]
+    neq bl bh 'h'
+    jmp ar_check_for_clh_end bl
+    inc v2
+
+
+    MOVB bl 1
+    MOV v2 0
+    ret
+ar_check_for_clh_end:
+    MOVB bl 0
+    ret
+#############################exit
+ar_check_for_exit:
+    mov v2 v1
+
+    MOVb bh [v2]
+    neq bl bh 'e'
+	jmp ar_check_for_exit_end bl
+    inc v2
+
+    MOVB bh [v2]
+    neq bl bh 'x'
+    jmp ar_check_for_exit_end bl
+    inc v2
+
+    MOVB bh [v2]
+    neq bl bh 'i'
+    jmp ar_check_for_exit_end bl
+    inc v2
+
+    MOVB bh [v2]
+    neq bl bh 't'
+    jmp ar_check_for_exit_end bl
+    inc v2
+
+
+    MOVB bl 1
+    MOV v2 0
+    ret
+ar_check_for_exit_end:
+    MOVB bl 0
+    ret
+
+
+_check_user_command_end:
+	RET
+
+##################################################################checkers
+_help_handler:
+	mov esi msg_help
+	movb ah 0x09
+	int 21h
+
+	RET
+
+_add_handler:
+    call _get_number_count
+    eq bl edx 1
+    jmp _edx_one bl
+    eq bl edx 2
+    jmp _edx_two bl
+    mov v25 v21
+    mov [v25] 1
+    add v25 v25 4
+    mov [v25] 1
+    mov v26 v21
+    mov v20 2
+    call _get_array_numbers
+_add_handler_2:
+    call _print_fib
+    jmp _check_user_command
+
+_history_handler:
+    push esi
+    mov esi msg_history
+    movb ah 0x09
+    int 21h
+
+    push v1
+    pushb bh
+    pushb bl
+    push edx
+    mov v1 v0
+
+    _history_handler_main_loop:
+        eq bh v1 hp
+        jmp _history_handler_end bh
+
+        movb dl [v1]
+        neq bl dl 0
+        jmp _history_handler_putc bl
+        inc v1
+        jmp _history_handler_main_loop
+
+    _history_handler_putc:
+        movb ah 0x02
+        int 21h
+        inc v1
+        jmp _history_handler_main_loop
+
+_history_handler_end:
+    pop edx
+    popb bl
+    popb bh
+    pop v1
+    pop esi
+    ret
+
+_clh_handler:
+    mov hp v0
+    ret
+
+
+
+#################################end handlers
+_get_number_count:
+    mov esi msg_add
+    movb ah 0x09
+    int 21h
+
+    call _read_int
+    mov edx v1
+    mov v29 edx
+    jmp _get_number_count_end
+_get_number_count_end:
+    ret
+
+_get_array_numbers:
+
+    #v25 is a pointer to the first empty array indx
+    #v21 is the first indx of array
+    #v20 for my number count
+
+    push v17
+    push v16
+
+    #while condition
+    eq bl v20 edx
+    jmp _get_array_numbers_end bl
+
+    mov v16 v25
+    mov v17 [v16]
+    sub v16 v16 4
+    add v17 v17 [v16]
+    add v25 v25 4
+    mov [v25] v17
+    inc v20
+
+    jmp _get_array_numbers
+_get_array_numbers_end:
+    pop v16
+    pop v17
+    jmp _add_handler_2
+
+_print_fib:
+    mov v2 [v25]
+    call _print_int
+    ret
+_edx_one:
+    mov v2 1
+    call _print_int
+    jmp _check_user_command
+_edx_two:
+    mov v2 2
+    call _print_int
+    jmp _check_user_command
+
+
+
+
+
+
+
+
+
+
+###########################################read int
+_read_int:
+    mov v1 0
+_read_int_loop:
+    ; first receive one character put it in al
+    movb ah 0x08
+    int 21h
+
+    eq bl al 32
+    #for space
+
+    eq cl al 10
+    #for enter
+
+    orb bl bl cl
+    jmp _read_int_end bl
+    jmp is_digit 1
+is_digit:
+    subb bl al '0'
+    IMUL v1 v1 10
+    ADD v1 v1 bl
+    jmp _read_int_loop 1
+_read_int_end:
+    RET
+###########################################read int
+
+
+###########################################print int
+_print_int:
+    push hp
+    push ecx
+    push ebx
+    push edx
+    push v3
+    push v2
+    jmp _print_loop:
+_print_loop:
+    eq bl v2 0
+    jmp _print_end_split bl
+    div v2 v2 10
+    add edx edx '0'
+    mov [hp] edx
+    inc hp
+    inc v3
+    jmp _print_loop
+_print_end_split:
+    mov v4 0
+    dec hp
+    jmp _print_loop_2
+_print_loop_2:
+    eq bl v3 v4
+    jmp _print_end_put bl
+    movb dl [hp]
+    movb ah 0x02
+    int 21h
+    inc v4
+    dec hp
+    jmp _print_loop_2
+_print_end_put:
+    movb dl 10
+    movb ah 0x02
+    int 21h
+    pop v2
+    pop v3
+    pop edx
+    pop ebx
+    pop ecx
+    pop hp
+    ret
+#######################################print int
+
+_exit_handler:
+    hlt
