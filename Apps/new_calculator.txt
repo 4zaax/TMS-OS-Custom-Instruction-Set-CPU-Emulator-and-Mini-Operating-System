@@ -1,39 +1,58 @@
 _initial:
-MOV cs 20000
-MOV ds 23000
-MOV ss 25000
-MOV esp 30000
+MOV cs 40000
+MOV ds 50000
+MOV ss 55000
+MOV esp 60000
 
+msg_result: db "the result value is :"  0
+msg_welcome: db "please enter your numbers and operators like this <int> <operand> <int> "   10 0
 
-msg_result: db "the result value is :"
 ################################################
+MOV v20 hp
 jmp start
 
-
 start:
-   call get_int
-   mov v1 v4
-    movb ah 0x08
-    int 21h
-    mov v2 al
+      mov esi msg_welcome
+       movb ah 0x09
+       INT 21h
+   loop_prog:
 
-    movb ah 0x08
-    int 21h
+       call get_line
+       call parse
+        mov esi msg_result
+        movb ah 0x09
+          INT 21h
+       show v8
+       jmp loop_prog
 
-   call get_int
-   mov v3 v4
-   jmp check_operator
+get_line:
+  loop_line:
+     call get_int
+       mov [hp] v4
+        add hp hp 4
+       movb ah 0x08
+       int 21h
+       mov [hp] al
+       eq bl al 10
+       jmp return_get_line bl
+      add hp hp 4
+        movb ah 0x08
+        int 21h
+       eq bl al 101
+       jmp end_program bl
+       jmp loop_line
+
+return_get_line:
+ ret
 
 
 get_int:
    mov v4 0
-    int_loop:
+   int_loop:
      movb ah 0x08
      int 21h
      eq bl al 101
      jmp end_program bl
-     eq bl al 10
-     jmp end_input bl
      eq bl al 32
      jmp end_input bl 
      sub v5 al '0'
@@ -46,15 +65,63 @@ end_input:
 
 
 
-check_operator:
-   eq bl v2 '*'
-   jmp MUL_lable bl
-   eq bl v2 '+'
-   jmp ADD_lable bl
-   eq bl v2 '/'
-   jmp DIV_lable bl
-   eq bl v2 '-'
-   jmp SUB_lable bl
+
+parse:
+   MOV v2 v20
+   loop_parse2:
+      eq bl [v2] 43
+      call  ADD_overwrite  bl
+      eq bl [v2] 45
+      call  SUB_overwrite  bl
+      eq bl [v2] 42
+      call  MOL_overwrite  bl
+      eq bl [v2] 47
+      call  DIV_overwrite  bl
+      eq bl [v2] 10
+      ret bl
+      add v2 v2 4
+      jmp loop_parse2
+
+
+
+ADD_overwrite:
+  sub v2 v2 4
+  MOV v8 [v2]
+  add v2 v2 8
+  MOV v9 [v2]
+  call ADD_lable
+  MOV [v2] v8
+  ret
+
+SUB_overwrite:
+  sub v2 v2 4
+  MOV v8 [v2]
+  add v2 v2 8
+  MOV v9 [v2]
+  call SUB_lable
+  MOV [v2] v8
+  ret
+
+
+MOL_overwrite:
+  sub v2 v2 4
+  MOV v8 [v2]
+  add v2 v2 8
+  MOV v9 [v2]
+  call MUL_lable
+  MOV [v2] v8
+  ret
+
+DIV_overwrite:
+  sub v2 v2 4
+  MOV v8 [v2]
+  add v2 v2 8
+  MOV v9 [v2]
+  call DIV_lable
+  MOV [v2] v8
+  ret
+
+
 
 
 
@@ -62,41 +129,28 @@ check_operator:
 
 
 ADD_lable:
-  add v1 v1 v3
-  mov esi msg_result
-  movb ah 0x09
-  int 21h
-  show v1
-  jmp start
+  add v8 v8 v9
+#  show v8
+  ret
 
 
 
 SUB_lable:
-  sub v1 v1 v3
-  mov esi msg_result
-  movb ah 0x09
-  int 21h
-  show v1
-  jmp start
+  sub v8 v8 v9
+#  show v8
+  ret
 
 
 MUL_lable:
-
-  mul v1 v1 v3
-  mov esi msg_result
-  movb ah 0x09
-  int 21h
-  show v1
-  jmp start
+  mul v8 v8 v9
+ # show v8
+  ret
 
 
 DIV_lable:
-  div v1 v1 v3
-  mov esi msg_result
-  movb ah 0x09
-  int 21h
-  show v1
-  jmp start
+  idiv v8  v8 v9
+#  show v8
+  ret
 
 end_program:
 hlt
