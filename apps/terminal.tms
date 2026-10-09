@@ -4,60 +4,58 @@ MOV ds 10000
 MOV ss 13000
 MOV esp 19998
 
+# ---------------------------------------------------------------------
+# TMS-OS terminal
+# The first program booted by the OS (see boot.txt). It reads commands,
+# keeps a command history in RAM and starts other apps with INT 21h/4Bh.
+# Note: the code segment (cs 0) must stay below the data segment (ds 10000).
+# ---------------------------------------------------------------------
+
 _terminal_start:
-    msg_directory: db "~/" 0
-    msg_help: db "help:     -helps you right? brilliant" 10 "echo:          -shows message on screen" 10 0
-    msg2: db "echo encountered." 10 0
-    msg3: db "this is our new mini os" 10 0
+    msg_banner: db "Welcome to TMS-OS. Type help to see the available commands." 10 0
+    msg_prompt: db "tms:~$ " 0
+    msg_help: db "  help          show this message" 10 "  echo <text>   print text" 10 "  apps          list the installed apps" 10 "  run <app>     start an app, e.g. run calc" 10
+    msg_help2: db "  pwd           print the working directory" 10 "  hist          show the command history" 10 "  clh           clear the command history" 10
+    msg_help3: db "  clear         clear the screen" 10 "  about         about this OS" 10 "  hlt           power off" 10 0
+    msg_about: db "TMS-OS: a toy operating system running on a CPU emulator written in C." 10 "This terminal and every app are programs written in the TMS language." 10 0
+    msg_apps: db "installed apps: calc  fact  fib  sum  reverse  arrays" 10 0
+    msg_unknown: db "unknown command, type help to see the available commands" 10 0
+    msg_run_usage: db "usage: run <app>   (type apps to see what is installed)" 10 0
     msg_history: db "Showing commands history: (type clh to clear ram and free up memory)" 10 0
-    name1: db "shayan" 0
-    name2: db "tannaz" 0
-    name3: db "mani" 0
-    name4: db "shahab" 0
-    name5: db "shayan" 0
-    fib_directory: db "./Apps/fib.tms" 0
-    pwd_command: db "pwd" 0
-    mkdir_command: db "mkdir" 0
-    touch_command: db "touch" 0
-    poweroff_command: db "poweroff" 0
-    about_command: db "about" 0
-    whoami_command: db "whoami" 0
-    ls_command: db "ls" 0
-    cat_command: db "cat" 0
-    _seperator: db "-----------------------------" 10 0
-    again_command: db "again" 0
-    pwd_msg: db 10 "Current working directory:" 0
-	show hp
-	mov v0 hp
+    msg_pwd: db "Current working directory: ~/" 10 0
+    msg_bye: db "Powering off..." 10 0
+    app_prefix: db "./apps/" 0
+    app_suffix: db ".tms" 0
+    cmd_help: db "help" 0
+    cmd_echo: db "echo" 0
+    cmd_apps: db "apps" 0
+    cmd_run: db "run" 0
+    cmd_pwd: db "pwd" 0
+    cmd_hist: db "hist" 0
+    cmd_clh: db "clh" 0
+    cmd_clear: db "clear" 0
+    cmd_about: db "about" 0
+    cmd_hlt: db "hlt" 0
+    cmd_poweroff: db "poweroff" 0
 
-_terminal_hard_code:
-    mov v20 127000
-    mov v21 v20
-    mov [v20] '~'
-    inc v21
-    mov [v21] '/'
+    mov esi msg_banner
+    movb ah 0x09
+    int 21h
+    # the command history starts at v0 and ends at hp
+    mov v0 hp
+
 _terminal_main_loop:
-	
-	# prints directory first
-	mov esi v20
-	movb ah 0x09
-	int 21h
-	mov esi hp
-	;delete these lines :
-	;mov esi name1
-	;mov ecx name5
-	;call _strcmp
-	;showb al
-	call _getstr
+    mov esi msg_prompt
+    movb ah 0x09
+    int 21h
+    mov esi hp
+    call _getstr
+    mov v1 esi
+    call _check_user_command
+    jmp _terminal_main_loop
 
-	movb ah 0x09
-	int 21h
-	mov v1 esi
-	call _check_user_command
-	jmp _terminal_main_loop
-
+# reads one line at hp, stored as <chars> 10 0 (hp ends after the 0)
 _getstr:
-    # receives one character
     movb ah 0x08
     int 21h
     eq bl al 10
@@ -73,339 +71,192 @@ _getstr_end:
     inc hp
     ret
 
+# ---------------------------------------------------------------------
+# command dispatcher: the line typed by the user is at v1
+# ---------------------------------------------------------------------
 _check_user_command:
-
-	# each check function sets bl 1 if the check result is true
-	call _check_for_echo
-	call _echo_handler bl		
-	
-	call _check_for_help
-	call _help_handler bl
-
-	call _check_for_halt
-	call _halt_handler bl
-
-	call _check_for_history
-	call _history_handler bl
-
-	call _check_for_clh
-	call _clh_handler bl
-
-
-    # check for pwd command
-    call _check_for_pwd
-    call _pwd_handler bl
-
-    call _check_for_mkdir
-    call _mkdir_handler bl
-
-    call _check_for_run
-    push esi
-    call _run_app bl
-    pop esi
-
-	JMP _check_user_command_end
-	
-	_check_for_echo:
-		mov v2 v1
-		
-		MOVb bh [v2]
-		neq bl bh 'e'
-		jmp _check_for_echo_end bl
-		inc v2
-		
-		MOVB bh [v2]
-		neq bl bh 'c'
-		jmp _check_for_echo_end bl
-		inc v2		
-		
-		MOVB bh [v2]
-		neq bl bh 'h'
-		jmp _check_for_echo_end bl
-		inc v2		
-		
-		MOVB bh [v2]
-		neq bl bh 'o'
-		jmp _check_for_echo_end bl
-		inc v2
-		
-		MOVB bl 1
-		MOV v2 0
-		ret
-		
-		_check_for_echo_end:
-		MOVB bl 0
-		ret	
-		
-	_check_for_help:
-		mov v2 v1
-		
-		MOVb bh [v2]
-		neq bl bh 'h'
-		jmp _check_for_help_end bl
-		inc v2
-		
-		MOVB bh [v2]
-		neq bl bh 'e'
-		jmp _check_for_help_end bl
-		inc v2		
-		
-		MOVB bh [v2]
-		neq bl bh 'l'
-		jmp _check_for_help_end bl
-		inc v2		
-		
-		MOVB bh [v2]
-		neq bl bh 'p'
-		jmp _check_for_help_end bl
-		inc v2
-		
-		MOVB bl 1
-		MOV v2 0
-		ret
-		
-		_check_for_help_end:
-		MOVB bl 0
-		ret
-
-
-		_check_for_halt:
-		    mov v2 v1
-            MOVb bh [v2]
-            neq bl bh 'h'
-            jmp _check_for_help_end bl
-            inc v2
-
-            MOVB bh [v2]
-            neq bl bh 'l'
-            jmp _check_for_help_end bl
-            inc v2
-
-            MOVB bh [v2]
-            neq bl bh 't'
-            jmp _check_for_help_end bl
-            inc v2
-
-            MOVB bl 1
-            MOV v2 0
-            ret
-
-        _check_for_history:
-            mov v2 v1
-
-            MOVb bh [v2]
-            neq bl bh 'h'
-            jmp _check_for_history_end bl
-            inc v2
-
-            MOVB bh [v2]
-            neq bl bh 'i'
-            jmp _check_for_history_end bl
-            inc v2
-
-            MOVB bh [v2]
-            neq bl bh 's'
-            jmp _check_for_history_end bl
-            inc v2
-
-            MOVB bh [v2]
-            neq bl bh 't'
-            jmp _check_for_history_end bl
-            inc v2
-
-            MOVB bl 1
-            MOV v2 0
-            ret
-
-            _check_for_history_end:
-            MOVB bl 0
-            ret
-
-
-        _check_for_clh:
-            mov v2 v1
-
-            MOVb bh [v2]
-            neq bl bh 'c'
-            jmp _check_for_clh_end bl
-            inc v2
-
-            MOVB bh [v2]
-            neq bl bh 'l'
-            jmp _check_for_clh_end bl
-            inc v2
-
-            MOVB bh [v2]
-            neq bl bh 'h'
-            jmp _check_for_clh_end bl
-            inc v2
-
-
-            MOVB bl 1
-            MOV v2 0
-            ret
-            _check_for_clh_end:
-                MOVB bl 0
-                ret
-
-
-        _check_for_pwd:
-               mov v2 v1
-
-               MOVb bh [v2]
-               neq bl bh 'p'
-               jmp _check_for_pwd_end bl
-               inc v2
-
-               MOVB bh [v2]
-               neq bl bh 'w'
-               jmp _check_for_pwd_end bl
-               inc v2
-
-               MOVB bh [v2]
-               neq bl bh 'd'
-               jmp _check_for_pwd_end bl
-               inc v2
-
-
-               MOVB bl 1
-               MOV v2 0
-               ret
-
-               _check_for_pwd_end:
-                   MOVB bl 0
-                   ret
-
-
-        _check_for_mkdir:
-               mov v2 v1
-
-               MOVb bh [v2]
-               neq bl bh 'm'
-               jmp _check_for_pwd_end bl
-               inc v2
-
-               MOVB bh [v2]
-               neq bl bh 'k'
-               jmp _check_for_pwd_end bl
-               inc v2
-
-               MOVB bh [v2]
-               neq bl bh 'd'
-               jmp _check_for_pwd_end bl
-               inc v2
-
-               MOVB bh [v2]
-               neq bl bh 'i'
-               jmp _check_for_pwd_end bl
-               inc v2
-
-               MOVB bh [v2]
-               neq bl bh 'r'
-               jmp _check_for_pwd_end bl
-               inc v2
-
-
-               MOVB bl 1
-               MOV v2 0
-               ret
-
-               _check_for_mkdir_end:
-                   MOVB bl 0
-                   ret
-
-
-        _check_for_run:
-            mov v2 v1
-
-            MOVb bh [v2]
-            neq bl bh 'r'
-            jmp _check_for_run_end bl
-            inc v2
-
-            MOVB bh [v2]
-            neq bl bh 'u'
-            jmp _check_for_run_end bl
-            inc v2
-
-            MOVB bh [v2]
-            neq bl bh 'n'
-            jmp _check_for_run_end bl
-            inc v2
-
-
-            MOVB bl 1
-            MOV v2 0
-            ret
-
-            _check_for_run_end:
-            MOVB bl 0
-            ret
-
-        _check_for_strcmp:
-            mov v2 v1
-
-            MOVb bh [v2]
-            neq bl bh 's'
-            jmp _check_for_strcmp_end bl
-            inc v2
-
-            MOVB bh [v2]
-            neq bl bh 't'
-            jmp _check_for_strcmp_end bl
-            inc v2
-
-            MOVB bh [v2]
-            neq bl bh 'r'
-            jmp _check_for_strcmp_end bl
-            inc v2
-
-            MOVB bh [v2]
-            neq bl bh 'c'
-            jmp _check_for_strcmp_end bl
-            inc v2
-
-            MOVB bh [v2]
-            neq bl bh 'm'
-            jmp _check_for_strcmp_end bl
-            inc v2
-
-            MOVB bh [v2]
-            neq bl bh 'p'
-            jmp _check_for_strcmp_end bl
-            inc v2
-
-
-            MOVB bl 1
-            MOV v2 0
-            ret
-
-            _check_for_strcmp_end:
-            MOVB bl 0
-            ret
-		
-		
-	_check_user_command_end:
-	RET
-	
-	
-_echo_handler:
-	mov esi msg2
-	movb ah 0x09
-	int 21h
-	
-	RET
-
+    movb bh [v1]
+    eq bl bh 10
+    ret bl
+
+    mov edi cmd_help
+    call _match_cmd
+    jmp _help_handler bl
+
+    mov edi cmd_echo
+    call _match_cmd
+    jmp _echo_handler bl
+
+    mov edi cmd_apps
+    call _match_cmd
+    jmp _apps_handler bl
+
+    mov edi cmd_run
+    call _match_cmd
+    jmp _run_handler bl
+
+    mov edi cmd_pwd
+    call _match_cmd
+    jmp _pwd_handler bl
+
+    mov edi cmd_hist
+    call _match_cmd
+    jmp _history_handler bl
+
+    mov edi cmd_clh
+    call _match_cmd
+    jmp _clh_handler bl
+
+    mov edi cmd_clear
+    call _match_cmd
+    jmp _clear_handler bl
+
+    mov edi cmd_about
+    call _match_cmd
+    jmp _about_handler bl
+
+    mov edi cmd_hlt
+    call _match_cmd
+    jmp _halt_handler bl
+
+    mov edi cmd_poweroff
+    call _match_cmd
+    jmp _halt_handler bl
+
+    mov esi msg_unknown
+    movb ah 0x09
+    int 21h
+    ret
+
+# compares the first word at v1 with the 0-terminated string at edi
+# sets bl to 1 when they match (the word must end with a space, newline or 0)
+_match_cmd:
+    mov v2 v1
+    mov v3 edi
+_match_cmd_loop:
+    movb cl [v3]
+    eq bl cl 0
+    jmp _match_cmd_word_end bl
+    movb bh [v2]
+    neq bl bh cl
+    jmp _match_cmd_fail bl
+    inc v2
+    inc v3
+    jmp _match_cmd_loop
+_match_cmd_word_end:
+    movb bh [v2]
+    eq bl bh 32
+    ret bl
+    eq bl bh 10
+    ret bl
+    eq bl bh 0
+    ret bl
+_match_cmd_fail:
+    movb bl 0
+    ret
+
+# moves esi forward past spaces
+_skip_spaces:
+    movb bh [esi]
+    neq bl bh 32
+    ret bl
+    inc esi
+    jmp _skip_spaces
+
+# copies the 0-terminated string at v4 to edi
+_append_str:
+    movb bh [v4]
+    eq bl bh 0
+    ret bl
+    movb [edi] bh
+    inc v4
+    inc edi
+    jmp _append_str
+
+# copies the word at esi (up to a space, newline or 0) to edi
+_append_word:
+    movb bh [esi]
+    eq bl bh 32
+    ret bl
+    eq bl bh 10
+    ret bl
+    eq bl bh 0
+    ret bl
+    movb [edi] bh
+    inc esi
+    inc edi
+    jmp _append_word
+
+# ---------------------------------------------------------------------
+# command handlers
+# ---------------------------------------------------------------------
 _help_handler:
-	mov esi msg_help
-	movb ah 0x09
-	int 21h
-	
-	RET
+    mov esi msg_help
+    movb ah 0x09
+    int 21h
+    ret
 
+_echo_handler:
+    add esi v1 4
+    call _skip_spaces
+    movb ah 0x09
+    int 21h
+    ret
+
+_apps_handler:
+    mov esi msg_apps
+    movb ah 0x09
+    int 21h
+    ret
+
+_about_handler:
+    mov esi msg_about
+    movb ah 0x09
+    int 21h
+    ret
+
+_pwd_handler:
+    mov esi msg_pwd
+    movb ah 0x09
+    int 21h
+    ret
+
+_clear_handler:
+    movb ah 0x00
+    int 10h
+    ret
 
 _halt_handler:
+    mov esi msg_bye
+    movb ah 0x09
+    int 21h
     hlt
+
+# run <app>: builds the path ./apps/<app>.tms after the history and asks
+# the OS to load and execute it (INT 21h, AH=4Bh). The OS saves our
+# registers and labels and gives control back when the app halts.
+_run_handler:
+    add esi v1 3
+    call _skip_spaces
+    movb bh [esi]
+    eq bl bh 10
+    jmp _run_usage bl
+    mov edi hp
+    mov v4 app_prefix
+    call _append_str
+    call _append_word
+    mov v4 app_suffix
+    call _append_str
+    movb [edi] 0
+    mov esi hp
+    movb ah 0x4B
+    int 21h
+    ret
+_run_usage:
+    mov esi msg_run_usage
+    movb ah 0x09
+    int 21h
+    ret
 
 _history_handler:
     push esi
@@ -444,177 +295,3 @@ _history_handler:
 _clh_handler:
     mov hp v0
     ret
-
-# expect first string to be in esi register and the second string pointer to be in edi -> sets al to 0 if those 2 are not equal
-_strcmp:
-    MOVB al 0
-    push esi
-    push edi
-    mov esi name5
-    _strcmp_main:
-        movb ah [esi]
-        movb bh [edi]
-        neq al ah bh
-        jmp _strcmp_end al
-        eq bl ah 0
-        jmp _strcmp_eq bl
-        inc esi
-        inc edi
-        jmp _strcmp_main
-
-_strcmp_eq:
-    movb al 1
-    pop edi
-    pop esi
-    ret
-_strcmp_end:
-    pop edi
-    pop esi
-    ret
-
-# put your string in esi call strlen and receive length in eax register
-_strlen:
-    push esi
-    pushb bl
-    mov eax 0
-    _strlen_main:
-        eq  bl [esi] 0
-        jmp _strlen_end bl
-        inc eax
-        inc esi
-        jmp _strlen_main
-_strlen_end:
-    popb bl
-    pop esi
-    ret
-
-
-_run_app:
-    inc esi
-    inc esi
-    _run_app_wsskip:
-        inc esi
-        movb dl [esi]
-        eq al dl 32
-        jmp _run_app_wsskip al
-
-    call _check_esi_fib
-    mov esi fib_directory
-    movb ah 0x4B
-    int 21h
-    ret
-
-
-_check_esi_fib:
-    movb al [esi]
-    neq al al 'f'
-    jmp _check_esi_fib_end al
-    inc esi
-
-    movb al [esi]
-    neq al al 'i'
-    jmp _check_esi_fib_end al
-    inc esi
-
-    movb al [esi]
-    neq al al 'b'
-    jmp _check_esi_fib_end al
-    inc esi
-    movb bl 1
-    ret
-_check_esi_fib_end:
-    movb bl 0
-    ret
-
-
-
-
-_pwd_handler:
-    mov esi pwd_msg
-    movb ah 0x09
-    int 21h
-    mov esi v20
-    movb ah 0x09
-    int 21h
-    movb dl 10
-    movb ah 0x02
-    int 21h
-    ret
-
-# assumes new folder name to be in esi and copies it into wd
-add_to_wd:
-
-ret
-
-# copies esi into memory address in v5
-str_to_mem:
-    mov v5 v21
-    showb_mem v5
-ret
-
-_mkdir_handler:
-    mov v5 esi
-    show v5
-    call find_next_tok
-    show v5
-    mov esi v5
-ret
-
-# increment v5 to the next token
-find_next_tok:
-    pushb cl
-    showb_mem v5
-    movb ch [v5]
-    call is_char
-    show ebx
-    show esp
-    eq cl cl 1
-    jmp find_next_tok_inc cl
-    ; if cl is 0 then it means that its a non character so we should loop until we hit next character
-    jmp find_next_valid_char
-    find_next_tok_inc:
-        inc v5
-        jmp find_next_tok
-    find_next_valid_char:
-        inc v5
-        showb_mem v5
-        show v5
-        movb ch [v5]
-        showb ch
-        call is_char
-        showb cl
-        eq cl cl 0
-        jmp find_next_valid_char cl
-    showb ch
-    showb cl
-    showb_mem v5
-    popb cl
-ret
-
-# checks character in ch return the result in cl
-is_char:
-    pushb ah
-    pushb al
-    pushb bh
-    pushb bl
-    gte al ch 'A'
-    lse ah ch 'Z'
-    andb ah ah al
-    gte bl ch 'a'
-    lse bh ch 'z'
-    andb bh bh bl
-    orb cl ah bh
-    popb bl
-    popb bh
-    popb al
-    popb ah
-ret
-
-mov eax 10000
-mov ebx [eax]
-
-
-
-
-
-

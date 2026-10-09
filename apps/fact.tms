@@ -5,14 +5,14 @@ MOV ss 72000
 MOV esp 80000
 
 
-_msg_fact_start: db "Enter your number:" 10 0
-_msg_fact_overflow: db "Warning: the result is not valid since you have entered a big number"
+_msg_fact_start: db "Enter your number (0 to exit):" 10 0
+_msg_fact_exit: db "Program finished. Terminal would take back control." 10 0
 _fact_main_loop:
     mov esi _msg_fact_start
     movb ah 0x09
     INT 21h
     call _fact_get_num
-    jmp fact_end
+    jmp _fact_main_loop
 _fact_get_num:
     push v1
     mov v1 0
@@ -30,8 +30,9 @@ _fact_is_digit:
     ADD v1 v1 bl
     jmp _fact_get_num_loop
 _fact_get_num_end:
+    eq bl v1 0
+    jmp _fact_end bl
 	mov v3 0
-	push v1
     call _fact_eval_v1
     call _fact_num_print
     pop v1
@@ -74,3 +75,9 @@ _fact_num_print:
     MOVB dl 10
     INT 21h
     ret
+
+_fact_end:
+    mov esi _msg_fact_exit
+    movb ah 0x09
+    int 21h
+    hlt

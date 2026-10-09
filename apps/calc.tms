@@ -4,157 +4,153 @@ MOV ds 50000
 MOV ss 55000
 MOV esp 60000
 
-msg_result: db "the result value is :"  0
-msg_welcome: db "please enter your numbers and operators like this <int> <operand> <int> "   10 0
+msg_result: db "the result value is : "  0
+msg_welcome: db "please enter your numbers and operators like this <int> <operator> <int> (e to exit)" 10 0
 
 ################################################
-MOV v20 hp
+# Every line is stored as 4-byte slots starting at v20:
+#   number, operator, number, operator, ..., number, '\n'
+# and evaluated from left to right (no operator precedence).
+################################################
 jmp start
 
 start:
-      mov esi msg_welcome
-       movb ah 0x09
-       INT 21h
-   loop_prog:
+    mov esi msg_welcome
+    movb ah 0x09
+    INT 21h
+loop_prog:
+    mov v20 hp
+    call get_line
+    call parse
+    mov esi msg_result
+    movb ah 0x09
+    INT 21h
+    mov v29 v8
+    call _print_int
+    jmp loop_prog
 
-       call get_line
-       call parse
-        mov esi msg_result
-        movb ah 0x09
-          INT 21h
-       show v8
-       jmp loop_prog
-
+# reads "<int> <op> <int> ..." until the end of the line
 get_line:
-  loop_line:
-     call get_int
-       mov [hp] v4
-        add hp hp 4
-       movb ah 0x08
-       int 21h
-       mov [hp] al
-       eq bl al 10
-       jmp return_get_line bl
-      add hp hp 4
-        movb ah 0x08
-        int 21h
-       eq bl al 101
-       jmp end_program bl
-       jmp loop_line
+loop_line:
+    # number in v4, the character that ended it in al
+    call get_int
+    mov [hp] v4
+    add hp hp 4
+    eq bl al 10
+    jmp end_line bl
+    # operator
+    movb ah 0x08
+    int 21h
+    mov [hp] al
+    add hp hp 4
+    # the space after the operator
+    movb ah 0x08
+    int 21h
+    jmp loop_line
+end_line:
+    mov [hp] 10
+    add hp hp 4
+    ret
 
-return_get_line:
- ret
-
-
+# reads digits into v4 until a space or newline ('e' quits the program)
 get_int:
-   mov v4 0
-   int_loop:
-     movb ah 0x08
-     int 21h
-     eq bl al 101
-     jmp end_program bl
-     eq bl al 32
-     jmp end_input bl 
-     sub v5 al '0'
-     mul v4 v4 10
-     add v4 v4 v5
-     jmp int_loop
-
+    mov v4 0
+int_loop:
+    movb ah 0x08
+    int 21h
+    eq bl al 101
+    jmp end_program bl
+    eq bl al 32
+    jmp end_input bl
+    eq bl al 10
+    jmp end_input bl
+    sub v5 al '0'
+    mul v4 v4 10
+    add v4 v4 v5
+    jmp int_loop
 end_input:
-  ret
+    ret
 
-
-
-
+# evaluates the slots starting at v20, result in v8
 parse:
-   MOV v2 v20
-   loop_parse2:
-      eq bl [v2] 43
-      call  ADD_overwrite  bl
-      eq bl [v2] 45
-      call  SUB_overwrite  bl
-      eq bl [v2] 42
-      call  MOL_overwrite  bl
-      eq bl [v2] 47
-      call  DIV_overwrite  bl
-      eq bl [v2] 10
-      ret bl
-      add v2 v2 4
-      jmp loop_parse2
-
-
-
-ADD_overwrite:
-  sub v2 v2 4
-  MOV v8 [v2]
-  add v2 v2 8
-  MOV v9 [v2]
-  call ADD_lable
-  MOV [v2] v8
-  ret
-
-SUB_overwrite:
-  sub v2 v2 4
-  MOV v8 [v2]
-  add v2 v2 8
-  MOV v9 [v2]
-  call SUB_lable
-  MOV [v2] v8
-  ret
-
-
-MOL_overwrite:
-  sub v2 v2 4
-  MOV v8 [v2]
-  add v2 v2 8
-  MOV v9 [v2]
-  call MUL_lable
-  MOV [v2] v8
-  ret
-
-DIV_overwrite:
-  sub v2 v2 4
-  MOV v8 [v2]
-  add v2 v2 8
-  MOV v9 [v2]
-  call DIV_lable
-  MOV [v2] v8
-  ret
-
-
-
-
-
-
-
+    mov v2 v20
+    mov v8 [v2]
+    add v2 v2 4
+loop_parse:
+    eq bl [v2] 10
+    ret bl
+    # operator
+    mov v7 [v2]
+    add v2 v2 4
+    # right operand
+    mov v9 [v2]
+    eq bl v7 43
+    call ADD_lable bl
+    eq bl v7 45
+    call SUB_lable bl
+    eq bl v7 42
+    call MUL_lable bl
+    eq bl v7 47
+    call DIV_lable bl
+    add v2 v2 4
+    jmp loop_parse
 
 ADD_lable:
-  add v8 v8 v9
-#  show v8
-  ret
-
-
+    add v8 v8 v9
+    ret
 
 SUB_lable:
-  sub v8 v8 v9
-#  show v8
-  ret
-
+    sub v8 v8 v9
+    ret
 
 MUL_lable:
-  mul v8 v8 v9
- # show v8
-  ret
-
+    imul v8 v8 v9
+    ret
 
 DIV_lable:
-  idiv v8  v8 v9
-#  show v8
-  ret
+    idiv v8 v8 v9
+    ret
 
+# prints the signed integer in v29 followed by a newline
+_print_int:
+    push v2
+    push v3
+    push edx
+    mov v2 v29
+    mov v3 0
+    ls bl v2 0
+    jmp _print_neg bl
+    jmp _print_digits
+_print_neg:
+    movb dl '-'
+    movb ah 0x02
+    int 21h
+    sub v2 0 v2
+_print_digits:
+    div v2 v2 10
+    add edx edx '0'
+    push edx
+    inc v3
+    neq bl v2 0
+    jmp _print_digits bl
+_print_out:
+    pop edx
+    movb ah 0x02
+    int 21h
+    dec v3
+    neq bl v3 0
+    jmp _print_out bl
+    movb dl 10
+    int 21h
+    pop edx
+    pop v3
+    pop v2
+    ret
+
+# consume the rest of the line so the terminal doesn't see it
 end_program:
-hlt
-
-
-
-
+    movb ah 0x08
+    int 21h
+    neq bl al 10
+    jmp end_program bl
+    hlt

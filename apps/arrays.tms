@@ -15,12 +15,9 @@ _array_management_start:
     msg_new_line: db 10 0
     msg_history: db "Showing commands history: (type clh to clear ram and free up memory)" 10 0
 	msg_debbug: db "just for debbugging" 10 0
-    mov v2 hp
-    call _print_int
-
 	mov v0 hp
 
-	mov v21 600
+	mov v21 200000
 	mov v25 v21
 	#v10 is the first number and v11 is the pointer
 
@@ -756,7 +753,14 @@ _print_int:
     push edx
     push v3
     push v2
-    jmp _print_loop:
+    mov v3 0
+    # zero has no digits to split, print it directly
+    neq bl v2 0
+    jmp _print_loop bl
+    movb dl '0'
+    movb ah 0x02
+    int 21h
+    jmp _print_end_put
 _print_loop:
     eq bl v2 0
     jmp _print_end_split bl

@@ -11,7 +11,6 @@ _array_management_start:
     msg_new_line: db 10 0
     msg_history: db "Showing commands history: (type clh to clear ram and free up memory)" 10 0
 	msg_debbug: db "just for debbugging" 10 0
-    SHOW hp
 
 	mov v0 hp
 
@@ -243,7 +242,7 @@ _add_handler:
     call _get_array_numbers
 _add_handler_2:
     call _print_fib
-    jmp _check_user_command
+    ret
 
 _history_handler:
     push esi
@@ -293,9 +292,12 @@ _get_number_count:
     movb ah 0x09
     int 21h
 
+    # _read_int returns in v1, which holds the typed command, so keep it
+    push v1
     call _read_int
     mov edx v1
     mov v29 edx
+    pop v1
     jmp _get_number_count_end
 _get_number_count_end:
     ret
@@ -309,6 +311,7 @@ _get_array_numbers:
     push v17
     push v16
 
+_get_array_numbers_loop:
     #while condition
     eq bl v20 edx
     jmp _get_array_numbers_end bl
@@ -321,11 +324,11 @@ _get_array_numbers:
     mov [v25] v17
     inc v20
 
-    jmp _get_array_numbers
+    jmp _get_array_numbers_loop
 _get_array_numbers_end:
     pop v16
     pop v17
-    jmp _add_handler_2
+    ret
 
 _print_fib:
     mov v2 [v25]
@@ -334,11 +337,11 @@ _print_fib:
 _edx_one:
     mov v2 1
     call _print_int
-    jmp _check_user_command
+    ret
 _edx_two:
-    mov v2 2
+    mov v2 1
     call _print_int
-    jmp _check_user_command
+    ret
 
 
 
@@ -384,7 +387,14 @@ _print_int:
     push edx
     push v3
     push v2
-    jmp _print_loop:
+    mov v3 0
+    # zero has no digits to split, print it directly
+    neq bl v2 0
+    jmp _print_loop bl
+    movb dl '0'
+    movb ah 0x02
+    int 21h
+    jmp _print_end_put
 _print_loop:
     eq bl v2 0
     jmp _print_end_split bl

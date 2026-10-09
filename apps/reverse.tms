@@ -4,45 +4,50 @@ MOV ds 33000
 MOV ss 35000
 MOV esp 40000
 
+msg_reverse_help: db "Type a line and it will be printed backwards. An empty line exits." 10 0
+msg_reverse_bye: db "bye!" 10 0
 
+mov esi msg_reverse_help
+movb ah 0x09
+int 21h
+# v1 is the start of the line buffer
+mov v1 hp
 
 start:
-mov [hp] 10
-inc hp
+    mov hp v1
+    call get_str
+    eq bl hp v1
+    jmp end_program bl
+    call print_reverse
+    jmp start
 
-call get_str
-call print_reverse
-  
-
+# reads one line into [v1 .. hp)
 get_str:
-     str_loop:
-     movb ah 0x08
-     int 21h
-     mov [hp] al
-     inc hp
-     eq bl al 101
-     jmp end_program bl
-     eq bl al 10
-     jmp end_input bl 
-     jmp str_loop
+    movb ah 0x08
+    int 21h
+    eq bl al 10
+    jmp end_input bl
+    movb [hp] al
+    inc hp
+    jmp get_str
 end_input:
-dec hp
-dec hp
-ret
+    ret
 
-
+# prints the buffer from the last character back to the first
 print_reverse:
-
- revers_loop:
- movb dl [hp]
- movb ah 0x02
- int 21h
- dec hp
- eq bl hp 32999
- jmp start bl
- jmp revers_loop
-
-
+    dec hp
+    movb dl [hp]
+    movb ah 0x02
+    int 21h
+    neq bl hp v1
+    jmp print_reverse bl
+    movb dl 10
+    movb ah 0x02
+    int 21h
+    ret
 
 end_program:
-hlt
+    mov esi msg_reverse_bye
+    movb ah 0x09
+    int 21h
+    hlt

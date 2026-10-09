@@ -93,7 +93,14 @@ _print_int:
     push v2
     push v29
     mov v2 v29
-    jmp _print_loop:
+    mov v3 0
+    # zero has no digits to split, print it directly
+    neq bl v2 0
+    jmp _print_loop bl
+    movb dl '0'
+    movb ah 0x02
+    int 21h
+    jmp _print_end_put
 _print_loop:
     eq bl v2 0
     jmp _print_end_split bl
