@@ -3,7 +3,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdint.h>
-#include "main.h"
+#include "os.h"
 #include "helpers.h"
 
 void* get_register(const char* reg, int size) {
@@ -98,7 +98,7 @@ int find_immediate_value(const char* s){
     return 0;
 }
 
-int find_mem_addr(char* arg){
+int find_mem_addr(const char* arg){
     if ((*arg) != '[') return -1;
     char* end_bracket = strchr(arg, ']');
     if(!end_bracket) return -1;
@@ -141,14 +141,14 @@ int find_mem32_value(int addr) {
 }
 
 uint8_t find_mem8_value_unsigned(int addr) {
-    if (addr < 0 || addr > MEMORY_SIZE - 4) {
-        printf("find_mem32_value: invalid address\n");
+    if (addr < 0 || addr > MEMORY_SIZE - 1) {
+        printf("find_mem8_value: invalid address\n");
         return 0;
     }
     return *((uint8_t*)&memory[addr]);
 }
 
-void show_all_registers() {
+void show_all_registers(void) {
     printf("EAX: 0x%08X  EBX: 0x%08X  ECX: 0x%08X  EDX: 0x%08X\n",
            *eax, *ebx, *ecx, *edx);
     printf("ESI: 0x%08X  EDI: 0x%08X  EBP: 0x%08X  ESP: 0x%08X\n",
@@ -157,11 +157,11 @@ void show_all_registers() {
            *ip, *cs);
 }
 
-void show_flags() {
+void show_flags(void) {
     printf("ZF: %d  SF: %d  CF: %d  OF: %d\n", *ZF, *SF, *CF, *OF);
 }
 
-void clear_flags() {
+void clear_flags(void) {
     for (int i = 0; i < 4; ++i)
         flags_mem[i] = 0;
 }
@@ -177,7 +177,7 @@ void push_int(int value) {
 }
 
 // Pop a 32-bit integer from stack
-int pop_int() {
+int pop_int(void) {
     if (*esp > MEMORY_SIZE - 4) {
         printf("pop_int: stack underflow\n");
         return -1;
@@ -191,7 +191,14 @@ void lstrip(char* line){
     char* trimmed = line;
     while(isspace((unsigned char)* trimmed))
         trimmed++;
-    strcpy(line, trimmed);
+    memmove(line, trimmed, strlen(trimmed) + 1);
+}
+
+// Removes trailing whitespace (including '\r' from CRLF files) in place
+void rstrip(char* line){
+    size_t n = strlen(line);
+    while (n && isspace((unsigned char)line[n-1]))
+        line[--n] = '\0';
 }
 
 char first_char(char* line){
@@ -201,46 +208,30 @@ char first_char(char* line){
 }
 
 
-//int is_num(char* arg){
-//    int len = strlen(arg);
-//    if (len == 1 && !isdigit(arg[0])){
-//        return 0;
-//    }
-//    char* c = arg;
-//    for(; isspace(*c); c++);
-//    if (!(isdigit(*c) || *c == '-' || *c == '+'))
-//        return 0;
-//    for(c++;*c != '\0' ;c++){
-//        if (!isdigit(*c))
-//            return 0;
-//    }
-//    return 1;
-//}
-
-int is_num(char* arg) {
+int is_num(const char* arg) {
     int len = strlen(arg);
     // Check for 0x... or ...h style
     if (len > 2 && arg[0] == '0' && (arg[1] == 'x' || arg[1] == 'X')) return 1;
     if (len > 1 && (arg[len-1] == 'h' || arg[len-1] == 'H')) {
         // Must be valid hex digits before the h
         for (int i = 0; i < len-1; i++) {
-            if (!isxdigit(arg[i])) return 0;
+            if (!isxdigit((unsigned char)arg[i])) return 0;
         }
         return 1;
     }
     // Decimal number
     // (old implementation)
-    if (len == 1 && !isdigit(arg[0])) return 0;
-    char* c = arg;
-    for(; isspace(*c); c++);
-    if (!(isdigit(*c) || *c == '-' || *c == '+')) return 0;
+    if (len == 1 && !isdigit((unsigned char)arg[0])) return 0;
+    const char* c = arg;
+    for(; isspace((unsigned char)*c); c++);
+    if (!(isdigit((unsigned char)*c) || *c == '-' || *c == '+')) return 0;
     for(c++; *c != '\0' ; c++) {
-        if (!isdigit(*c)) return 0;
+        if (!isdigit((unsigned char)*c)) return 0;
     }
     return 1;
 }
 
-int is_mem_addr(char* arg){
+int is_mem_addr(const char* arg){
     return (arg[0] == '[' && arg[strlen(arg)-1] == ']') && (strlen(arg) > 2);
 }
 
@@ -248,7 +239,7 @@ int is_immediate(const char* s) {
     return (is_num(s) || is_char(s));
 }
 
-    int is_char(char* arg){
+int is_char(const char* arg){
     int len = strlen(arg);
     if (len == 1 && arg[0] == '\'')
         return 2;
@@ -264,11 +255,11 @@ int is_immediate(const char* s) {
     }
     return 0;
 }
-int char_to_i(char* arg){
+int char_to_i(const char* arg){
     int len = strlen(arg);
     if (len == 3)
         return arg[1];
-    else if (len == 4)
+    else if (len == 4) {
         if (strcmp(arg, "'\\n'") == 0)
             return '\n';
         else if (strcmp(arg, "'\\t'") == 0)
@@ -283,15 +274,16 @@ int char_to_i(char* arg){
             return '\v';
         else if (strcmp(arg, "'\\0'") == 0)
             return '\0';
-        else if (strcmp(arg, "'\\'") == 0)
+        else if (strcmp(arg, "'\\\\'") == 0)
             return '\\';
         else if (strcmp(arg, "'\\''") == 0)
             return '\'';
-        else
-            printf("char_to_i: Invalid character, couldn't convert to integer.\n");
+    }
+    printf("char_to_i: Invalid character, couldn't convert to integer.\n");
+    return 0;
 }
 
-void my_strcpy(char *des,char *src,int len){
+void my_strcpy(char *des, const char *src, int len){
     for (int i=0;i<len;i++) {
         *(des + i) = *(src + i);
     }
@@ -307,10 +299,10 @@ int my_atoi(const char* s) {
     int len = strlen(s);
     if ((len > 1) && (s[len-1] == 'h' || s[len-1] == 'H')) {
         char buf[32];
-        if (len-1 >= sizeof(buf)) {  // too long, fallback to decimal
+        if (len-1 >= (int)sizeof(buf)) {  // too long, fallback to decimal
             return atoi(s);
         }
-        strncpy(buf, s, len-1); // Copy everything except 'h'
+        memcpy(buf, s, len-1); // Copy everything except 'h'
         buf[len-1] = '\0';
         return (int)strtol(buf, NULL, 16);
     }

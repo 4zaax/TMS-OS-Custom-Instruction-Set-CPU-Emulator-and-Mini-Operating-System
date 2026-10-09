@@ -2,9 +2,8 @@
 #ifndef HELPERS_H
 #define HELPERS_H
 
-#define LINE_LEN 512
-
-#include "stdint.h"
+#include <stdint.h>
+#include "os.h"
 
 extern uint8_t memory[];
 extern uint8_t reg_mem[];
@@ -53,27 +52,27 @@ uint8_t find_mem8_value_unsigned(int addr);
 int find_immediate_value(const char* s);
 
 // Easier Debug
-void show_all_registers();
-void clear_flags();
-void show_flags();
+void show_all_registers(void);
+void clear_flags(void);
+void show_flags(void);
 
 // Stack
 void push_int(int value);
-int pop_int();
+int pop_int(void);
 
 // Type Recognition
-int is_num(char* arg);
-int is_mem_addr(char* arg);
-int is_char(char* arg);
+int is_num(const char* arg);
+int is_mem_addr(const char* arg);
+int is_char(const char* arg);
 int is_immediate(const char* s);
 
 
 
 
 // General
-int char_to_i(char* arg);
-int find_mem_addr(char* arg);
-void my_strcpy(char *des,char *src,int len);
+int char_to_i(const char* arg);
+int find_mem_addr(const char* arg);
+void my_strcpy(char *des, const char *src, int len);
 int my_atoi(const char* s);
 void watch_memory(unsigned char *mem, int start, int count);
 

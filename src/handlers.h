@@ -1,7 +1,8 @@
 #ifndef HANDLERS_H
 #define HANDLERS_H
 
-#define LINE_LEN 512
+#include <stdint.h>
+#include "os.h"
 
 extern uint8_t memory[];
 extern uint8_t reg_mem[];
@@ -153,9 +154,4 @@ void showstr(const char* arg);
 void get_handler(const char* reg);
 void int_handler(const char* arg);
 
-void getc_handler();
-void putc_handler();
-
-static int map_cr_to_lf(int ch);
-static int read_emu_cstr(uint32_t addr, char* out, size_t out_sz);
 #endif

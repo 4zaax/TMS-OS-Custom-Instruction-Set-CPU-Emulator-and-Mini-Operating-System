@@ -1,11 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "ctype.h"
-#include "stdint.h"
-#include "main.h"
+#include <ctype.h>
+#include <stdint.h>
+#include "os.h"
 #include "helpers.h"
 #include "handlers.h"
+
+static int map_cr_to_lf(int ch);
+static int read_emu_cstr(uint32_t addr, char* out, size_t out_sz);
 
 
 // INC
@@ -84,7 +87,7 @@ void showsb(const char* reg) {
 void showc(const char* arg) {
     if (is_mem_addr(arg)){
         uint8_t r = find_mem8_value_unsigned(find_mem_addr(arg));
-        printf("%s = 0x%02X (%c))\n", arg, r, r, r);
+        printf("%s = 0x%02X (%c)\n", arg, r, r);
         showb_mem(find_mem_addr(arg));
         return;
     }
@@ -778,7 +781,7 @@ void jg_handler(const char* label) {
     if (!*ZF && (*SF == *OF)) {
         int label_offset = find_label_offset(label);
         if (label_offset >= 0)
-            *ip = label_offset;
+            *ip = label_offset - *cs;
         else
             printf("Unknown label: %s\n", label);
     }
@@ -789,7 +792,7 @@ void jl_handler(const char* label) {
     if (*SF != *OF) {
         int label_offset = find_label_offset(label);
         if (label_offset >= 0)
-            *ip = label_offset;
+            *ip = label_offset - *cs;
         else
             printf("Unknown label: %s\n", label);
     }
@@ -860,8 +863,17 @@ void lse_handler(const char* dest, const char* src1, const char* src2) {
     *d = ((int32_t)find_any_value(src1) <= (int32_t)find_any_value(src2)) ? 1 : 0;
 }
 
-// INT handler (for "INT xx")
-// INT handler (for INT xx)
+/*
+ * INT handler (for "INT xx")
+ *
+ *   INT 21h  AH=02h  print the character in DL
+ *            AH=08h  read one character from stdin into AL
+ *            AH=09h  print the 0-terminated string at [ESI]
+ *            AH=4Bh  load and run the program whose path is at [ESI]
+ *                    (the caller's registers and labels are restored when
+ *                    the child halts)
+ *   INT 10h  AH=00h  clear the screen
+ */
 void int_handler(const char* arg) {
     int int_num = 0;
     if (is_num((char*)arg)) {
@@ -879,7 +891,12 @@ void int_handler(const char* arg) {
         }
         else if (ah_val == 0x08) { // Get character from input, return in AL
             int ch = getchar();
-            if (ch != EOF) *al = (uint8_t)map_cr_to_lf(ch);
+            if (ch == EOF) {        // end of input: power the machine off
+                power_off = 1;
+                *al = '\n';
+            } else {
+                *al = (uint8_t)map_cr_to_lf(ch);
+            }
         }
         else if (ah_val == 0x09) { // Print 0-terminated string at [ESI]
             uint32_t addr = *esi;
@@ -897,11 +914,11 @@ void int_handler(const char* arg) {
             if (!read_emu_cstr(*esi, path, sizeof(path)) || path[0] == '\0') {
                 printf("INT 21h/4B: empty or invalid filename at [ESI]\n");
             } else {
-                /* save CPU state */
-                uint32_t saved_cs=*cs,saved_ip=*ip,saved_ds=*ds,saved_ss=*ss,saved_esp=*esp;
-                uint32_t saved_hp=*hp,saved_esi=*esi,saved_edi=*edi,saved_eax=*eax,saved_ebx=*ebx;
-                uint32_t saved_ecx=*ecx,saved_edx=*edx;
-                int saved_v0= *v0;int saved_v1= *v1;int saved_v2= *v2;int saved_v3= *v3;int saved_v4= *v4;int saved_v5= *v5;int saved_v6= *v6;int saved_v7= *v7;int saved_v8= *v8;int saved_v9= *v9;int saved_v10= *v10;int saved_v11= *v11;int saved_v12= *v12;int saved_v13= *v13;int saved_v14= *v14;int saved_v15= *v15;int saved_v16= *v16;int saved_v17= *v17;int saved_v18= *v18;int saved_v19= *v19;int saved_v20= *v20;int saved_v21= *v21;int saved_v22= *v22;int saved_v23= *v23;int saved_v24= *v24;int saved_v25= *v25;int saved_v26= *v26;int saved_v27= *v27;int saved_v28= *v28;int saved_v29= *v29;
+                /* save CPU state (all named registers and v0..v29) */
+                uint8_t saved_regs[REG_MEM_SIZE];
+                int saved_v[V_REG_COUNT];
+                memcpy(saved_regs, reg_mem, sizeof(saved_regs));
+                memcpy(saved_v, reg_mem2, sizeof(saved_v));
                 /* save caller labels */
                 int saved_label_count = label_count;
                 size_t L = sizeof(label_table);
@@ -929,10 +946,8 @@ void int_handler(const char* arg) {
                 label_count = saved_label_count;
                 free(label_backup);
 
-                *cs=saved_cs; *ip=saved_ip; *ds=saved_ds; *ss=saved_ss; *esp=saved_esp;
-                *hp=saved_hp; *esi=saved_esi; *edi=saved_edi; *eax=saved_eax; *ebx=saved_ebx;
-                *ecx=saved_ecx; *edx=saved_edx;
-                *v0= saved_v0;*v1= saved_v1;*v2= saved_v2;*v3= saved_v3;*v4= saved_v4;*v5= saved_v5;*v6= saved_v6;*v7= saved_v7;*v8= saved_v8;*v9= saved_v9;*v10= saved_v10;*v11= saved_v11;*v12= saved_v12;*v13= saved_v13;*v14= saved_v14;*v15= saved_v15;*v16= saved_v16;*v17= saved_v17;*v18= saved_v18;*v19= saved_v19;*v20= saved_v20;*v21= saved_v21;*v22= saved_v22;*v23= saved_v23;*v24= saved_v24;*v25= saved_v25;*v26= saved_v26;*v27= saved_v27;*v28= saved_v28;*v29= saved_v29;
+                memcpy(reg_mem, saved_regs, sizeof(saved_regs));
+                memcpy(reg_mem2, saved_v, sizeof(saved_v));
             }
         }
         else {

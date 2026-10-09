@@ -1,0 +1,34 @@
+name: build
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  unix:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: make CFLAGS="-std=c11 -O2 -Wall -Werror"
+      - name: Smoke tests
+        run: make test
+
+  windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build (MinGW gcc)
+        run: gcc -std=c11 -O2 -Wall -o tmsos.exe src/os.c src/handlers.c src/helpers.c
+      - name: Smoke tests
+        run: sh tests/run_tests.sh ./tmsos.exe
+      - name: Build (MSVC via CMake)
+        run: |
+          cmake -S . -B build
+          cmake --build build --config Release

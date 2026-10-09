@@ -1,7 +1,11 @@
-CMakeLists.txt
-cmake-build-debug
-.idea
-test.txt
-mov bug fix .txt
-test_bitwise_ops.txt
-a.exe
+# build output
+/tmsos
+/tmsos.exe
+*.o
+*.obj
+build/
+cmake-build-*/
+
+# IDE
+.idea/
+.vscode/

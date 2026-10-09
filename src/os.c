@@ -1,21 +1,49 @@
+/*
+ * os.c - boot loader, program loader and instruction dispatcher
+ *
+ * The "OS" boots by reading boot.txt (or the path given on the command
+ * line), loading that program's data segment and code segment into the
+ * emulated RAM, and running it on the emulated CPU. Programs can load and
+ * run other programs through INT 21h / AH=4Bh (see handlers.c).
+ */
+#if !defined(_WIN32) && !defined(_POSIX_C_SOURCE)
+#define _POSIX_C_SOURCE 200809L
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#include "main.h"
-#include "stdint.h"
+#include <stdint.h>
+#include "os.h"
 #include "helpers.h"
 #include "handlers.h"
+
+#ifdef _WIN32
 #include <windows.h>
-#define LINE_LEN 512
-#define SKIP_LINE_COUNT 5
+#else
+#include <time.h>
+#endif
+
+/* The first lines of every program are the header:
+ *   _initial:
+ *   MOV cs ...
+ *   MOV ds ...
+ *   MOV ss ...
+ *   MOV esp ...
+ * The header is executed by registers_initializer() and is not copied into
+ * the code segment. */
+#define HEADER_REG_LINES 4
+#define SKIP_LINE_COUNT (HEADER_REG_LINES + 1)
+#define DEFAULT_BOOT_TARGET "./apps/terminal.tms"
 
 int call_count = 0;
 int ret_count = 0;
+int power_off = 0;
 
 uint8_t memory[MEMORY_SIZE];
-uint8_t reg_mem[52]; // 40 bytes (10 * 4 bytes) -> 10 extended registers
-int reg_mem2[30];
+uint8_t reg_mem[REG_MEM_SIZE]; // 13 x 32-bit registers: eax ebx ecx edx esi edi ebp esp ip cs ss ds hp
+int reg_mem2[V_REG_COUNT]; // v0..v29
 uint8_t flags_mem[4]; // ZF, SF, CF, OF (one byte each)
 
 LabelEntry label_table[MAX_LABELS];
@@ -99,7 +127,16 @@ int* v28 = reg_mem2 + 28;
 int* v29 = reg_mem2 + 29;
 
 
-void print_os_info() {
+void os_sleep_ms(int ms) {
+#ifdef _WIN32
+    Sleep(ms);
+#else
+    struct timespec ts = { ms / 1000, (long)(ms % 1000) * 1000000L };
+    nanosleep(&ts, NULL);
+#endif
+}
+
+void print_os_info(void) {
 #ifdef _WIN32
     printf("Device is running on Windows\n");
 #elif __linux__
@@ -113,44 +150,37 @@ void print_os_info() {
 #endif
 }
 
-static char* trim_trailing_newline(char* s) {
-    size_t n = strlen(s);
-    while (n && (s[n-1] == '\n' || s[n-1] == '\r' || s[n-1] == ' ' || s[n-1] == '\t'))
-        s[--n] = 0;
-    return s;
+static char* dup_string(const char* s) {
+    char* copy = (char*)malloc(strlen(s) + 1);
+    if (copy) strcpy(copy, s);
+    return copy;
 }
 
 static char* read_boot_target(const char* bootfile) {
     FILE* f = fopen(bootfile, "r");
     if (!f) {
-        fprintf(stderr, "boot: couldn't open %s; falling back to ./Apps/terminal.txt\n", bootfile);
-        char* fallback = (char*)malloc(64);
-        strcpy(fallback, "./Apps/terminal.txt");
-        return fallback;
+        fprintf(stderr, "boot: couldn't open %s; falling back to %s\n", bootfile, DEFAULT_BOOT_TARGET);
+        return dup_string(DEFAULT_BOOT_TARGET);
     }
     char buf[LINE_LEN];
     while (fgets(buf, sizeof buf, f)) {
         lstrip(buf);
         if (buf[0] == 0)        continue;  // empty after lstrip
         if (buf[0] == '#' || buf[0] == ';')      continue;  // comment
-        trim_trailing_newline(buf);
+        rstrip(buf);
         const char* p = buf;
-        if (strncasecmp(buf, "APP=", 4) == 0) p = buf + 4;  // allow APP=./Apps/terminal.txt
-        char* path = (char*)malloc(strlen(p)+1);
-        strcpy(path, p);
+        if (strncasecmp(buf, "APP=", 4) == 0) p = buf + 4;  // allow APP=./apps/terminal.tms
         fclose(f);
-        return path;
+        return dup_string(p);
     }
     fclose(f);
     // no usable line
-    char* fallback = (char*)malloc(64);
-    strcpy(fallback, "./Apps/terminal.txt");
-    return fallback;
+    return dup_string(DEFAULT_BOOT_TARGET);
 }
 
-int load_program_data(const char* directory){
-    FILE* f = fopen(directory, "r");
-    if (!f) { puts("Program not found"); return 1; }
+int load_program_data(const char* path){
+    FILE* f = fopen(path, "r");
+    if (!f) { fprintf(stderr, "Program not found: %s\n", path); return -1; }
 
     // 2. Now we should load data segment
     // NOTE : !!!! : make sure initializer has assigned correct value to ds
@@ -162,40 +192,33 @@ int load_program_data(const char* directory){
     return (int)prog_size;
 }
 
-int registers_initializer (const char* directory) {
-    char* c;
-    for(c = directory; *c != '\0'; c++){
-        if (*c == '\n'){
-                *c = '\0';
-        }
+// Runs the program header (_initial: followed by the cs/ds/ss/esp setup lines)
+int registers_initializer(const char* path) {
+    FILE* file = fopen(path, "r");
+    if (!file) {
+        fprintf(stderr, "exec: program '%s' not found\n", path);
+        return -1;
     }
-    FILE* file = fopen(directory, "r");
-    if (!file) fprintf(stderr, "register_initializer: file [%s] not found.\n", directory);
 
     char buffer[LINE_LEN];
-    int flag_initializer_validation = 0;
-    rewind(file);
-
-    while(fgets(buffer, sizeof (buffer), file) != NULL){
-
-        lstrip(buffer); // skips white spaces
-
-        if((strcasecmp(buffer, "_initial:") == 0) || (strcasecmp(buffer, "_initial:\n") == 0)){
-            flag_initializer_validation = 1;
-            for (int i = 0; i < 4; i++){
-                fgets(buffer, sizeof (buffer), file) != NULL;
-                int execution_status = parse_and_execute(buffer);
-            }
-        }
-
-        if (flag_initializer_validation){
-            return 0;
-        } else {
-            MessageBox(NULL, "Program should be started with a register initializer label.", "Error", MB_ICONERROR | MB_OK);
-            return -1;
-        }
+    if (!fgets(buffer, sizeof(buffer), file)) {
+        fprintf(stderr, "exec: '%s' is empty\n", path);
+        fclose(file);
+        return -1;
+    }
+    lstrip(buffer);
+    rstrip(buffer);
+    if (strcasecmp(buffer, "_initial:") != 0) {
+        fprintf(stderr, "exec: '%s' must start with an _initial: header\n", path);
+        fclose(file);
+        return -1;
     }
 
+    for (int i = 0; i < HEADER_REG_LINES && fgets(buffer, sizeof(buffer), file); i++)
+        parse_and_execute(buffer);
+
+    fclose(file);
+    return 0;
 }
 
 void load_data_segment(FILE* file) {
@@ -214,8 +237,7 @@ void load_data_segment(FILE* file) {
             int addr = *ds + data_ptr;
             // Add label to label_table with is_data=1
             if (label_count < MAX_LABELS) {
-                strncpy(label_table[label_count].name, label, 31);
-                label_table[label_count].name[31] = 0;
+                snprintf(label_table[label_count].name, sizeof(label_table[label_count].name), "%s", label);
                 label_table[label_count].offset = addr;
                 label_table[label_count].is_data = 1;
                 label_count++;
@@ -246,8 +268,8 @@ void load_data_segment(FILE* file) {
                     if (*p == '\'') p++;
                 }
                 else if (isdigit((unsigned char)*p) || *p == '-') {
-                    int val;
-                    int n = sscanf(p, "%d", &val);
+                    int val = 0;
+                    sscanf(p, "%d", &val);
                     memory[addr++] = (uint8_t)val;
                     data_ptr++;
                     // Advance past the number
@@ -271,7 +293,7 @@ uint32_t load_program_linear(FILE* file) {
     rewind(file);
     // skips initializer lines
     for(int i = 0; i < SKIP_LINE_COUNT; i++) {
-        fgets(buffer, sizeof(buffer), file);
+        if (!fgets(buffer, sizeof(buffer), file)) return 0;
     }
 
     while (fgets(buffer, sizeof(buffer), file) != NULL) {
@@ -301,15 +323,16 @@ void scan_labels(int prog_size) {
         }
         line[i] = '\0';
 
-        // Trim leading spaces
+        // Trim surrounding whitespace (also handles CRLF files)
         lstrip(line);
+        rstrip(line);
 
         // Check if line is a label (ends with ':')
         int len = strlen(line);
         if (len > 1 && line[len-1] == ':') {
             if (label_count < MAX_LABELS) {
-                strncpy(label_table[label_count].name, line, len-1);
-                label_table[label_count].name[len-1] = '\0';  // Remove ':'
+                // copy the name without the trailing ':' (truncated to fit)
+                snprintf(label_table[label_count].name, sizeof(label_table[label_count].name), "%.*s", len - 1, line);
                 label_table[label_count].offset = line_start;
                 label_table[label_count].is_data = 0;
                 label_count++;
@@ -321,25 +344,25 @@ void scan_labels(int prog_size) {
     }
 }
 
+// Fetch-decode-execute loop. Returns EXEC_HALT when the program halts.
 int execute_program(int prog_size) {
     char line[LINE_LEN];
-    while (*ip < prog_size) {
-
+    while (*ip < (uint32_t)prog_size) {
         int current_line_len = fetch_instruction(line, prog_size);
         *ip += current_line_len ? current_line_len : 1; // now ip is ready to execute next instruction
-        int execution_status =  parse_and_execute(line);
-        if (execution_status == 401){
-            return 401;}; // shuts down OS
+        int execution_status = parse_and_execute(line);
+        if (execution_status == EXEC_HALT || power_off)
+            return EXEC_HALT;
     }
+    return 0;
 }
 
 // Reads a line from memory at *ip, returns line length
 int fetch_instruction(char* out, int prog_size) {
     int i = 0;
 
-    while ((*ip + i < prog_size) && (memory[*cs + *ip + i] != '\n')) {
-
-        out[i] = memory[*cs + *ip + i]; // <-- fixed here
+    while ((*ip + i < (uint32_t)prog_size) && (memory[*cs + *ip + i] != '\n') && i < LINE_LEN - 1) {
+        out[i] = memory[*cs + *ip + i];
         i++;
     }
 
@@ -347,41 +370,36 @@ int fetch_instruction(char* out, int prog_size) {
     return i + (memory[*cs + *ip + i] == '\n' ? 1 : 0); // include newline if present
 }
 
-int main() {
+int main(int argc, char** argv) {
     print_os_info();
     memset(reg_mem, 0, sizeof(reg_mem));
     memset(flags_mem, 0, sizeof(flags_mem));
     memset(memory, 0, sizeof(memory));
 
+    // Boot target: a program path on the command line, otherwise boot.txt
+    char* boot_target = (argc > 1) ? dup_string(argv[1]) : read_boot_target("./boot.txt");
 
-    char* directory = read_boot_target("./boot.txt");
-
-    /*--- Now boot.txt should target terminal ---*/
-
-    // 1) Initializing Target File Registers
-    int reg_init_res = registers_initializer(directory);
-    if (reg_init_res == -1) {
-        fprintf(stderr, "There was an error finding your initializer label in program.\n");
-        free(directory);
-        exit(1);
+    // 1) Run the program header to set up cs/ds/ss/esp
+    if (registers_initializer(boot_target) == -1) {
+        fprintf(stderr, "boot: couldn't start %s\n", boot_target);
+        free(boot_target);
+        return 1;
     }
 
-
-    // 2) It's time to load Targe File codes into code section and datas in data section of RAM
-    image_size = load_program_data(directory);
+    // 2) Load data into the data segment and code into the code segment
+    image_size = load_program_data(boot_target);
     if (image_size < 0) {
-        fprintf(stderr, "Failed to load program: %s\n", directory);
-        free(directory);
-        exit(1);
+        fprintf(stderr, "Failed to load program: %s\n", boot_target);
+        free(boot_target);
+        return 1;
     }
 
-    // 3) execution
-    int execution_status = execute_program(image_size);
+    // 3) Run it
+    execute_program(image_size);
 
-    if (ret_count != call_count)
-        fprintf(stderr, "There must be a problem in program since total calls doesnt match total returns.\n");
     fprintf(stderr, "Shutting down OS...\n");
-    Sleep(1000);
+    free(boot_target);
+    os_sleep_ms(1000);
     return 0;
 }
 
@@ -390,6 +408,7 @@ int main() {
 int parse_and_execute(char* line){
 
     lstrip(line);
+    rstrip(line);
     // Ignore empty lines
     if (line[0] == '\0') return 0;
     // Ignore comment lines
@@ -399,7 +418,7 @@ int parse_and_execute(char* line){
     if (len > 1 && line[len-1] == ':') return 0;
 
     char command[30],arg1[30],arg2[30],arg3[30];
-    int tokens = sscanf(line, "%s %s %s %s", command, arg1, arg2, arg3);
+    int tokens = sscanf(line, "%29s %29s %29s %29s", command, arg1, arg2, arg3);
     if (tokens < 1) return -1;
 
     if (strcasecmp(command,"exit") == 0)
@@ -606,9 +625,8 @@ int parse_and_execute(char* line){
     else if (strcasecmp(command,"CLS") == 0)
         clear_screen();
     else if (strcasecmp(command,"HLT") == 0){
-        return 401;
+        return EXEC_HALT;
     } else if (strcasecmp(command, "DEBUGGER") == 0){
-        int c = 32;
         printf("Debugger started working.\n");
         fflush(stdout);
     } else
@@ -617,14 +635,15 @@ int parse_and_execute(char* line){
 }
 
 
-void clear_screen() {
-    Sleep(1000);
+void clear_screen(void) {
+    os_sleep_ms(1000);
 
-    #ifdef _WIN32
-        system("cls");
-    #else
-        system("clear");
-    #endif
+#ifdef _WIN32
+    int rc = system("cls");
+#else
+    int rc = system("clear");
+#endif
+    (void)rc;
 }
 
 // Returns offset in program for a given label name, or -1 if not found
@@ -645,6 +664,3 @@ int find_label_index(const char* name) {
     return -1;
 }
 
-
-
-// test line
