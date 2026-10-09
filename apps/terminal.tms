@@ -18,7 +18,7 @@ _terminal_start:
     msg_help2: db "  pwd           print the working directory" 10 "  hist          show the command history" 10 "  clh           clear the command history" 10
     msg_help3: db "  clear         clear the screen" 10 "  about         about this OS" 10 "  hlt           power off" 10 0
     msg_about: db "TMS-OS: a toy operating system running on a CPU emulator written in C." 10 "This terminal and every app are programs written in the TMS language." 10 0
-    msg_apps: db "installed apps: calc  fact  fib  sum  reverse  arrays" 10 0
+    msg_apps: db "installed apps: hello  calc  fact  fib  sum  reverse  arrays" 10 0
     msg_unknown: db "unknown command, type help to see the available commands" 10 0
     msg_run_usage: db "usage: run <app>   (type apps to see what is installed)" 10 0
     msg_history: db "Showing commands history: (type clh to clear ram and free up memory)" 10 0

@@ -18,6 +18,7 @@ check() { # name, input, expected substring...
 }
 
 check "boot + help"   'help\nhlt\n'                       "Welcome to TMS-OS" "run <app>" "Powering off"
+check "hello"         'run hello\nhlt\n'                     "Hello from a TMS program!"
 check "echo"          'echo hello world\nhlt\n'           "hello world"
 check "unknown"       'frobnicate\nhlt\n'                 "unknown command"
 check "missing app"   'run nope\nhlt\n'                   "not found"

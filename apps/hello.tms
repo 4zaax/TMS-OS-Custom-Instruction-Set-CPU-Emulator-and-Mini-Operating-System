@@ -1,0 +1,13 @@
+_initial:
+MOV cs 90000
+MOV ds 95000
+MOV ss 97000
+MOV esp 99996
+
+# The smallest TMS program: print a string and give control back.
+msg: db "Hello from a TMS program!" 10 0
+
+mov esi msg
+movb ah 0x09
+int 21h
+hlt
