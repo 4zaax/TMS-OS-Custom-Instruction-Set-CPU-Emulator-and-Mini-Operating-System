@@ -1,8 +1,0 @@
-_initial:
-MOV cs 0
-MOV ds 10000
-MOV ss 13000
-MOV esp 19998
-
-movb al -10
-showb al
