@@ -181,7 +181,7 @@ and fixes for bugs in the emulator and the apps.
 ## Authors
 
 - Shayan Khodarahimi ([@4zaax](https://github.com/4zaax))
-- Tannaz ([@TANNAZ84](https://github.com/TANNAZ84))
+- Tannaz Farokhi ([@TANNAZ84](https://github.com/TANNAZ84))
 - Mani Adhami ([@NOT-87](https://github.com/NOT-87))
 
 ## License
